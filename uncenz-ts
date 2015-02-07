@@ -22,6 +22,11 @@ if [ -e ".uncenz-ts" ] ; then
 		echo "Wait till this minute is over, then run the script again,"
 		echo "two sessions in the same minute is a bad idea."
 		date
+# Here we need to kill uncenz-1st for which reason in the working dir there is
+# the .uncenz-1st.pid
+# We really may only kill it if either ffmpeg or dumpcap are running.  However
+# this is small inconvenience that I can live with, no time.
+		kill `cat .uncenz-1st.pid`
 	else # echo "is different" ; 
 #		read FAKE
 		echo $ts_var > .uncenz-ts

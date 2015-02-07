@@ -30,16 +30,6 @@
 # This is the first phase of my method, but see wherever that I put the
 # explanation of my method for more about it.
 #
-# This uncenz-1st script needs to start ffmpeg screencasting and immediately
-# afterward network packet capturing. The two files that it will produce with
-# those processes that it will start, it needs to name with the same infix,
-# and so the first thing to run is actually the uncenz-ts:
-#
-uncenz-ts
-#
-# This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
-# as "150207_0636" for 2015-02-06 06:36.
-#
 # Now let's try and start the screencast capturing with FFmpeg (Sorry, I don't
 # use the FFmpeg's regression Avconv, nor want to spend time on it; I wish
 # there were no wars there btwn those teams, that's all I can say. Oh, and that
@@ -51,25 +41,50 @@ uncenz-ts
 hostname_sh=`hostname|sed 's/\(...\).*/\1/'`
 echo $hostname_sh
 #read FAKE
+#
+# We must not start ffmpeg nor dumpcap if another session is running.
+#
+ffpidof=`pidof ffmpeg`
+dupidof=`pidof dumpcap`
 # In case you have a different display, surely you need to change this. Just,
 # currently I want to try and get this script to work for me on the display I
 # use on my box for online. No time here to make this work for other
 # displays/display settings.
 #
-ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
-	-c:v libx264 -g 10 -preset ultrafast -threads 0 \
-	Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+if [ -z "$ffpidof" ] && [ -z "$dupidof" ] ; then
+# We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
+# be able to kill the process of the main script, this uncenz-1st one.
+# Is it "$?"? I think so.
+ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
+#read FAKE
+#
+# This uncenz-1st script needs to start ffmpeg screencasting and immediately
+# afterward network packet capturing. The two files that it will produce with
+# those processes that it will start, it needs to name with the same infix,
+# and so the first thing to run is actually the uncenz-ts:
+#
+uncenz-ts
+#
+# This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
+# as "150207_0636" for 2015-02-06 06:36.
+#
+	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
+		-c:v libx264 -g 10 -preset ultrafast -threads 0 \
+		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
 
-sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
-
+	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+else
+	echo "A session is running:" ; echo
+	ls -ltr | tail -4 ; sleep 2 ; echo
+	ls -ltr | tail -4 ; sleep 1
+fi
 # We need to find the pid of each of the above processes (I'm really new to this).
 ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
 dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
-
 echo \$dupid is: # du for dumpcap
 echo $dupid
 
@@ -87,6 +102,6 @@ echo $dupid
 #read FAKE
 #cat `which uncenz-kill`
 #cat /usr/local/bin/uncenz-kill`
-echo "To end this session issue \"uncenz-kill <Enter>\" from this terminal."
+echo "To end a session issue \"uncenz-kill <Enter>\" from its terminal."
 
 exit 0
