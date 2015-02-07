@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+# uncenz-kill -- kill screencasting/dumpcapping session that uncenz-1st started
+#
+# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+#
+# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
+# Commons Attribution-ShareAlike 4.0 International Public License. For
+# considerations consult www.creativecommons.org/ .
+#
+# Pls. note that with this initial presentation of this program-to-be, or this
+# idea for a program to develop, you probably will not get any meaningful
+# results if you try and run concurrent sessions or if you try and run another
+# nonrelater instance of ffmpeg or dumpcap process.
+#
+ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+
+echo \$ffpid is: # ff for ffmpeg
+echo $ffpid
+
+echo \$dupid is: # du for dumpcap
+echo $dupid
+
+echo "To kill ffmpeg and dumpcap, hit Enter"
+echo "Or you can terminate this script without killing ffmpeg and dumpcap"
+echo "with issuing: Ctrl-C"
+
+read FAKE
+
+sudo -s kill $dupid $ffpid

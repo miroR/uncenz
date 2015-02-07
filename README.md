@@ -1,0 +1,126 @@
+
+Copyright 2015, Miroslav Rovis, http://www.CroatiaFidelis.hr
+
+NO WARRANTIES OF ANY KIND WHATSOEVER! USE ONLY AT YOUR OWN RISK AND AT YOUR OWN
+RESPONSABILITY!
+
+The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
+Commons Attribution-ShareAlike 4.0 International Public License. For
+considerations consult www.creativecommons.org/ .
+
+Uncenz is a set scripts for my method of engaging against censorship by
+documenting it to be able to call public or institutional attention, as well as
+discovering and documenting intrusion/other attacks to be able to seek help.
+
+The latter is related to the censorship issue since regimatic censorship is
+often accompanied with an array of possible attacks deliberate by same or
+related parties or purposefully allowed from non-related parties via sly means.
+All those possible attacks are intentional or allowed by the powerful subjects
+on the poor user, such as his/her own provider or possibly beyond.
+
+See topic:
+
+"Postfix smtp/TLS, Backup/Cloning Method, and Documenting Censorship/Intrusion"
+http://forums.gentoo.org/viewtopic-t-999436.html
+
+on Gentoo Forums.
+
+Before I explain this method let me emphasize that I am not an expert and I am
+aware that a few things from my scripts definitely need to be done, and are
+usually done in programs, differently, but I currently simply don't know nor
+have time to learn to do better.
+
+Requirements are: FFmpeg, Dumpcap (comes with Wireshark). Surely Tcpdump could
+be used instead of the latter, and maybe simply by replacing the string dumpca
+with tcpdump. And you certainly need to understand and modify a few things
+if, say your display is not 1024x768, and probably other things.
+
+Pls. also note that with this initial presentation of this program-to-be, or
+this idea for a program to develop, you probably will not get any meaningful
+results if you try and run concurrent sessions or if you try and run another
+nonrelated instance of ffmpeg or dumpcap process.
+
+My method (tested only on typical wired connection) cosists of two phases:
+
+phase first)
+
+zero ground) we start from no-connection, the usual state of for-online
+computers of the surveillance/other-intrusions aware poor users if not expert
+for any prolonged online not under their control
+
+first) starting the first phase of uncenz by running the script uncenz-1st
+which starts ffmpeg screencast capturing and network packet capturing
+
+second) physically connecting to the internet via the provider's router (the
+packet capturing being on, and the screencasting being on) by connecting the
+socket (get/make a very short extension cable, don't expose the router's socket
+to wearing)
+
+third) doing whatever task/visit/other is needed/wished to do online
+
+fourth) physically disconnecting from the internet by unplugging from the
+socket
+
+fifth) killing the still running uncenz-1st started processes (never kill it
+before first disconnecting physically)
+
+This first phase gets you files such as Screen_150131_0232_XXX.mkv and
+dump_150131_0232_XXX.pcap if uncenz naming is used (where XXX is the first
+three letters of your hostname.
+
+This uncenz-2nd script, for now, only does one thing and not too well.
+
+It takes two arguments or assumes their defaults.
+
+$1 is usually previously archived system log --the file that during the time of
+screencasting/packet capturing from the first phase was logged into in the
+online computer under name of /var/log/messages or other name. If it is not
+named "messages" (the default), you need to provide $1
+
+$2 is a list of (timestamp-named) files (given as arg 2, else uncenz-2nd
+construes the list if files follow the naming in my method, which they do if
+they were produced with uncenz-1st). Haven't yet tested providing arg 2. This
+script lists fine the uncenz-1st made files as explained next.
+
+All these documenting files usually need to be transferred in some secure
+air-gapped way off the online system. They all need to be put in the same empty
+directory, where then they can be worked with this uncenz-2nd, the second phase
+of uncenz set of scripts.
+
+So we're not anymore in the online system for the uncenz-2nd, but, say in our
+air-gapped system safe off the internet.
+
+uncenz-2nd runs a for loop on the system log (default "messages", the archived
+messages from the online system logged into when all the uncenz-1st sessions
+were taken) for each of the items in the list of timestamps (the timestamps are
+the same as the timestamps made with the uncenz-1st. uncenz-2nd recovers those.
+
+uncenz-2nd first greps for 'ffmpeg -f x11grab' lines containing the timestamp
+for each item of the list, and takes, for each item of the list separately (in
+the for loop), a number of --after-context lines from there.
+
+uncenz-2nd then, on that portion of the system log stowed temporarily in
+$syslog_${i}_leg_tmp.log grep's for only the first occurence of 'carrier lost',
+and taking the --before-context, it stows all that was logged in $syslog during
+that particular run of uncenz-1st in the final file for each iteration which
+it names $syslog_${i}_leg.log
+
+That is what this script currently does. The aim is, however, to get it to do
+so much more, such as, exampli gratia, list the exact connections made during a
+particular session from /var/log/conntrackd-stats.log (for which
+conntrack-tools need to be installed and conntrackd run as daemon). And some
+other parameters and whatever else might be necessary to make censorship
+irrefutably undeniable and intrusions identified and undeniable with as little
+effort as possible, and all that workable for non-expert users.
+
+If I make it (which can not happen soon, I'm too busy elsewhere). And if others
+do, thanks for using my idea (but see paragraph below).
+
+During all the time that I have been slowly progressing to this moment when the
+idea has been sufficiently shaped to propose it here, I have not been aware of
+any similar ideas. But (if you read the topic linked above in Gentoo Forums)
+I'm not Schmoog the Surveillance Engine to know it all. Do let me know if there
+exists something similar to my idea. Not a good thing inventing hot water. (And
+while you're possibly trying to contact me, be aware of the censorship and
+related attacks.)
+

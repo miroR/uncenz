@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# uncenz-2nd -- second phase, sorting, archiving 
+#
+# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+#
+# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
+# Commons Attribution-ShareAlike 4.0 International Public License. For
+# considerations consult www.creativecommons.org/ .
+#
+# Uncenz is a set scripts for my method of engaging against censorship by
+# documenting it to be able to call public or institutional attention, as well
+# as discovering and documenting intrusion/other attacks to be able to seek
+# help.
+
+# The latter is related to the censorship issue since regimatic censorship is
+# often accompanied with an array of possible attacks deliberate by same or
+# related parties or purposefully allowed from non-related parties via sly
+# means. All those possible attacks are intentional or allowed by the powerful
+# subjects on the poor user, such as his/her own provider or possibly beyond.
+#
+# See topic:
+#
+# "Postfix smtp/TLS, Backup/Cloning Method, and Documenting
+# Censorship/Intrusion"
+# http://forums.gentoo.org/viewtopic-t-999436.html
+#
+# on Gentoo Forums.
+#
+# This uncenz-2nd script of the uncenz set is usually run in a directory with
+# screencasts and packet captures produced previously with the uncenz-1st
+# sessions.
+#
+
+if [ -n "$1" ] ; then
+	syslog=$1
+	else
+	syslog=messages
+fi
+
+if [ -n "$2" ] ; then
+	screencast_list=`ls -1 $2`
+	# But I haven't tried giving this script an argument yet
+	else
+	# this is my matching glob with my "ffmpeg -f x11grab ..." command which I use
+	screencast_list=`ls -1 Screen_??????_????_???.mkv`
+fi
+
+echo \$screencast_list:
+echo $screencast_list
+read FAKE
+for h in `echo $screencast_list`
+# no meaning to "h", it's just the letter previous to "i" in the alphabet
+	do echo $h
+# I always sprinkle my scripts temporarily with these "read FAKE" lines
+# I allows me to hit Enter to go on if all is well, or if it is not, hit Ctrl-C
+echo "See explanation in the script at this point."
+read FAKE
+# I left this one above uncommented. But in a working script it's commented out
+i=`echo $h|sed 's/Screen_//'|sed 's/_g0n\.mkv//'`
+	echo $i
+read FAKE
+	ls -l Screen_${i}_g0n.mkv dump_${i}_g0n.pcap
+	# old method of calling conntrack from the command line; better is using
+	# the logs /var/log/conntrackd-stats.log ; may be called conn-leg.sh not
+	# yet written
+	if [ -e "conntrack-E_${i}.log" ] ; then ls -l conntrack-E_${i}.log ; fi
+read FAKE
+	grep -B9 -A10 $i $syslog | grep 'ffmpeg -f x11grab' | awk '{ print $6}'| sed 's/\[//'|sed 's/\]//'
+
+	mark_top=`grep -B9 -A10 $i $syslog | grep 'ffmpeg -f x11grab' | awk '{ print $6}'| sed 's/\[//'|sed 's/\]//'`
+echo \$mark_top:
+echo $mark_top
+if [ ! -z "$mark_top" ] ; then
+read FAKE
+	echo "grep -A20000 $mark_top $syslog > $syslog_${i}_leg_tmp.log"
+	echo "grep --after-context=20000 lines; well it should never take that much"
+	echo "but we got -m1 in the next grep on it"
+	grep -A20000 $mark_top $syslog > $syslog_${i}_leg_tmp.log
+	echo -B20000 -m1 "grep 'carrier lost' $syslog_${i}_leg_tmp.log"
+	echo "Surely 20000 is for most cases superfluous, but irrelevantly so"
+	grep -B20000 -m1 'carrier lost' $syslog_${i}_leg_tmp.log > $syslog_${i}_leg.log
+	rm -v $syslog_${i}_leg_tmp.log
+#	echo "\"view $syslog_${i}_leg.log\" now"
+#	view $syslog_${i}_leg.log
+else
+	# There can be a case that the $mark_top is "" in case where the line was
+	# originally grep'ed out for 'ffmpeg -f x11grab' contained a space in '['
+	# and ']' and awk'ed for field $6 it contained '[' only. So it needs to be
+	# reprocessed for $7 (surely this is a dirty way to correct it):
+# This is abandoned, see more comments below.
+#	if [ "$mark_top" == "" ] ; then
+#	grep -B9 -A10 $i $syslog | grep 'ffmpeg -f x11grab' | awk '{ print $7}'| sed 's/\[//'|sed 's/\]//'
+#
+#	mark_top=`grep -B9 -A10 $i $syslog | grep 'ffmpeg -f x11grab' | awk '{ print $7}'| sed 's/\[//'|sed 's/\]//'`
+#
+#	fi
+    echo \$mark_top:
+	echo $mark_top
+	# Here it is possible that $mark_top has more then only one found, which is
+	# not useable in the current script.
+	# The reason is that I used to cheat when developing my method. I'll first
+	# correct that in the method.  Namely, I'm right now while I'm writing this
+	# changing the method to first create the timestamp infix, and only then
+	# start, first screencasting, and then packet capturing. I mean when I
+	# cheated is when there was difference in the timestamp of screencasting
+	# and packet capturing because the screencasting I started just before the
+	# ending of the current minute, and the packet capturing just afer the
+	# start of the next minute, which I usually solved by later renaming the
+	# screencast file to the timestamp of the next minnute.
+	#
+	# So nothing to do with those screencast/packet captures done the old way.
+	#
+	# Now rerun the same if conditional:
+	if [ "$mark_top" == "" ] ; then
+	mkdir -p syslog-leg-not-found/
+	mv -iv Screen_${i}_g0n.mkv dump_${i}_g0n.pcap syslog-leg-not-found/
+	# old method of calling conntrack from the command line; better is using
+	# the logs /var/log/conntrackd-stats.log ; may be called conn-leg.sh not
+	# yet written
+	if [ -e "conntrack-E_${i}.log" ] ; then mv -iv conntrack-E_${i}.log \
+		syslog-leg-not-found/ ; fi
+	echo "\$mark_top "$mark_top" not found."
+	fi
+fi
+done ;
+echo
+echo "These screencast and packet capture files couldn't be taken the usual"
+echo "corresponding stretch out from the system log for or the \$mark_top was"
+echo "not unique or something else is the matter."
+ls -l syslog-leg-not-found/ ; echo
+echo "Pls investigate these manually."
+

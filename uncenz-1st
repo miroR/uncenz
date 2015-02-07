@@ -1,0 +1,92 @@
+#!/bin/bash
+#
+# uncenz-1st -- first phase, screencasting and packet capturing
+#
+# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+#
+# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
+# Commons Attribution-ShareAlike 4.0 International Public License. For
+# considerations consult www.creativecommons.org/ .
+#
+# Uncenz is a set scripts for my method of engaging against censorship by
+# documenting it to be able to call public or institutional attention, as well
+# as discovering and documenting intrusion/other attacks to be able to seek
+# help.
+
+# The latter is related to the censorship issue since regimatic censorship is
+# often accompanied with an array of possible attacks deliberate by same or
+# related parties or purposefully allowed from non-related parties via sly
+# means. All those possible attacks are intentional or allowed by the powerful
+# subjects on the poor user, such as his/her own provider or possibly beyond.
+#
+# See topic:
+#
+# "Postfix smtp/TLS, Backup/Cloning Method, and Documenting
+# Censorship/Intrusion"
+# http://forums.gentoo.org/viewtopic-t-999436.html
+#
+# on Gentoo Forums.
+#
+# This is the first phase of my method, but see wherever that I put the
+# explanation of my method for more about it.
+#
+# This uncenz-1st script needs to start ffmpeg screencasting and immediately
+# afterward network packet capturing. The two files that it will produce with
+# those processes that it will start, it needs to name with the same infix,
+# and so the first thing to run is actually the uncenz-ts:
+#
+uncenz-ts
+#
+# This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
+# as "150207_0636" for 2015-02-06 06:36.
+#
+# Now let's try and start the screencast capturing with FFmpeg (Sorry, I don't
+# use the FFmpeg's regression Avconv, nor want to spend time on it; I wish
+# there were no wars there btwn those teams, that's all I can say. Oh, and that
+# the dishonest blows come from, and big business support is enjoyed by, Avconv
+# team mostly; I wouldn't trust them on surveillance.)
+#
+# This line takes your hostname and retains only the first three letters to use
+# in the infix
+hostname_sh=`hostname|sed 's/\(...\).*/\1/'`
+echo $hostname_sh
+#read FAKE
+# In case you have a different display, surely you need to change this. Just,
+# currently I want to try and get this script to work for me on the display I
+# use on my box for online. No time here to make this work for other
+# displays/display settings.
+#
+ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
+	-c:v libx264 -g 10 -preset ultrafast -threads 0 \
+	Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+
+sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+
+# We need to find the pid of each of the above processes (I'm really new to this).
+ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+
+echo \$ffpid is: # ff for ffmpeg
+echo $ffpid
+
+echo \$dupid is: # du for dumpcap
+echo $dupid
+
+#echo "Issue (paste from this stdout, literally):"
+#echo "sudo -s kill $dupid $ffpid"
+#echo "sudo -s kill $dupid ; sudo -s kill $ffpid"
+#echo "to end this session."
+#echo $dupid > /var/run/dumpcap-uncenz.pid
+#echo "cat /var/run/dumpcap-uncenz.pid"
+#cat /var/run/dumpcap-uncenz.pid
+#read FAKE
+#echo $ffpid > /var/run/ffmpeg-uncenz.pid
+#echo "cat /var/run/ffmpeg-uncenz.pid"
+#cat /var/run/ffmpeg-uncenz.pid
+#read FAKE
+#cat `which uncenz-kill`
+#cat /usr/local/bin/uncenz-kill`
+echo "To end this session issue \"uncenz-kill <Enter>\" from this terminal."
+
+exit 0

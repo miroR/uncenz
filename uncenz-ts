@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# uncenz-ts -- set timestamp infix for screencast and dumpcap
+#
+# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+#
+# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
+# Commons Attribution-ShareAlike 4.0 International Public License. For
+# considerations consult www.creativecommons.org/ .
+#
+# "ts" is for "time stamp"
+ts_var=`date +%y%m%d_%H%M`
+echo $ts_var
+if [ -e ".uncenz-ts" ] ; then
+	ts_var_old=`cat .uncenz-ts`
+	echo $ts_var_old
+#	read FAKE
+
+	if [ "$ts_var" == "$ts_var_old" ]
+		then echo "We won't overwrite the files just made."
+#		read FAKE
+		echo "Wait till this minute is over, then run the script again,"
+		echo "two sessions in the same minute is a bad idea."
+		date
+	else # echo "is different" ; 
+#		read FAKE
+		echo $ts_var > .uncenz-ts
+#		read FAKE
+#		echo cat .uncenz-ts
+#		cat .uncenz-ts
+	fi
+else
+	echo $ts_var > .uncenz-ts
+#	echo "cat .uncenz-ts"
+#	cat .uncenz-ts
+fi
