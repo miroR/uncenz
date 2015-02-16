@@ -72,16 +72,21 @@ uncenz-ts
 		-c:v libx264 -g 10 -preset ultrafast -threads 0 \
 		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
 
-	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+#	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+	touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+	dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 else
 	echo "A session is running:" ; echo
 	ls -ltr | tail -4 ; sleep 2 ; echo
 	ls -ltr | tail -4 ; sleep 1
 fi
 # We need to find the pid of each of the above processes (I'm really new to this).
-ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+#ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+#dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+
+ffpid=`ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+dupid=`ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
