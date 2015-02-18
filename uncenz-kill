@@ -28,4 +28,5 @@ echo "with issuing: Ctrl-C"
 
 read FAKE
 
-sudo -s kill $dupid $ffpid
+#sudo -s kill $dupid $ffpid
+kill $dupid $ffpid
