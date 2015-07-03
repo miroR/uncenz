@@ -68,25 +68,33 @@ uncenz-ts
 # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
 # as "150207_0636" for 2015-02-06 06:36.
 #
-	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
-		-c:v libx264 -g 10 -preset ultrafast -threads 0 \
+#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 25 -i :0.0 \
+#		-c:v libx264 -preset ultrafast -threads 0 \
+#		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+#
+#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
+#		-c:v libx264 -preset ultrafast -threads 0 \
+#		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+#
+	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
+		-c:v libx264 -preset ultrafast -threads 0 \
 		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
 
 #	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-#	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
-	touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-	dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+	sudo dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 else
 	echo "A session is running:" ; echo
 	ls -ltr | tail -4 ; sleep 2 ; echo
 	ls -ltr | tail -4 ; sleep 1
 fi
 # We need to find the pid of each of the above processes (I'm really new to this).
-#ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-#dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
-ffpid=`ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-dupid=`ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+#ffpid=`ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+#dupid=`ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
