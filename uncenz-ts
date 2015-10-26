@@ -4,9 +4,7 @@
 #
 # Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
 #
-# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
-# Commons Attribution-ShareAlike 4.0 International Public License. For
-# considerations consult www.creativecommons.org/ .
+# released under BSD license, pls. see LICENSE
 #
 # "ts" is for "time stamp"
 ts_var=`date +%y%m%d_%H%M`

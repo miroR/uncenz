@@ -4,9 +4,7 @@ Copyright 2015, Miroslav Rovis, http://www.CroatiaFidelis.hr
 NO WARRANTIES OF ANY KIND WHATSOEVER! USE ONLY AT YOUR OWN RISK AND AT YOUR OWN
 RESPONSABILITY!
 
-The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
-Commons Attribution-ShareAlike 4.0 International Public License. For
-considerations consult www.creativecommons.org/ .
+Released under BSD license, pls. see LICENSE
 
 Uncenz is a set scripts for my method of engaging against censorship by
 documenting it to be able to call public or institutional attention, as well as

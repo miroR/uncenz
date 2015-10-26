@@ -4,9 +4,7 @@
 #
 # Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
 #
-# The uncenz set of scripts is distributed freely under CC-BY-SA-4.0, Creative
-# Commons Attribution-ShareAlike 4.0 International Public License. For
-# considerations consult www.creativecommons.org/ .
+# released under BSD license, pls. see LICENSE
 #
 # Uncenz is a set scripts for my method of engaging against censorship by
 # documenting it to be able to call public or institutional attention, as well
@@ -30,11 +28,7 @@
 # This is the first phase of my method, but see wherever that I put the
 # explanation of my method for more about it.
 #
-# Now let's try and start the screencast capturing with FFmpeg (Sorry, I don't
-# use the FFmpeg's regression Avconv, nor want to spend time on it; I wish
-# there were no wars there btwn those teams, that's all I can say. Oh, and that
-# the dishonest blows come from, and big business support is enjoyed by, Avconv
-# team mostly; I wouldn't trust them on surveillance.)
+# Now let's try and start the screencast capturing with FFmpeg.
 #
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
