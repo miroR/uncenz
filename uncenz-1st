@@ -36,10 +36,10 @@ hostname_sh=`hostname|sed 's/\(...\).*/\1/'`
 echo $hostname_sh
 #read FAKE
 #
-# We must not start ffmpeg nor dumpcap if another session is running.
+# We must not start ffmpeg nor tcpdump if another session is running.
 #
 ffpidof=`pidof ffmpeg`
-dupidof=`pidof dumpcap`
+dupidof=`pidof tcpdump`
 # In case you have a different display, surely you need to change this. Just,
 # currently I want to try and get this script to work for me on the display I
 # use on my box for online. No time here to make this work for other
@@ -75,9 +75,9 @@ uncenz-ts
 		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
 
 #	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s tcpdump -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-	sudo dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+	sudo tcpdump -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 else
 	echo "A session is running:" ; echo
 	ls -ltr | tail -4 ; sleep 2 ; echo
@@ -92,16 +92,16 @@ dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
-echo \$dupid is: # du for dumpcap
+echo \$dupid is: # du for tcpdump
 echo $dupid
 
 #echo "Issue (paste from this stdout, literally):"
 #echo "sudo -s kill $dupid $ffpid"
 #echo "sudo -s kill $dupid ; sudo -s kill $ffpid"
 #echo "to end this session."
-#echo $dupid > /var/run/dumpcap-uncenz.pid
-#echo "cat /var/run/dumpcap-uncenz.pid"
-#cat /var/run/dumpcap-uncenz.pid
+#echo $dupid > /var/run/tcpdump-uncenz.pid
+#echo "cat /var/run/tcpdump-uncenz.pid"
+#cat /var/run/tcpdump-uncenz.pid
 #read FAKE
 #echo $ffpid > /var/run/ffmpeg-uncenz.pid
 #echo "cat /var/run/ffmpeg-uncenz.pid"
