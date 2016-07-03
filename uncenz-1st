@@ -2,9 +2,11 @@
 #
 # uncenz-1st -- first phase, screencasting and packet capturing
 #
-# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+# Copyright (C) 2015 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
-# released under BSD license, pls. see LICENSE
+# released under BSD license, see LICENSE, or assume general BSD license,
+# meaning you can do basically anything with these scripts except claim that
+# you wrote them
 #
 # Uncenz is a set scripts for my method of engaging against censorship by
 # documenting it to be able to call public or institutional attention, as well
@@ -28,24 +30,29 @@
 # This is the first phase of my method, but see wherever that I put the
 # explanation of my method for more about it.
 #
-# Now let's try and start the screencast capturing with FFmpeg.
+# Now let's try and start the screencast capturing with FFmpeg
 #
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
 hostname_sh=`hostname|sed 's/\(...\).*/\1/'`
-echo $hostname_sh
-#read FAKE
+echo "\$hostname_sh: "; echo $hostname_sh
+read FAKE
 #
-# We must not start ffmpeg nor tcpdump if another session is running.
+# We must not start ffmpeg nor dumpcap if another session is running.
 #
 ffpidof=`pidof ffmpeg`
-dupidof=`pidof tcpdump`
+echo "\$ffpidof: "; echo $ffpidof
+ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+echo "\$ffpid: "; echo $ffpid
+dupidof=`pidof dumpcap`
+echo "\$dupidof: "; echo $dupidof
+read FAKE
 # In case you have a different display, surely you need to change this. Just,
 # currently I want to try and get this script to work for me on the display I
 # use on my box for online. No time here to make this work for other
 # displays/display settings.
 #
-if [ -z "$ffpidof" ] && [ -z "$dupidof" ] ; then
+if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 # We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
 # be able to kill the process of the main script, this uncenz-1st one.
 # Is it "$?"? I think so.
@@ -62,24 +69,36 @@ uncenz-ts
 # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
 # as "150207_0636" for 2015-02-06 06:36.
 #
+	tail -1 $SSLKEYLOGFILE > ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt
+	echo stored ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt ..
+	chmod 600 ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt
+read FAKE
 #	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 25 -i :0.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
 #
-#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :0.0 \
+#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+#
+#	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
 #
 	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
 		-c:v libx264 -preset ultrafast -threads 0 \
 		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+	
+	echo "Monitor screen 800x600, take notice!"; sleep 1.5
 
-#	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-#	sudo -s tcpdump -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-	sudo tcpdump -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 129.143.116.10 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 137.226.34.227 and not 195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not 129.143.116.10 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	echo "Some hosts are filtered and not traced, take notice!"; sleep 1.5
+	sudo dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+	echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
 else
-	echo "A session is running:" ; echo
+	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
 	ls -ltr | tail -4 ; sleep 2 ; echo
 	ls -ltr | tail -4 ; sleep 1
 fi
