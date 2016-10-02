@@ -1,50 +1,75 @@
 
 Copyright 2015, Miroslav Rovis, http://www.CroatiaFidelis.hr
 
-NO WARRANTIES OF ANY KIND WHATSOEVER! USE ONLY AT YOUR OWN RISK AND AT YOUR OWN
-RESPONSABILITY!
-
 Released under BSD license, pls. see LICENSE
-
-Uncenz is a set scripts for my method of engaging against censorship by
-documenting it to be able to call public or institutional attention, as well as
-discovering and documenting intrusion/other attacks to be able to seek help.
-
-The latter is related to the censorship issue since regimatic censorship is
-often accompanied with an array of possible attacks deliberate by same or
-related parties or purposefully allowed from non-related parties via sly means.
-All those possible attacks are intentional or allowed by the powerful subjects
-on the poor user, such as his/her own provider or possibly beyond.
-
-See topic:
-
-"Postfix smtp/TLS, Backup/Cloning Method, and Documenting Censorship/Intrusion"
-http://forums.gentoo.org/viewtopic-t-999436.html
-
-on Gentoo Forums.
 
 Before I explain this method let me emphasize that I am not an expert and I am
 aware that a few things from my scripts definitely need to be done, and are
 usually done in programs, differently, but I currently simply don't know nor
 have time to learn to do better.
 
-Requirements are: FFmpeg, Dumpcap (comes with Wireshark). Surely Tcpdump could
-be used instead of the latter, and maybe simply by replacing the string dumpca
-with tcpdump. And you certainly need to understand and modify a few things
-if, say your display is not 1024x768, and probably other things.
+Requirements to use uncenz (the scripts themselves you can just unpack into
+your /usr/local/bin ) are: FFmpeg, Dumpcap (comes with Wireshark). Surely
+Tcpdump could be used instead of the latter, and maybe simply by replacing the
+string dumpcap with tcpdump. But I'm in no hurry to try and accomodate for
+Tcpdump, as Dumpcap is just as good.
+
+Uncenz is a set of scripts for my method of engaging against censorship by
+documenting it to be able to call public or institutional attention, as well as
+discovering and documenting intrusion/other attacks to be able to seek help.
+
+The latter is often (not always, can have completely different motives, e.g.
+theft, behind it, documenting of which being equally or, some would say, more
+useful!) [often] related to the censorship issue since regimatic censorship is
+often accompanied with an array of possible attacks deliberate by same or
+related parties or purposefully allowed from non-related parties via sly means.
+Often those attacks are intentional or allowed by the powerful subjects on the
+poor user, such as his/her own provider or possibly beyond.
+
+See topic:
+"Postfix smtp/TLS, Backup/Cloning Method, and Documenting Censorship/Intrusion"
+http://forums.gentoo.org/viewtopic-t-999436.html
+
+on Gentoo Forums.
+
+Or try and study my collection of (not all censorship related, but most)
+screencasts and traces at:
+http://www.CroatiaFidelis.hr/foss/cap/
+
+For SSL capturing see:
+https://wiki.wireshark.org/SSL
+
+You certainly need to understand and modify a few things if,
+say, your display is not 800x600 or 1024x768 (which are offered in the script by
+mere uncommenting some lines and commenting out other lines), and probably other
+things.
+
+Currently the only way to set up uncenz for your environment is: uncommenting and modifying the scripts :-) .
+
+And, for complete use, $SSLKEYLOGFILE on Wireshark's Wiki above needs to be
+understood and applied.
+
+No attempt is made to explain the SSL capturing in this set of scripts, but the
+last line from wherever you store your effemeral keys is taken out in all the
+scripts that start dumpcamp'ing and is stored, so that later the new keys of
+the session can be found more easily and extracted, if presentation of the
+session where censorship happened is needed, when the effemeral keys need to be
+published.
 
 Pls. also note that with this initial presentation of this program-to-be, or
 this idea for a program to develop, you probably will not get any meaningful
-results if you try and run concurrent sessions or if you try and run another
-nonrelated instance of ffmpeg or dumpcap process.
+results if you try and run concurrent sessions. Limiting it to one session
+allowed per minute is confortable for me. Else, delete what uncenz-ts wrote,
+and start sooner.
 
 My method (tested only on typical wired connection) cosists of two phases:
 
 phase first)
 
-zero ground) we start from no-connection, the usual state of for-online
-computers of the surveillance/other-intrusions aware poor users if not expert
-for any prolonged online not under their control
+zero ground) we start from no-connection, the usual should-be state of
+for-online computers of the surveillance/other-intrusions-aware poor users,
+non-experts, before any prolonged online absolutely not under their complete
+control (complete control of own machines is the goal)
 
 first) starting the first phase of uncenz by running the script uncenz-1st
 which starts ffmpeg screencast capturing and network packet capturing
@@ -60,11 +85,16 @@ fourth) physically disconnecting from the internet by unplugging from the
 socket
 
 fifth) killing the still running uncenz-1st started processes (never kill it
-before first disconnecting physically)
+before first disconnecting physically) by issuing uncenz-kill
 
+Now comes the part that is unfinished and/or broken. Just skip to BROKEN-END
+(else try to figure out my idea btwn BROKEN-START and BROKEN-END. Should be
+realized some day...)
+
+BROKEN-START
 This first phase gets you files such as Screen_150131_0232_XXX.mkv and
 dump_150131_0232_XXX.pcap if uncenz naming is used (where XXX is the first
-three letters of your hostname.
+three letters of your hostname).
 
 This uncenz-2nd script, for now, only does one thing and not too well.
 
@@ -102,6 +132,7 @@ $syslog_${i}_leg_tmp.log grep's for only the first occurence of 'carrier lost',
 and taking the --before-context, it stows all that was logged in $syslog during
 that particular run of uncenz-1st in the final file for each iteration which
 it names $syslog_${i}_leg.log
+BROKEN-END
 
 That is what this script currently does. The aim is, however, to get it to do
 so much more, such as, exampli gratia, list the exact connections made during a
@@ -114,11 +145,17 @@ effort as possible, and all that workable for non-expert users.
 If I make it (which can not happen soon, I'm too busy elsewhere). And if others
 do, thanks for using my idea (but see paragraph below).
 
-During all the time that I have been slowly progressing to this moment when the
-idea has been sufficiently shaped to propose it here, I have not been aware of
-any similar ideas. But (if you read the topic linked above in Gentoo Forums)
-I'm not Schmoog the Surveillance Engine to know it all. Do let me know if there
-exists something similar to my idea. Not a good thing inventing hot water. (And
-while you're possibly trying to contact me, be aware of the censorship and
-related attacks.)
+During all the time that I have been slowly progressing toward this point in
+time when the idea has been sufficiently shaped to propose it here, I have not
+been aware of any similar ideas. But (if you read the topic linked above in
+Gentoo Forums) I'm not Schmoog the Surveillance Engine to know it all. Do let
+me know if there exists something similar to my idea. Not a good thing
+inventing hot water. (And while you're possibly trying to contact me, be aware
+of the censorship and related attacks. Use the uncenz to document that you tried to contact me!)
 
+There is a simple standalone script, separate from the set, that will often be
+more practical to use: just dumpcamp'ing. Much simpler, but it's akin to recording ony voice and not picture ;-) . You can't show with blatant evidence to non-experts the censorship that happened, in cases where stuff like, e.g. clickjacking and such visual events happened.
+
+That standalone no-ffmpeg is all in just one standalone script:
+
+uncenz-only-dump.sh

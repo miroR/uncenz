@@ -32,6 +32,9 @@
 # sessions.
 #
 
+echo "This script is BROKEN/UNFINISHED. Left just if anybody wants to look"
+echo "into the idea proposed."
+
 if [ -n "$1" ] ; then
 	syslog=$1
 	else

@@ -27,10 +27,8 @@
 #
 # on Gentoo Forums.
 #
-# This is the first phase of my method, but see wherever that I put the
-# explanation of my method for more about it.
-#
-# Now let's try and start the screencast capturing with FFmpeg
+# This is the first phase of my method. We try and start the screencast
+# capturing with FFmpeg and dumpcamp'ing with dumpcap.
 #
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
@@ -57,12 +55,13 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 # be able to kill the process of the main script, this uncenz-1st one.
 # Is it "$?"? I think so.
 ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
-#read FAKE
+echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
+read FAKE
 #
 # This uncenz-1st script needs to start ffmpeg screencasting and immediately
 # afterward network packet capturing. The two files that it will produce with
-# those processes that it will start, it needs to name with the same infix,
-# and so the first thing to run is actually the uncenz-ts:
+# those processes that it will start, it needs to name with the same infix, and
+# so the first thing to run is actually the uncenz-ts:
 #
 uncenz-ts
 #
@@ -90,19 +89,45 @@ read FAKE
 	echo "Monitor screen 800x600, take notice!"; sleep 1.5
 
 	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
-#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 129.143.116.10 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 137.226.34.227 and not 195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not 129.143.116.10 and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+# These are my settings below. Only one line starting with "sudo -s dumpcap -i
+# any ..." is allowed. The lonest one, with lots of carrying on to next line
+# (with '\') is when I want to rsync my local Gentoo mirror. A Gentoo user in
+# Europe with a local mirror could use that.
+#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" \
+#	-w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 217.72.206.21 \
+#	and not 194.8.197.22 and not 178.218.164.164" \
+#	-w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 129.143.116.10 and not \
+#	178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 137.226.34.227 and not \
+#	195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not \
+#	129.143.116.10 and not 178.218.164.164" -w \
+#	dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 #	echo "Some hosts are filtered and not traced, take notice!"; sleep 1.5
-	sudo dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	sudo -s dumpcap -i any -f "host not 137.226.34.227 \
+#	and not 195.20.242.90 \
+#	and not 217.72.206.21 \
+#	and not 194.8.197.22 \
+#	and not 129.143.116.10 \
+#	and not 208.70.246.16 \
+#	and not 147.251.48.205 \
+#	and not 86.49.49.49 \
+#	and not 137.226.34.46 \
+#	and not 62.93.32.21 \
+#	and not 212.219.56.184 \
+#	and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	echo "Gentoo mirror rsync hosts are filtered and not traced,"
+#	echo "				take notice!"; sleep 1.5
+	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
 	echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
 else
 	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
 	ls -ltr | tail -4 ; sleep 2 ; echo
 	ls -ltr | tail -4 ; sleep 1
 fi
-# We need to find the pid of each of the above processes (I'm really new to this).
+# We need to find the pid of each of the above processes (I'm really new to
+# this).
 ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
 dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
@@ -111,16 +136,16 @@ dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
-echo \$dupid is: # du for tcpdump
+echo \$dupid is: # du for dumpcap
 echo $dupid
 
 #echo "Issue (paste from this stdout, literally):"
 #echo "sudo -s kill $dupid $ffpid"
 #echo "sudo -s kill $dupid ; sudo -s kill $ffpid"
 #echo "to end this session."
-#echo $dupid > /var/run/tcpdump-uncenz.pid
-#echo "cat /var/run/tcpdump-uncenz.pid"
-#cat /var/run/tcpdump-uncenz.pid
+#echo $dupid > /var/run/dumpcap-uncenz.pid
+#echo "cat /var/run/dumpcap-uncenz.pid"
+#cat /var/run/dumpcap-uncenz.pid
 #read FAKE
 #echo $ffpid > /var/run/ffmpeg-uncenz.pid
 #echo "cat /var/run/ffmpeg-uncenz.pid"
