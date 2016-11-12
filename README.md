@@ -12,8 +12,11 @@ There are new scripts in this branch "develop", and I haven't thought out
 completely how to use some of them:
 
 hhmmss2sec
+
 dump_perl_repl.sh
+
 uncenz-ipt_conf_states.sh
+
 dump_dLo.sh
 
 The purpose of each of them is explained inside their own text.
