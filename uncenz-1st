@@ -32,17 +32,17 @@
 #
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
-hostname_sh=`hostname|sed 's/\(...\).*/\1/'`
+hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 read FAKE
 #
 # We must not start ffmpeg nor dumpcap if another session is running.
 #
-ffpidof=`pidof ffmpeg`
+ffpidof=$(pidof ffmpeg)
 echo "\$ffpidof: "; echo $ffpidof
-ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
 echo "\$ffpid: "; echo $ffpid
-dupidof=`pidof dumpcap`
+dupidof=$(pidof dumpcap)
 echo "\$dupidof: "; echo $dupidof
 read FAKE
 # In case you have a different display, surely you need to change this. Just,
@@ -68,42 +68,56 @@ uncenz-ts
 # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
 # as "150207_0636" for 2015-02-06 06:36.
 #
-	tail -1 $SSLKEYLOGFILE > ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt
-	echo stored ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt ..
-	chmod 600 ~/SSLLAST_`cat .uncenz-ts`_${hostname_sh}.txt
+	tail -1 $SSLKEYLOGFILE > ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+	echo stored ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt ..
+	chmod 600 ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
 read FAKE
 #	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 25 -i :0.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
-#		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+#		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 #
 #	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
-#		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+#		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 #
 #	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
 #
 	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
 		-c:v libx264 -preset ultrafast -threads 0 \
-		Screen_`cat .uncenz-ts`_${hostname_sh}.mkv &
+		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 	
 	echo "Monitor screen 800x600, take notice!"; sleep 1.5
 
-	sudo -s touch dump_`cat .uncenz-ts`_${hostname_sh}.pcap
+	sudo -s touch dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
+#
+# When I have issues with configuring network (such as setting up bridges)
+# I like to take the state of the network when I'm online before I disconnect
+# (this is not to be taken every time by default, it's a lot of output)
+#	echo
+#	echo "the iptables, and the link layer conf states"
+#	echo "        will be taken in 30 sec             "
+#	echo "sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &"
+#	sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &
+#	sleep 1.5
+	echo
 # These are my settings below. Only one line starting with "sudo -s dumpcap -i
-# any ..." is allowed. The lonest one, with lots of carrying on to next line
+# any ..." is allowed. The longest one, with lots of carrying on to next line
 # (with '\') is when I want to rsync my local Gentoo mirror. A Gentoo user in
 # Europe with a local mirror could use that.
+# files.devuan.org :
+#	sudo -s dumpcap -i any -f "host not 104.236.249.173" \
+#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" \
-#	-w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 217.72.206.21 \
 #	and not 194.8.197.22 and not 178.218.164.164" \
-#	-w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	sudo -s dumpcap -i any -f "host not 129.143.116.10 and not \
-#	178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	178.218.164.164" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	sudo -s dumpcap -i any -f "host not 137.226.34.227 and not \
 #	195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not \
 #	129.143.116.10 and not 178.218.164.164" -w \
-#	dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	echo "Some hosts are filtered and not traced, take notice!"; sleep 1.5
 #	sudo -s dumpcap -i any -f "host not 137.226.34.227 \
 #	and not 195.20.242.90 \
@@ -116,10 +130,10 @@ read FAKE
 #	and not 137.226.34.46 \
 #	and not 62.93.32.21 \
 #	and not 212.219.56.184 \
-#	and not 178.218.164.164" -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+#	and not 178.218.164.164" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	echo "Gentoo mirror rsync hosts are filtered and not traced,"
 #	echo "				take notice!"; sleep 1.5
-	sudo -s dumpcap -i any -w dump_`cat .uncenz-ts`_${hostname_sh}.pcap &
+	sudo -s dumpcap -i any -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 	echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
 else
 	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
@@ -128,11 +142,11 @@ else
 fi
 # We need to find the pid of each of the above processes (I'm really new to
 # this).
-ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
+dupid=$(sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}')
 
-#ffpid=`ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-#dupid=`ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+#ffpid=$(ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
+#dupid=$(ps aux | egrep '[d]umpcap' | awk '{ print $2}')
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
@@ -151,8 +165,8 @@ echo $dupid
 #echo "cat /var/run/ffmpeg-uncenz.pid"
 #cat /var/run/ffmpeg-uncenz.pid
 #read FAKE
-#cat `which uncenz-kill`
-#cat /usr/local/bin/uncenz-kill`
+#cat $(which uncenz-kill)
+#cat /usr/local/bin/uncenz-kill
 echo "To end a session issue \"uncenz-kill <Enter>\" from its terminal."
 
 exit 0

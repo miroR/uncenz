@@ -8,6 +8,16 @@ aware that a few things from my scripts definitely need to be done, and are
 usually done in programs, differently, but I currently simply don't know nor
 have time to learn to do better.
 
+There are new scripts in this branch "develop", and I haven't thought out
+completely how to use some of them:
+
+hhmmss2sec
+dump_perl_repl.sh
+uncenz-ipt_conf_states.sh
+dump_dLo.sh
+
+The purpose of each of them is explained inside their own text.
+
 Requirements to use uncenz (the scripts themselves you can just unpack into
 your /usr/local/bin ) are: FFmpeg, Dumpcap (comes with Wireshark). Surely
 Tcpdump could be used instead of the latter, and maybe simply by replacing the

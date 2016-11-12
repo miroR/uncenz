@@ -1,0 +1,115 @@
+#!/bin/bash
+#
+# hhmmss2sec -- translate syslog lines to time corresponding and human-
+#					 comparable to times in PCAPS
+#
+# ==========================
+# this script is unfinished
+# ==========================
+# but it will be part of uncenz program, of the second part, the analysis
+# (where see for details such as licensing)
+#
+# I had started correlating events as recorded in both syslog messages and
+# PCAPs at:
+#
+# Re: php-cgi and nonexisting connections to udp/80 (and udp/0
+# https://forums.grsecurity.net/viewtopic.php?f=3&t=2951&p=16341#p16324
+#
+# and haven't made much progress in this meantime...
+#
+# This script converts hh:mm:ss (3 times 2 decimal digits, hh in range 0-24, mm
+# in range 0-60, and ss in range 0-60) in file
+# messages_161029_2021_g0n_TIMEShhmmss
+#      what to call it?
+# dump_161029_2021_g0n_messages_TIMEShhmmss
+#one entry per line, to sec in normal
+# range of integers, and most importantly for my case of comparison of logs and
+# network traces, getting the relative period of time offset from the starting
+# time for each line.
+#
+# Doing it in haste, will be dirty.
+#
+if [ $# -eq 0 ]; then
+	echo "Takes three args."
+	echo "$1 is the section of the logs corresponding to the trace"
+	echo "dump_161029_2021_g0n.pcap"
+	echo "dump_161029_2021_g0n_messages, it is manually cut."
+	echo "$2 is the time of 'exec of /usr/local/bin/uncenz-1st'"
+	# 20:21:10
+	echo "That surely can be gotten auto, but only three values there, so..."
+	echo "Must be in hh:mm:ss as in the logs."
+	echo "$2 will become the $zero_value_raw in the script"
+	echo "$3 is the number of seconds btwn that time and the time"
+	# 20:21:24
+	echo "that is recorded in the dumpcap (use capinfos) as 'First packet time'"
+	echo "$3 will become $offset in the script"
+	# 14
+	echo "Haste here, can't check the script in details."
+	exit 0
+fi
+
+logs_section=$1
+echo "\$logs_section: " $logs_section
+zero_value_raw=$2
+echo "\$zero_value_raw: " $zero_value_raw 
+offset=$3
+echo "\$offset: " $offset
+read FAKE;
+# 2 PROBLEMS HERE
+zero_value=""	# necessary?
+# Nulling previous runs:
+> zero_value	# necessary?
+echo "\$zero_value: " $zero_value
+read FAKE;
+> sec_rel
+echo "\$sec_rel: " $sec_rel
+
+zero_value_sec=""
+echo "Must calculate \$zero_value_sec, $zero_value_sec, before the loop."
+read FAKE;
+
+	hh=$(echo $zero_value_raw|cut -d: -f1);
+	mm=$(echo $zero_value_raw|cut -d: -f2);
+	ss=$(echo $zero_value_raw|cut -d: -f3);
+	echo the values are $hh $mm $ss;
+#read FAKE;
+	zero_value_sec=$(echo $hh*3600 + $mm*60 + $ss|bc)
+	echo "\$zero_value_sec: " $zero_value_sec
+#read FAKE;
+
+cat $logs_section | awk '{ print $3 }' > ${logs_section}_TIMEShhmmss
+for i in $(cat ${logs_section}_TIMEShhmmss); do
+	hh=$(echo $i|cut -d: -f1);
+	mm=$(echo $i|cut -d: -f2);
+	ss=$(echo $i|cut -d: -f3);
+	echo $i is $hh $mm $ss;
+#read FAKE;
+	sec=$(echo $hh*3600 + $mm*60 + $ss|bc)
+	echo $sec
+#read FAKE;
+	# However we only need seconds relative to 20:21:10
+	# So we need the sec of the first entry to subtract it from any later time
+	echo "\$zero_value at start of loop: " $zero_value
+	echo "\$zero_value_sec at start of loop: " $zero_value_sec
+	if [ "$zero_value" != "$zero_value_sec" ]; then
+		if [ i=="zero_value_raw" ]; then
+			echo $sec > zero_value ;
+			zero_value=$(cat zero_value)
+			echo "\$zero_value_sec in the if constuct: " $zero_value_sec
+			echo "\$zero_value in the if constuct: " $zero_value
+		fi ;
+	fi
+	echo "\$zero_value at end of loop: " $zero_value
+	echo "\$zero_value_sec at end of loop: " $zero_value_sec
+	# relative to the start of uncenz-1st script
+	sec_rel_uncenz=$(echo $sec-$zero_value|bc)
+	echo "\$sec_rel_uncenz: " echo $sec_rel_uncenz
+	# the difference btwn the starts of uncenz scripts in how Wireshark (with
+	# capinfos I found) reckons the timing in the traces are btwn 5 and 6
+	# seconds. I take $offset.
+	sec_rel=$(echo $sec_rel_uncenz-$offset|bc)
+	echo "\$sec_rel: " echo $sec_rel
+	# End of this hasty conversion, just stow this $sec_rel value into a file
+	echo $sec_rel >> sec_rel
+#read FAKE;
+done

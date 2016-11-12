@@ -1,0 +1,53 @@
+# Pls. see script dump_perl_repl.sh which explains (and uses) this list (well,
+# in practice a list of this kind).
+#
+# dump_perl_repl.sh is part of my uncenz program at:
+# https://github.com/miroR/uncenz
+#
+# Below are various strings. What I give you is, before the ',' char the
+# already faked strings from my published PCAPs, so if you're a hardworking
+# eager-to-learn newbie, you can practice on my own already faked dumps at:
+# http://www.CroatiaFidelis.hr/foss/cap (from second half of 2016 on).
+#
+# Of course I couldn't care to spend more time in manually randomizing the
+# numbers in the after the ',' char, since this is just an exercise for
+# possible curious/eager-to-learn readers, on my own already faked numbers.
+# The replaced numbers should still make, or should I say keep, the new
+# slightly randomized PCAPs as good as the original ones (...only not sure
+# whether any checksums were set... but probably not).
+#
+\x00\x0e\x2e\xe4\x94\x73,\x00\x0e\x2e\x00\x00\x00
+\x00\x0e\x2e\x6c\xc2\x29,\x00\x0e\x2e\x00\x00\x00
+\x00\x0e\x2e\x46\x62\xbb,\x00\x0e\x2e\x00\x00\x00
+#
+# Edimax_
+\x00\x0e\x2e\xab\x28\x71,\x00\x0e\x2e\x00\x00\x00
+#
+\x00\x21\x04\x81\xfc\xd8,\x00\x21\x04\x00\x00\x00
+#
+# Planet_
+\x00\x30\x4f\x4b\x23\x19,\x00\x30\x4f\x00\x00\x00
+#
+# ZTE ZXDSL 931VII is a censor-ready Chinese router that, among other things,
+# hides your temporary public IP from you, and prohibits sharing of User
+# Manuals. Routers of this kind are spread, in Europe, only in some former
+# Communist country. I'm so proud of it, that I don't want to hide it and so
+# I'm changing only the last three bytes. Praised be the idiots that purchased
+# it so wholesale that it is mostly unavoidable when fiberoptic tech comes to
+# your home in Croatia.
+\x2c\x95\x7f\x8b\x44\x87,\x2c\x95\x7f\x00\x00\x00
+#
+# Juniper has gained notoriety for decrypting SSL traffic for (mainly state)
+# subjects, IIRC. Read on Bruce Schneier's blog, no time to search for links,
+# right now.  And why would a censor prone rulers go for anything else? I'm so
+# proud of it, praised be those idiots along with all the neverending communism
+# of the world itself!...  Hiding only the last three bytes.
+\x3c\x94\xd5\x12\x8a\xe3,\x3c\x94\xd5\x00\x00\x00
+#
+\x52\x54\x00\x82\x21\xfc,\x52\x54\x00\x00\x00\x00
+\xe8\x39\xdf\xab\x33\x7a,\xe8\x39\xdf\x00\x00\x00
+#
+# Here is an example of a serial in hex, this is not a MAC Must not add in
+# 0's, zeroes would not show, would be padding, also must be ASCII numbers in
+# hex.
+\x37\x31\x30\x38\x35\x30\x36,\x37\x31\x30\x38\x38\x38\x38
