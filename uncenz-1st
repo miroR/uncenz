@@ -32,6 +32,15 @@
 #
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
+
+# First of all, I don't go online if I don't capture traffic (and screencast,
+# so: if I don't start this script first in other words), and I can't capture
+# traffic if the $SSLKEYLOGFILE is not in place, so:
+if [ ! -e "$SSLKEYLOGFILE" ]; then
+	echo "There is no $SSLKEYLOGFILE. Fix that before you go online!"
+    exit 0
+fi
+
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 read FAKE

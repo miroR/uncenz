@@ -11,7 +11,7 @@
 #
 # Of course I couldn't care to spend more time in manually randomizing the
 # numbers in the after the ',' char, since this is just an exercise for
-# possible curious/eager-to-learn readers, on my own already faked numbers.
+# possible courious/eager-to-learn readers, on my own already faked numbers.
 # The replaced numbers should still make, or should I say keep, the new
 # slightly randomized PCAPs as good as the original ones (...only not sure
 # whether any checksums were set... but probably not).
@@ -25,8 +25,12 @@
 #
 \x00\x21\x04\x81\xfc\xd8,\x00\x21\x04\x00\x00\x00
 #
+# And the replacement strings, I guess, must at least minimally differ btwn
+# themselves, so the two of the same kind below differ --slightly.
+#
 # Planet_
 \x00\x30\x4f\x4b\x23\x19,\x00\x30\x4f\x00\x00\x00
+\x00\x30\x4f\x22\x3d\x9a,\x00\x30\x4f\x00\x00\x01
 #
 # ZTE ZXDSL 931VII is a censor-ready Chinese router that, among other things,
 # hides your temporary public IP from you, and prohibits sharing of User
