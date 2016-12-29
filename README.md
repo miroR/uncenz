@@ -8,8 +8,10 @@ aware that a few things from my scripts definitely need to be done, and are
 usually done in programs, differently, but I currently simply don't know nor
 have time to learn to do better.
 
-There are new scripts in this branch "develop", and I haven't thought out
-completely how to use some of them:
+These first few lines concern the very latest updates.
+
+The scripts are here which I haven't thought out completely about how to use
+some of them:
 
 hhmmss2sec
 
@@ -20,6 +22,18 @@ uncenz-ipt_conf_states.sh
 dump_dLo.sh
 
 The purpose of each of them is explained inside their own text.
+
+And there is the include functionality, pls. read in the example script:
+
+uncenz-include-vimeo
+
+Now generally about uncenz and how to use it.
+
+Lest I forgot: while this can surely be rewritten completely and employed under
+M$ Windoze, I haven't yet even considered finding (the ample) time to it.
+Anybody is welcome to do it, just pls. consider the license, and keep to the
+free conditions, and mark whence your derivative originates from. Or just a few
+modifications, and uncenz could be used in M$ Windoze with Cygwin maybe?
 
 Requirements to use uncenz (the scripts themselves you can just unpack into
 your /usr/local/bin ) are: FFmpeg, Dumpcap (comes with Wireshark). Surely
@@ -53,14 +67,24 @@ For SSL capturing see:
 https://wiki.wireshark.org/SSL
 
 You certainly need to understand and modify a few things if,
-say, your display is not 800x600 or 1024x768 (which are offered in the script by
+say, your display is not 1024x768 or 800x600 (which are offered in the script by
 mere uncommenting some lines and commenting out other lines), and probably other
 things.
 
-Currently the only way to set up uncenz for your environment is: uncommenting and modifying the scripts :-) .
+Currently the only way to set up some of the functionality in uncenz for your
+environment is: uncommenting and modifying the scripts :-) .
+
+E.g., if you don't use grsecurity hardened kernel, you need to do some
+uncommenting. I'll make it an include, some day. (Not in a hurry.)
+
+However, the dumpcap line can now be dealt with via a completely new include of
+your own.
 
 And, for complete use, $SSLKEYLOGFILE on Wireshark's Wiki above needs to be
-understood and applied.
+understood and applied. It makes little sense to record the network, without
+logging the SSL-keys, so if you can't set your SSL-keys to be logged, there's
+little use of uncenz for your either. Set off on the steep learning curve,
+Tuxian!
 
 No attempt is made to explain the SSL capturing in this set of scripts, but the
 last line from wherever you store your effemeral keys is taken out in all the
@@ -85,7 +109,8 @@ non-experts, before any prolonged online absolutely not under their complete
 control (complete control of own machines is the goal)
 
 first) starting the first phase of uncenz by running the script uncenz-1st
-which starts ffmpeg screencast capturing and network packet capturing
+(optionally with the first argument being an include script) which starts
+network packet capturing and ffmpeg screencast capturing
 
 second) physically connecting to the internet via the provider's router (the
 packet capturing being on, and the screencasting being on) by connecting the
@@ -105,6 +130,10 @@ Now comes the part that is unfinished and/or broken. Just skip to BROKEN-END
 realized some day...)
 
 BROKEN-START
+( Pls also note that the script in the repo:
+hhmmss2sec
+is a recent try in this direction)
+
 This first phase gets you files such as Screen_150131_0232_XXX.mkv and
 dump_150131_0232_XXX.pcap if uncenz naming is used (where XXX is the first
 three letters of your hostname).
@@ -164,10 +193,14 @@ been aware of any similar ideas. But (if you read the topic linked above in
 Gentoo Forums) I'm not Schmoog the Surveillance Engine to know it all. Do let
 me know if there exists something similar to my idea. Not a good thing
 inventing hot water. (And while you're possibly trying to contact me, be aware
-of the censorship and related attacks. Use the uncenz to document that you tried to contact me!)
+of the censorship and related attacks. Use, if you can, the uncenz to document
+that you tried to contact me!)
 
 There is a simple standalone script, separate from the set, that will often be
-more practical to use: just dumpcamp'ing. Much simpler, but it's akin to recording ony voice and not picture ;-) . You can't show with blatant evidence to non-experts the censorship that happened, in cases where stuff like, e.g. clickjacking and such visual events happened.
+more practical to use: just dumpcamp'ing. Much simpler, but it's akin to
+recording only voice and not picture ;-) . You can't show with blatant evidence
+to non-experts (which is very much needed!) the censorship that happened, in
+cases where stuff like, e.g.  clickjacking and such visual events happened.
 
 That standalone no-ffmpeg is all in just one standalone script:
 

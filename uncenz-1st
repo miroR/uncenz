@@ -38,7 +38,7 @@ function show_help {
     echo "$0 -- first phase of uncenz,"
     echo "screencasting and packet capturing"
     echo
-    echo "version 0.20"
+    echo "version 0.21"
     echo
     echo "Usage: $0 [an-include-script-with-capture-filters]"
     echo ""
