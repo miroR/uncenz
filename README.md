@@ -30,16 +30,25 @@ uncenz-include-vimeo
 Now generally about uncenz and how to use it.
 
 Lest I forgot: while this can surely be rewritten completely and employed under
-M$ Windoze, I haven't yet even considered finding (the ample) time to it.
-Anybody is welcome to do it, just pls. consider the license, and keep to the
-free conditions, and mark whence your derivative originates from. Or just a few
-modifications, and uncenz could be used in M$ Windoze with Cygwin maybe?
+M$ Windoze (nota bene: similar considerations apply to Schmapple Mac,
+the-other-rich-man-who-has-no-more-riches-any-longer OS), I
+haven't yet even considered finding (the ample) time to even consider it. But
+anybody is welcome to do it, just pls. be aware of the license, and keep to the
+free conditions, and mark whence your derivative originates from. Or is it just
+a few modifications, and uncenz could be used in M$ Windoze with Cygwin maybe?
+
+For various Unix flavors' users: I can't wait to study Bash and the related
+Posix standards, but haven't found that (ample) time either. So if you find I
+use bashisms that don't work in your Unix flavor, and are able to modify the
+scripts so thay work on your unix, pls. send me the patches, but be patient for
+me to apply them (again: I'm not really a programmer, I take time to do
+things...)
 
 Requirements to use uncenz (the scripts themselves you can just unpack into
 your /usr/local/bin ) are: FFmpeg, Dumpcap (comes with Wireshark). Surely
 Tcpdump could be used instead of the latter, and maybe simply by replacing the
-string dumpcap with tcpdump. But I'm in no hurry to try and accomodate for
-Tcpdump, as Dumpcap is just as good.
+string dumpcap with tcpdump. But I'm in no hurry yet to try and accomodate for
+Tcpdump, as Dumpcap is faily good too.
 
 Uncenz is a set of scripts for my method of engaging against censorship by
 documenting it to be able to call public or institutional attention, as well as
