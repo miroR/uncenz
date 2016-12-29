@@ -33,7 +33,7 @@
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
 
-# First of all, I don't go online if I don't capture traffic (and screencast,
+# First of all, I don't go online if I don't capture traffic (and screencast),
 # so: if I don't start this script first in other words), and I can't capture
 # traffic if the $SSLKEYLOGFILE is not in place, so:
 if [ ! -e "$SSLKEYLOGFILE" ]; then
@@ -41,9 +41,40 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
     exit 0
 fi
 
+#echo
+rm .gradm-S
+sudo -s gradm -S > .gradm-S
+gradm_S=$(cat .gradm-S)
+if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
+	echo "#####"
+	echo "$gradm_S"
+	echo
+	echo " Do you really want to go online with Gradm disabled? "
+	echo
+	echo "[[play some sound here]]"
+	echo
+	echo "Disconnect, then Ctrl-C, and run uncenz-kill"
+	echo "and then enable Gradm, or..."
+	echo
+	echo "... or hit Enter to continue."
+	echo
+	read FAKE
+	echo
+	echo "#####"
+# Can't do the below w/o adding miro to proc modify allowed group, I think.
+#else if [ "$gradm_S" == "The RBAC system is currently enabled." ]; then
+#		echo sysctl kernel.grsecurity.tpe
+#		sudo -s sysctl kernel.grsecurity.tpe
+#		echo sysctl kernel.grsecurity.tpe_restrict_all
+#		sudo -s sysctl kernel.grsecurity.tpe_restrict_all
+#		echo "should reenable these?"
+#		read FAKE
+#	fi
+fi
+
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
-read FAKE
+#read FAKE
 #
 # We must not start ffmpeg nor dumpcap if another session is running.
 #
@@ -53,7 +84,7 @@ ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
 echo "\$ffpid: "; echo $ffpid
 dupidof=$(pidof dumpcap)
 echo "\$dupidof: "; echo $dupidof
-read FAKE
+#read FAKE
 # In case you have a different display, surely you need to change this. Just,
 # currently I want to try and get this script to work for me on the display I
 # use on my box for online. No time here to make this work for other
@@ -65,7 +96,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 # Is it "$?"? I think so.
 ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
 echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
-read FAKE
+#read FAKE
 #
 # This uncenz-1st script needs to start ffmpeg screencasting and immediately
 # afterward network packet capturing. The two files that it will produce with
@@ -78,25 +109,55 @@ uncenz-ts
 # as "150207_0636" for 2015-02-06 06:36.
 #
 	tail -1 $SSLKEYLOGFILE > ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
-	echo stored ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt ..
+	echo stored ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt ...
 	chmod 600 ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
-read FAKE
+	ls -l ~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt \
+		~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+		ssllast_hash=$(sha256sum \
+			~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt|cut -d' ' -f1)
+		ssllast_hash_old=$(sha256sum \
+			~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
+		echo \$ssllast_hash, then \$ssllast_hash_old:
+		echo $ssllast_hash
+		echo $ssllast_hash_old
+	if [ "$ssllast_hash" == "$ssllast_hash_old" ]; then
+		echo
+		echo "#####"
+		echo
+		echo " The last key is the same as at the start of last session "
+		echo
+		echo " If \$SSLKEYLOGFILE enable browser was active in the last session"
+		echo " and opened https pages, it may have malfunctioned. "
+		echo
+		echo "                            ^^^      ^^^^^^^^^^^^^ "
+		echo "[[play some sound here]]"
+		echo
+		echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
+		echo "or hit Enter to continue."
+		echo "(If no SSL-key logging browser was active, all may still be fine.)"
+		echo
+		read FAKE
+		echo
+		echo "#####"
+	fi
+
+#read FAKE
 #	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 25 -i :0.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 #
-#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
+	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
+		-c:v libx264 -preset ultrafast -threads 0 \
+		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
+
+	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
+
+#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 #
-#	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
+#	echo "Monitor screen 800x600, take notice!"; sleep 1.5
 #
-	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
-		-c:v libx264 -preset ultrafast -threads 0 \
-		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
-	
-	echo "Monitor screen 800x600, take notice!"; sleep 1.5
-
 	sudo -s touch dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 #
 # When I have issues with configuring network (such as setting up bridges)
@@ -108,7 +169,7 @@ read FAKE
 #	echo "sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &"
 #	sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &
 #	sleep 1.5
-	echo
+#	echo
 # These are my settings below. Only one line starting with "sudo -s dumpcap -i
 # any ..." is allowed. The longest one, with lots of carrying on to next line
 # (with '\') is when I want to rsync my local Gentoo mirror. A Gentoo user in
@@ -142,6 +203,35 @@ read FAKE
 #	and not 178.218.164.164" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 #	echo "Gentoo mirror rsync hosts are filtered and not traced,"
 #	echo "				take notice!"; sleep 1.5
+#
+## Vimeo (not complete)
+#	sudo -s dumpcap -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
+#	and net not 8.253.84.0 mask 255.255.255.0 \
+#	and net not 8.254.200.0 mask 255.255.255.0 \
+#	and net not 8.254.228.0 mask 255.255.255.0 \
+#	and net not 151.101.113.0 mask 255.255.255.0 \
+#	" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
+#	echo "Vimeo net is filtered and not traced,"
+#	echo "				take notice!"; sleep 1.5
+
+## Youtube (not complete)
+#	sudo -s dumpcap -i any -f "
+#	net not 173.194.62.0 mask 255.255.255.0 \
+#	and net not 104.237.172.0 mask 255.255.255.0 \
+#	and net not 173.194.164.0 mask 255.255.255.0 \
+#	and net not 172.217.22.0 mask 255.255.255.0 \
+#	and net not 173.194.2.0 mask 255.255.255.0 \
+#	and net not 173.194.21.0 mask 255.255.255.0 \
+#	and net not 173.194.151.0 mask 255.255.255.0 \
+#	and net not 74.125.11.0 mask 255.255.255.0 \
+#	and net not 74.125.99.0 mask 255.255.255.0 \
+#	and net not 74.125.108.0 mask 255.255.255.0 \
+#	and net not 74.125.160.0 mask 255.255.255.0 \
+#	and net not 74.125.163.0 mask 255.255.255.0 \
+#	" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
+#	echo "Youtube net is filtered and not traced,"
+#	echo "				take notice!"; sleep 1.5
+
 	sudo -s dumpcap -i any -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
 	echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
 else

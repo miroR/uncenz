@@ -29,13 +29,22 @@
 # it and still use it... but I can't help with it.
 #
 
-function ask()	# this function borrowed from Advanced BASH Scripting Guide
-				# by Mendel Cooper
+function ask()	# this function borrowed from "Advanced BASH Scripting Guide"
+				# (a free book) by Mendel Cooper
 {
-    echo -n "$@" '[y/n] ' ; read ans
+    echo -n "$@" '[y/[n]] ' ; read ans
     case "$ans" in
         y*|Y*) return 0 ;;
         *) return 1 ;;
+    esac
+}
+
+function decline()	# the opposite, inverse, the negative if you will, of ask()
+{
+    echo -n "$@" '[[y]/n] ' ; read ans
+    case "$ans" in
+        n*|N*) return 1 ;;
+        *) return 0 ;;
     esac
 }
 
@@ -153,7 +162,8 @@ echo "###"
 echo "### The listing of files ${the_list} has just been downloaded from"
 echo "### $the_url"
 echo "### You can now edit the ${the_list} and only the files that remain in the list"
-echo "### will be downloaded."
+echo "### will be downloaded. (And if you add some file from the \$the_url , it will"
+echo "### be downloaded too."
 echo "###"
 read FAKE
 
@@ -200,10 +210,11 @@ echo "cat ${the_list}"
 cat ${the_list}
 read FAKE
 cat ${the_list} | sed "s/\($the_list\)/\1.sum\n\1.sum.asc/" \
-	| grep -v index.php > ${the_list}_cor
+	| grep -Ev '\.php\>' | sed 's/^\.\///' > ${the_list}_cor
 read FAKE
 # If ${the_list}_cor has a '/' in it, then the dLo.sh is slightly more complex
 # I'll try and grep the lines containing '/'.
+read FAKE
 grep '/' ${the_list}_cor | awk -F'/' '{ print $1 }' | sort -u >> the_subdirs.txt
 read FAKE
 
@@ -238,8 +249,8 @@ if [ -e "$the_dir" ]; then
 	echo "If you are downloading from a network"
 	echo "directory from which you already downloaded from recently,"
 	echo "then it should be fine to reuse the same directory"
-	echo "and download it it another number of files from the list."
-	echo "Hit Enter to do so."
+	echo "and download into it another number of files from the list."
+	echo "Hit Enter to do continue."
 	read FAKE
 fi
 echo "mkdir -pv $the_dir" >> dLo.sh
@@ -249,15 +260,19 @@ echo >> dLo.sh
 
 if [ -s "the_subdirs.txt" ]; then
 	for the_subdir in $(cat the_subdirs.txt); do
-		cat ${the_list}_cor | grep -v $the_subdir \
-			| sed "s@\(.*\)@wget -nc $the_url\1@" >> dLo.sh_topdir
 		cat ${the_list}_cor | grep $the_subdir \
 			| sed "s@\(.*\)@wget -nc $the_url\1@" >> dLo.sh_subdir
 	done
+	all_subdirs=$(cat the_subdirs.txt | tr '\012' '\|' | sed "s/|$//")
+	echo \$all_subdirs: $all_subdirs
+	read FAKE
+	cat ${the_list}_cor | grep -Ev $all_subdirs \
+		| sed "s@\(.*\)@wget -nc $the_url\1@" >> dLo.sh_topdir
 else
 	cat ${the_list}_cor \
 		| sed "s@\(.*\)@wget -nc $the_url\1@" >> dLo.sh_topdir
 fi	
+read FAKE
 
 mv -iv dLo.sh_topdir dLo.sh_topdir_RAW
 sort -u dLo.sh_topdir_RAW > dLo.sh_topdir
@@ -265,11 +280,16 @@ if [ -e "dLo.sh_subdir" ]; then
 	mv -iv dLo.sh_subdir dLo.sh_subdir_RAW
 	sort -u dLo.sh_subdir_RAW > dLo.sh_subdir
 fi
+
 cat dLo.sh_topdir >> dLo.sh
 if [ -e "dLo.sh_subdir" ]; then
-	echo "mkdir $the_subdir" >> dLo.sh
-	echo "cd $the_subdir" >> dLo.sh
-	cat dLo.sh_subdir >> dLo.sh
+	for the_subdir in $(cat the_subdirs.txt); do
+		echo "mkdir $the_subdir" >> dLo.sh
+		echo "cd $the_subdir" >> dLo.sh
+		grep $the_subdir dLo.sh_subdir >> dLo.sh
+		echo "cd -" >> dLo.sh
+	done
+#	cat dLo.sh_subdir >> dLo.sh
 fi
 #read FAKE
 chmod 755 dLo.sh
@@ -286,34 +306,46 @@ echo "### created dLo.sh and run it after the cleaning"
 echo "### in the step after next below.)"
 ask
 if [ "$?" == 0 ] ; then
-./dLo.sh
+	./dLo.sh
+	echo "Likely you can now descend into"
+	echo "the newly created directory:"
+	echo "$the_dir on your local storage, and check and verify"
+	echo "the files you downloaded."
+	echo "All the files should be there:"
+	ls -l $the_dir
+	echo "If the files are there, then do the following:"
+	echo "cd $the_dir"
+	echo "sha256sum -c ${the_list}.sum"
+	echo "gpg --verify ${the_list}.sum.asc"
+	echo "and if all verifies correctly, you're done"
+	echo "with fetching and verifying the files."
+else
+	echo "After you run ./dLo.sh, do:"
+	echo "cd $the_dir"
+	echo "sha256sum -c ${the_list}.sum"
+	echo "gpg --verify ${the_list}.sum.asc"
+	echo "and if all verifies correctly, you're done"
+	echo "with fetching and verifying the files."
 fi
-echo "Do the cleaning now?"
-ask
-if [ "$?" == 0 ] ; then
-	rm -v num_slashes.txt
-	rm -v the_dir.txt
-	rm -v the_list.txt
-	rm -v the_dirR.txt
-	rm -v the_listR.txt
-	rm -v the_subdirs.txt
-	rm -v dLo.sh_topdir
-	rm -v dLo.sh_topdir_RAW
-	rm -v dLo.sh_subdir
-	rm -v dLo.sh_subdir_RAW
-	rm -v CMD
-	rm -v ${the_list}_cor
+echo "Go without doing the cleaning now?"
+echo "(Hitting anything but n/no/No/no does the cleaning.)"
+decline
+if [ "$?" == 1 ] ; then
+	echo "The cleaning is left to the user, by own decision."
+else
+	if [ -e "$the_dir" ]; then
+		mv dLo.sh ${the_list} $the_dir
+	fi
+	rm num_slashes.txt
+	rm the_dir.txt
+	rm the_list.txt
+	rm the_dirR.txt
+	rm the_listR.txt
+	rm the_subdirs.txt
+	rm dLo.sh_topdir
+	rm dLo.sh_topdir_RAW
+	rm dLo.sh_subdir
+	rm dLo.sh_subdir_RAW
+	rm CMD
+	rm ${the_list}_cor
 fi
-echo "If you just ran ./dLo.sh (or if you will run it later)"
-echo "then likely you can now (or after you run ./dLo.sh) descend into"
-echo "the newly created directory:"
-echo "$the_dir on your local storage, and check and verify"
-echo "the files you downloaded."
-echo "All the files should be there:"
-ls -l $the_dir
-echo "If the files are there (or once they will be), then do the following:"
-echo "cd $the_dir"
-echo "sha256sum -c ${the_list}.sum"
-echo "gpg --verify ${the_list}.sum.asc"
-echo "and if all verifies correctly, you're done"
-echo "with fetching and verifying the files."
