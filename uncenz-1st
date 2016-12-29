@@ -30,14 +30,37 @@
 # This is the first phase of my method. We try and start the screencast
 # capturing with FFmpeg and dumpcamp'ing with dumpcap.
 #
-# This line takes your hostname and retains only the first three letters to use
-# in the infix
 
+function show_help {
+    echo
+    echo "==============================================================="
+    echo
+    echo "$0 -- first phase of uncenz,"
+    echo "screencasting and packet capturing"
+    echo
+    echo "version 0.20"
+    echo
+    echo "Usage: $0 [an-include-script-with-capture-filters]"
+    echo ""
+    echo "    Without arguments uncenz captures in promiscuous mode,"
+    echo "    on all available interfaces."
+    echo
+    echo "    With first argument, an executable file \$include_filter_run,"
+    echo "    it starts the dumpcap with whatever its capture filter contains."
+    echo "    \$include_filter_run is named with no spaces, and resides"
+    echo "    where the $0 is regularly run from, usually in"
+    echo "    /usr/local/bin ."
+    echo
+}
+
+# First, the checks that apply to uncenz-1st run with and without the include
+# alike.
+#
 # First of all, I don't go online if I don't capture traffic (and screencast),
 # so: if I don't start this script first in other words), and I can't capture
 # traffic if the $SSLKEYLOGFILE is not in place, so:
 if [ ! -e "$SSLKEYLOGFILE" ]; then
-	echo "There is no $SSLKEYLOGFILE. Fix that before you go online!"
+    echo "There is no $SSLKEYLOGFILE. Fix that before you go online!"
     exit 0
 fi
 
@@ -46,32 +69,34 @@ rm .gradm-S
 sudo -s gradm -S > .gradm-S
 gradm_S=$(cat .gradm-S)
 if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
-	echo "#####"
-	echo "$gradm_S"
-	echo
-	echo " Do you really want to go online with Gradm disabled? "
-	echo
-	echo "[[play some sound here]]"
-	echo
-	echo "Disconnect, then Ctrl-C, and run uncenz-kill"
-	echo "and then enable Gradm, or..."
-	echo
-	echo "... or hit Enter to continue."
-	echo
-	read FAKE
-	echo
-	echo "#####"
-# Can't do the below w/o adding miro to proc modify allowed group, I think.
+    echo "#####"
+    echo "$gradm_S"
+    echo
+    echo " Do you really want to go online with Gradm disabled? "
+    echo
+    echo "[[play some sound here]]"
+    echo
+    echo "Disconnect, then Ctrl-C, and run uncenz-kill"
+    echo "and then enable Gradm, or..."
+    echo
+    echo "... or hit Enter to continue."
+    echo
+    read FAKE
+    echo
+    echo "#####"
+# Can't do the below w/o adding <user> to proc modify allowed group, I think.
 #else if [ "$gradm_S" == "The RBAC system is currently enabled." ]; then
-#		echo sysctl kernel.grsecurity.tpe
-#		sudo -s sysctl kernel.grsecurity.tpe
-#		echo sysctl kernel.grsecurity.tpe_restrict_all
-#		sudo -s sysctl kernel.grsecurity.tpe_restrict_all
-#		echo "should reenable these?"
-#		read FAKE
-#	fi
+#        echo sysctl kernel.grsecurity.tpe
+#        sudo -s sysctl kernel.grsecurity.tpe
+#        echo sysctl kernel.grsecurity.tpe_restrict_all
+#        sudo -s sysctl kernel.grsecurity.tpe_restrict_all
+#        echo "should reenable these?"
+#        read FAKE
+#    fi
 fi
 
+# This line takes your hostname and retains only the first three letters to use
+# in the infix
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 #read FAKE
@@ -91,181 +116,133 @@ echo "\$dupidof: "; echo $dupidof
 # displays/display settings.
 #
 if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
-# We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
-# be able to kill the process of the main script, this uncenz-1st one.
-# Is it "$?"? I think so.
-ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
-echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
-#read FAKE
-#
-# This uncenz-1st script needs to start ffmpeg screencasting and immediately
-# afterward network packet capturing. The two files that it will produce with
-# those processes that it will start, it needs to name with the same infix, and
-# so the first thing to run is actually the uncenz-ts:
-#
-uncenz-ts
-#
-# This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
-# as "150207_0636" for 2015-02-06 06:36.
-#
-	tail -1 $SSLKEYLOGFILE > ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
-	echo stored ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt ...
-	chmod 600 ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
-	ls -l ~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt \
-		~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
-		ssllast_hash=$(sha256sum \
-			~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt|cut -d' ' -f1)
-		ssllast_hash_old=$(sha256sum \
-			~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
-		echo \$ssllast_hash, then \$ssllast_hash_old:
-		echo $ssllast_hash
-		echo $ssllast_hash_old
-	if [ "$ssllast_hash" == "$ssllast_hash_old" ]; then
-		echo
-		echo "#####"
-		echo
-		echo " The last key is the same as at the start of last session "
-		echo
-		echo " If \$SSLKEYLOGFILE enable browser was active in the last session"
-		echo " and opened https pages, it may have malfunctioned. "
-		echo
-		echo "                            ^^^      ^^^^^^^^^^^^^ "
-		echo "[[play some sound here]]"
-		echo
-		echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
-		echo "or hit Enter to continue."
-		echo "(If no SSL-key logging browser was active, all may still be fine.)"
-		echo
-		read FAKE
-		echo
-		echo "#####"
-	fi
+    # We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
+    # be able to kill the process of the main script, this uncenz-1st one.
+    ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
+    echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
+    #read FAKE
+    #
+    # This uncenz-1st script needs to start ffmpeg screencasting and immediately
+    # afterward network packet capturing. The two files that it will produce with
+    # those processes that it will start, it needs to name with the same infix, and
+    # so the first thing to run is actually the uncenz-ts:
+    #
+    uncenz-ts
+    #
+    # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
+    # as "150207_0636" for 2015-02-06 06:36.
+    #
+    # Pretty dirty, but does it for me, this below is for the purpose that I
+    # more easily find out if Palemoon (or Firefox), if active, is still
+    # logging SSL-keys. It will just compare the previous SSLLAST to the new
+    # just taken, by their hashes, and tell me to decide if they shouldn't
+    # differ, if they do.
+    tail -1 $SSLKEYLOGFILE > ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+    echo stored ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt ...
+    chmod 600 ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+    ls -l ~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt \
+        ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+        ssllast_hash=$(sha256sum \
+            ~/SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt|cut -d' ' -f1)
+        ssllast_hash_old=$(sha256sum \
+            ~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
+        echo \$ssllast_hash, then \$ssllast_hash_old:
+        echo $ssllast_hash
+        echo $ssllast_hash_old
+    if [ "$ssllast_hash" == "$ssllast_hash_old" ]; then
+        echo
+        echo "#####"
+        echo
+        echo " The last key is the same as at the start of last session "
+        echo
+        echo " If \$SSLKEYLOGFILE enable browser was active in the last session"
+        echo " and opened https pages, it may have malfunctioned. "
+        echo
+        echo "                            ^^^      ^^^^^^^^^^^^^ "
+        echo "[[play some sound here]]"
+        echo
+        echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
+        echo "or hit Enter to continue."
+        echo "(If no SSL-key logging browser was active, all may still be fine.)"
+        echo
+        read FAKE
+        echo
+        echo "#####"
+    fi
 
-#read FAKE
-#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 25 -i :0.0 \
-#		-c:v libx264 -preset ultrafast -threads 0 \
-#		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
-#
-	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
-		-c:v libx264 -preset ultrafast -threads 0 \
-		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
+    the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
+    export the_dump
+    sudo -s touch $the_dump
+    #
+    # When I have issues with configuring network (such as setting up bridges)
+    # I like to take the state of the network when I'm online before I disconnect
+    # (this is not to be taken every time by default, it's a lot, like debugging)
+    #    echo
+    #    echo "the iptables, and the link layer conf states"
+    #    echo "        will be taken in 30 sec             "
+    #    echo "sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &"
+    #    sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &
+    #    sleep 1.5
+    #    echo
+    #
 
-	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
+    #
+    # Only one line starting with "sudo -s dumpcap -i any ..." is allowed, of course.
+    #
+    
+    if [ "$1" ]; then
+        include_filter_run=$1
+        echo \$include_filter_run: $include_filter_run
+        # This is wrong! This checks for file in current dir.
+        #if [ -e "$include_filter_run" ]; then ...
+        #
+        # Of course it would also need to check if it is executable, but, sorry, rush,
+        # no time, and this suffices for my purposes.
+        # So, will just check for...
+        if [ -e "/usr/local/bin/$include_filter_run" ]; then 
+                /usr/local/bin/$include_filter_run
+            else
+                echo "The include script you gave:"
+                echo "$include_filter_run"
+                echo "does not exist, or is not in the /usr/local/bin/ directory."
+                sleep 3
+                show_help
+                exit 0
+        fi
+    else
+        sudo -s dumpcap -i any -w $the_dump &
+        echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
+        
+    fi
 
-#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
-#		-c:v libx264 -preset ultrafast -threads 0 \
-#		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
-#
-#	echo "Monitor screen 800x600, take notice!"; sleep 1.5
-#
-	sudo -s touch dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
-#
-# When I have issues with configuring network (such as setting up bridges)
-# I like to take the state of the network when I'm online before I disconnect
-# (this is not to be taken every time by default, it's a lot of output)
-#	echo
-#	echo "the iptables, and the link layer conf states"
-#	echo "        will be taken in 30 sec             "
-#	echo "sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &"
-#	sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &
-#	sleep 1.5
-#	echo
-# These are my settings below. Only one line starting with "sudo -s dumpcap -i
-# any ..." is allowed. The longest one, with lots of carrying on to next line
-# (with '\') is when I want to rsync my local Gentoo mirror. A Gentoo user in
-# Europe with a local mirror could use that.
-# files.devuan.org :
-#	sudo -s dumpcap -i any -f "host not 104.236.249.173" \
-#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 194.8.197.22" \
-#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 195.20.242.90 and not 217.72.206.21 \
-#	and not 194.8.197.22 and not 178.218.164.164" \
-#	-w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 129.143.116.10 and not \
-#	178.218.164.164" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	sudo -s dumpcap -i any -f "host not 137.226.34.227 and not \
-#	195.20.242.90 and not 217.72.206.21 and not 194.8.197.22 and not \
-#	129.143.116.10 and not 178.218.164.164" -w \
-#	dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	echo "Some hosts are filtered and not traced, take notice!"; sleep 1.5
-#	sudo -s dumpcap -i any -f "host not 137.226.34.227 \
-#	and not 195.20.242.90 \
-#	and not 217.72.206.21 \
-#	and not 194.8.197.22 \
-#	and not 129.143.116.10 \
-#	and not 208.70.246.16 \
-#	and not 147.251.48.205 \
-#	and not 86.49.49.49 \
-#	and not 137.226.34.46 \
-#	and not 62.93.32.21 \
-#	and not 212.219.56.184 \
-#	and not 178.218.164.164" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	echo "Gentoo mirror rsync hosts are filtered and not traced,"
-#	echo "				take notice!"; sleep 1.5
-#
-## Vimeo (not complete)
-#	sudo -s dumpcap -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
-#	and net not 8.253.84.0 mask 255.255.255.0 \
-#	and net not 8.254.200.0 mask 255.255.255.0 \
-#	and net not 8.254.228.0 mask 255.255.255.0 \
-#	and net not 151.101.113.0 mask 255.255.255.0 \
-#	" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	echo "Vimeo net is filtered and not traced,"
-#	echo "				take notice!"; sleep 1.5
+    ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
+        -c:v libx264 -preset ultrafast -threads 0 \
+        Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
+    
+    echo "Monitor screen 1024x768, take notice!"; sleep 1.5
 
-## Youtube (not complete)
-#	sudo -s dumpcap -i any -f "
-#	net not 173.194.62.0 mask 255.255.255.0 \
-#	and net not 104.237.172.0 mask 255.255.255.0 \
-#	and net not 173.194.164.0 mask 255.255.255.0 \
-#	and net not 172.217.22.0 mask 255.255.255.0 \
-#	and net not 173.194.2.0 mask 255.255.255.0 \
-#	and net not 173.194.21.0 mask 255.255.255.0 \
-#	and net not 173.194.151.0 mask 255.255.255.0 \
-#	and net not 74.125.11.0 mask 255.255.255.0 \
-#	and net not 74.125.99.0 mask 255.255.255.0 \
-#	and net not 74.125.108.0 mask 255.255.255.0 \
-#	and net not 74.125.160.0 mask 255.255.255.0 \
-#	and net not 74.125.163.0 mask 255.255.255.0 \
-#	" -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-#	echo "Youtube net is filtered and not traced,"
-#	echo "				take notice!"; sleep 1.5
-
-	sudo -s dumpcap -i any -w dump_$(cat .uncenz-ts)_${hostname_sh}.pcap &
-	echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
 else
-	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
-	ls -ltr | tail -4 ; sleep 2 ; echo
-	ls -ltr | tail -4 ; sleep 1
+    echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
+    ls -ltr | tail -4 ; sleep 2 ; echo
+    ls -ltr | tail -4 ; sleep 1
 fi
-# We need to find the pid of each of the above processes (I'm really new to
-# this).
+
+#    ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
+#        -c:v libx264 -preset ultrafast -threads 0 \
+#        Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
+#
+#    echo "Monitor screen 800x600, take notice!"; sleep 1.5
+#
+# We need to find the pid of each of the above processes.
 ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
 dupid=$(sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}')
-
-#ffpid=$(ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
-#dupid=$(ps aux | egrep '[d]umpcap' | awk '{ print $2}')
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
 echo \$dupid is: # du for dumpcap
 echo $dupid
 
-#echo "Issue (paste from this stdout, literally):"
-#echo "sudo -s kill $dupid $ffpid"
-#echo "sudo -s kill $dupid ; sudo -s kill $ffpid"
-#echo "to end this session."
-#echo $dupid > /var/run/dumpcap-uncenz.pid
-#echo "cat /var/run/dumpcap-uncenz.pid"
-#cat /var/run/dumpcap-uncenz.pid
-#read FAKE
-#echo $ffpid > /var/run/ffmpeg-uncenz.pid
-#echo "cat /var/run/ffmpeg-uncenz.pid"
-#cat /var/run/ffmpeg-uncenz.pid
-#read FAKE
-#cat $(which uncenz-kill)
-#cat /usr/local/bin/uncenz-kill
 echo "To end a session issue \"uncenz-kill <Enter>\" from its terminal."
 
 exit 0
+# vim: set tabstop=4 expandtab:

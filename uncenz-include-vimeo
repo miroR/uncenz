@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+# include dumpcap run with capture filters
+#
+# And only this one uncenz-include is present in uncenz git as example. If you
+# want a clean trace, empty the cache of your Palemoon/Firefox. Close it.
+#
+# Now fire up uncenz:
+# $ uncenz-1st uncenz-include-vimeo
+#
+# And now start Palemoon/Firefox on this link
+# System attacked, Konqueror went on window-popping spree!
+# https://forums.gentoo.org/viewtopic-t-905472.html
+#
+# Like this:
+# $ palemoon https://forums.gentoo.org/viewtopic-t-905472.html
+# (or $ firefox https://forums.gentoo.org/viewtopic-t-905472.html )
+#
+# Search for vimeo.com/<and some number>, id est, the videos at this page (only
+# on vimeo; the Youtube account is still quenched, and will probably remain so
+# forever, because all the Schmoog stinks too badly).
+#
+# During at least some of the videos you open (in the browser or with mpv or
+# with youtube-dl), there will be no traffic from the download url in the trace.
+#
+# The better but more complicated way is to limit the size of the packets. Some
+# other time I'll make that kind of include.
+#
+# Vimeo (not complete)
+    echo "sudo -s dumpcap -i any -f \"net not 8.254.199.0 mask 255.255.255.0"
+    sudo -s dumpcap -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
+    and net not 8.253.84.0 mask 255.255.255.0 \
+    and net not 8.254.200.0 mask 255.255.255.0 \
+    and net not 8.254.228.0 mask 255.255.255.0 \
+    and net not 151.101.113.0 mask 255.255.255.0 \
+    " -w $the_dump &
+    echo "Vimeo net is filtered and not traced,"
+    echo "            take notice!"; sleep 1.5
+# vim: set tabstop=4 expandtab:
