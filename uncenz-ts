@@ -11,7 +11,8 @@ ts_var=`date +%y%m%d_%H%M`
 echo $ts_var
 if [ -e ".uncenz-ts" ] ; then
 	ts_var_old=`cat .uncenz-ts`
-	echo $ts_var_old
+	#echo $ts_var_old
+	echo $ts_var_old > .uncenz-ts.old
 #	read FAKE
 
 	if [ "$ts_var" == "$ts_var_old" ]

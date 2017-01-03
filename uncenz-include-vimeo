@@ -39,6 +39,11 @@ if [ "$dumper" == "dumpcap" ]; then
 		and net not 8.254.228.0 mask 255.255.255.0 \
 		and net not 151.101.113.0 mask 255.255.255.0 \
 		" -w $the_dump &
+		echo $the_dump_real
+		if [ -e "$the_dump" ]; then
+			echo "Renaming $the_dump to $the_dump_real, is not pcap-ng an overkill extension?"
+			mv -iv $the_dump $the_dump_real
+		fi		
 fi
 if [ "$dumper" == "tcpdump" ]; then
 	sudo -s $dumper -i any -Z tcpdump -U -vv -f \
@@ -48,6 +53,10 @@ if [ "$dumper" == "tcpdump" ]; then
 		and net not 8.254.228.0 mask 255.255.255.0 \
 		and net not 151.101.113.0 mask 255.255.255.0 \
 		" -w $the_dump &
+		if [ -e "$the_dump" ]; then
+			echo "Renaming $the_dump to $the_dump_real, is not pcap-ng an overkill extension?"
+			mv -iv $the_dump $the_dump_real
+		fi		
 fi
 echo "Vimeo net is filtered and not traced,"
 echo "			take notice!"; sleep 1.5

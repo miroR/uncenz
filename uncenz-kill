@@ -60,9 +60,9 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
 	echo
 	echo "#####"
 fi
-echo "Here removing: rm ~/$ssllast_active"
-sleep 2;
-read FAKE
+#echo "Here removing: rm ~/$ssllast_active"
+#sleep 2;
+#read FAKE
 rm ~/$ssllast_active
 
 ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
