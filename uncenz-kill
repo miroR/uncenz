@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# uncenz-kill -- kill screencasting/dumpcapping session that uncenz-1st started
+# uncenz-kill -- kill screencasting/trace'ing session that uncenz-1st started
 #
 # Copyright (C) 2015 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
@@ -9,8 +9,11 @@
 # Pls. note that with this initial presentation of this program-to-be, or this
 # idea for a program to develop, you probably will not get any meaningful
 # results if you try and run concurrent sessions or if you try and run another
-# nonrelated instance of ffmpeg or dumpcap process.
+# nonrelated instance of ffmpeg or dumpcap/tcpdump process.
 #
+dumper=$(cat .uncenz-dumper)
+echo \$dumper: $dumper
+read FAKE
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 ssllast=SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
@@ -22,54 +25,62 @@ tail -1 $SSLKEYLOGFILE > ~/$ssllast_active
 echo stored ~/$ssllast_active ...
 chmod 600 ~/$ssllast_active
 ls -l ~/$ssllast \
-    ~/$ssllast_active
-    ssllast_hash_active=$(sha256sum \
-        ~/$ssllast_active|cut -d' ' -f1)
+	~/$ssllast_active
+	ssllast_hash_active=$(sha256sum \
+		~/$ssllast_active|cut -d' ' -f1)
 echo \$ssllast_hash_active: $ssllast_hash_active
 read FAKE
-    ssllast_hash=$(sha256sum \
-        ~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
+	ssllast_hash=$(sha256sum \
+		~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
 echo \$ssllast_hash: $ssllast_hash
 read FAKE
-    echo \$ssllast_hash_active, then \$ssllast_hash:
-    echo $ssllast_hash_active
-    echo $ssllast_hash
+	echo \$ssllast_hash_active, then \$ssllast_hash:
+	echo $ssllast_hash_active
+	echo $ssllast_hash
 if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
-    echo
-    echo "#####"
-    echo
-    # uncenz-kill is typically called to kill the session, even though it runs
-    # if a session is not running, wording is for the typical case.
-    echo " The last key taken during this session "
-    echo " is the same as at the start of last session "
-    echo
-    echo " If \$SSLKEYLOGFILE enable browser was active during this session"
-    echo " and opened https pages, it may have malfunctioned. "
-    echo
-    echo "                            ^^^      ^^^^^^^^^^^^^ "
-    echo "[[play some sound here]]"
-    echo
-    echo "But if no SSL-key logging browser was active, all may still be fine."
-    echo
-    echo "Hit Enter after you have read the above."
-    echo
-    read FAKE
-    echo
-    echo "#####"
+	echo
+	echo "#####"
+	echo
+	# uncenz-kill is typically called to kill the session, even though it runs
+	# if a session is not running, wording is for the typical case.
+	echo " The last key taken during this session "
+	echo " is the same as at the start of last session "
+	echo
+	echo " If \$SSLKEYLOGFILE enable browser was active during this session"
+	echo " and opened https pages, it may have malfunctioned. "
+	echo
+	echo "							^^^	  ^^^^^^^^^^^^^ "
+	echo "[[play some sound here]]"
+	echo
+	echo "But if no SSL-key logging browser was active, all may still be fine."
+	echo
+	echo "Hit Enter after you have read the above."
+	echo
+	read FAKE
+	echo
+	echo "#####"
 fi
+echo "Here removing: rm ~/$ssllast_active"
+sleep 2;
+read FAKE
 rm ~/$ssllast_active
 
 ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
-dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+if [ "$dumper" == "dumpcap" ]; then
+	dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+fi
+if [ "$dumper" == "tcpdump" ]; then
+	dupid=`sudo -s ps aux | egrep '[t]cpdump' | awk '{ print $2}'`
+fi
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
 
-echo \$dupid is: # du for dumpcap
+echo \$dupid is: # du for dumpcap/tcpdump
 echo $dupid
 
-echo "To kill ffmpeg and dumpcap, hit Enter"
-echo "Or you can terminate this script without killing ffmpeg and dumpcap"
+echo "To kill ffmpeg and dumpcap/tcpdump, hit Enter"
+echo "Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump"
 echo "with issuing: Ctrl-C"
 
 read FAKE

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# uncenz-ts -- set timestamp infix for screencast and tcpdump
+# uncenz-ts -- set timestamp infix for screencast and dumpcap/tcpdump
 #
 # Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
 #
@@ -22,7 +22,7 @@ if [ -e ".uncenz-ts" ] ; then
 		date
 # Here we need to kill uncenz-1st for which reason in the working dir there is
 # the .uncenz-1st.pid
-# We really may only kill it if either ffmpeg or tcpdump are running.  However
+# We really may only kill it if either ffmpeg or dumpcap/tcpdump are running. However
 # this is small inconvenience that I can live with, no time.
 		kill `cat .uncenz-1st.pid`
 	else # echo "is different" ; 

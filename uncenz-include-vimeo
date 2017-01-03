@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# include dumpcap run with capture filters
+# include dumpcap/tcpdump run with capture filters
 #
 # And only this one uncenz-include is present in uncenz git as example. If you
 # want a clean trace, empty the cache of your Palemoon/Firefox. Close it.
@@ -26,14 +26,29 @@
 # The better but more complicated way is to limit the size of the packets. Some
 # other time I'll make that kind of include.
 #
-# Vimeo (not complete)
-    echo "sudo -s dumpcap -i any -f \"net not 8.254.199.0 mask 255.255.255.0"
-    sudo -s dumpcap -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
-    and net not 8.253.84.0 mask 255.255.255.0 \
-    and net not 8.254.200.0 mask 255.255.255.0 \
-    and net not 8.254.228.0 mask 255.255.255.0 \
-    and net not 151.101.113.0 mask 255.255.255.0 \
-    " -w $the_dump &
-    echo "Vimeo net is filtered and not traced,"
-    echo "            take notice!"; sleep 1.5
+dumper=$(cat .uncenz-dumper)
+echo \$dumper: $dumper
+read FAKE
+# Vimeo (not complete), I perfectly understand it's duplicated, can't go and
+# learn now.
+echo "sudo -s $dumper ... -i any -f \"net not 8.254.199.0 mask 255.255.255.0"
+if [ "$dumper" == "dumpcap" ]; then
+		sudo -s $dumper -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
+		and net not 8.253.84.0 mask 255.255.255.0 \
+		and net not 8.254.200.0 mask 255.255.255.0 \
+		and net not 8.254.228.0 mask 255.255.255.0 \
+		and net not 151.101.113.0 mask 255.255.255.0 \
+		" -w $the_dump &
+fi
+if [ "$dumper" == "tcpdump" ]; then
+	sudo -s $dumper -i any -Z tcpdump -U -vv -f \
+		"net not 8.254.199.0 mask 255.255.255.0 \
+		and net not 8.253.84.0 mask 255.255.255.0 \
+		and net not 8.254.200.0 mask 255.255.255.0 \
+		and net not 8.254.228.0 mask 255.255.255.0 \
+		and net not 151.101.113.0 mask 255.255.255.0 \
+		" -w $the_dump &
+fi
+echo "Vimeo net is filtered and not traced,"
+echo "			take notice!"; sleep 1.5
 # vim: set tabstop=4 expandtab:
