@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# include dumpcap run with capture filters
+#
+dumper=$(cat .uncenz-dumper)
+echo \$dumper: $dumper
+read FAKE
+## Youtube (not complete), I perfectly understand it's duplicated, can't go and
+# learn now.
+if [ "$dumper" == "dumpcap" ]; then
+	sudo -s touch $the_dump
+	sudo -s $dumper -i any -f "net not 173.194.6.0 mask 255.255.255.0 \
+		and net not 173.194.15.0 mask 255.255.255.0 \
+		and net not 173.194.16.0 mask 255.255.255.0 \
+		and net not 173.194.62.0 mask 255.255.255.0 \
+		and net not 173.194.65.0 mask 255.255.255.0 \
+		and net not 104.237.172.0 mask 255.255.255.0 \
+		and net not 173.194.164.0 mask 255.255.255.0 \
+		and net not 173.194.165.0 mask 255.255.255.0 \
+		and net not 172.217.22.0 mask 255.255.255.0 \
+		and net not 173.194.2.0 mask 255.255.255.0 \
+		and net not 173.194.21.0 mask 255.255.255.0 \
+		and net not 173.194.151.0 mask 255.255.255.0 \
+		and net not 74.125.11.0 mask 255.255.255.0 \
+		and net not 74.125.99.0 mask 255.255.255.0 \
+		and net not 74.125.104.0 mask 255.255.255.0 \
+		and net not 74.125.108.0 mask 255.255.255.0 \
+		and net not 74.125.160.0 mask 255.255.255.0 \
+		and net not 74.125.163.0 mask 255.255.255.0 \
+		" -w $the_dump &
+	#if [ -e "$the_dump" ]; then
+	#	echo "Renaming $the_dump to $the_dump_real,"
+	#	echo "is not pcapng an overkill extension?"
+	#	mv -iv $the_dump $the_dump_real
+	#fi		
+fi
+if [ "$dumper" == "tcpdump" ]; then
+	sudo -s $dumper -i any -Z tcpdump -U -v -f \
+		"net not 173.194.6.0 mask 255.255.255.0 \
+		and net not 173.194.15.0 mask 255.255.255.0 \
+		and net not 173.194.16.0 mask 255.255.255.0 \
+		and net not 173.194.62.0 mask 255.255.255.0 \
+		and net not 173.194.65.0 mask 255.255.255.0 \
+		and net not 104.237.172.0 mask 255.255.255.0 \
+		and net not 173.194.164.0 mask 255.255.255.0 \
+		and net not 173.194.165.0 mask 255.255.255.0 \
+		and net not 172.217.22.0 mask 255.255.255.0 \
+		and net not 173.194.2.0 mask 255.255.255.0 \
+		and net not 173.194.21.0 mask 255.255.255.0 \
+		and net not 173.194.151.0 mask 255.255.255.0 \
+		and net not 74.125.11.0 mask 255.255.255.0 \
+		and net not 74.125.99.0 mask 255.255.255.0 \
+		and net not 74.125.104.0 mask 255.255.255.0 \
+		and net not 74.125.108.0 mask 255.255.255.0 \
+		and net not 74.125.160.0 mask 255.255.255.0 \
+		and net not 74.125.163.0 mask 255.255.255.0 \
+		" -w $the_dump &
+	#if [ -e "$the_dump" ]; then
+	#	echo "Renaming $the_dump to $the_dump_real,"
+	#	echo "is not pcapng an overkill extension?"
+	#	mv -iv $the_dump $the_dump_real
+	#fi		
+fi
+echo "Youtube net is filtered and not traced,"
+echo "				take notice!"; sleep 1.5
+# vim: set tabstop=4 expandtab:

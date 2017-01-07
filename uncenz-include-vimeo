@@ -33,30 +33,33 @@ read FAKE
 # learn now.
 echo "sudo -s $dumper ... -i any -f \"net not 8.254.199.0 mask 255.255.255.0"
 if [ "$dumper" == "dumpcap" ]; then
-		sudo -s $dumper -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
+	sudo -s touch $the_dump
+	sudo -s $dumper -i any -f "net not 8.254.199.0 mask 255.255.255.0 \
 		and net not 8.253.84.0 mask 255.255.255.0 \
 		and net not 8.254.200.0 mask 255.255.255.0 \
 		and net not 8.254.228.0 mask 255.255.255.0 \
 		and net not 151.101.113.0 mask 255.255.255.0 \
 		" -w $the_dump &
 		echo $the_dump_real
-		if [ -e "$the_dump" ]; then
-			echo "Renaming $the_dump to $the_dump_real, is not pcap-ng an overkill extension?"
-			mv -iv $the_dump $the_dump_real
-		fi		
+		#if [ -e "$the_dump" ]; then
+		#	echo "Renaming $the_dump to $the_dump_real,"
+		#	echo "is not pcap-ng an overkill extension?"
+		#	mv -iv $the_dump $the_dump_real
+		#fi		
 fi
 if [ "$dumper" == "tcpdump" ]; then
-	sudo -s $dumper -i any -Z tcpdump -U -vv -f \
+	sudo -s $dumper -i any -Z tcpdump -U -v -f \
 		"net not 8.254.199.0 mask 255.255.255.0 \
 		and net not 8.253.84.0 mask 255.255.255.0 \
 		and net not 8.254.200.0 mask 255.255.255.0 \
 		and net not 8.254.228.0 mask 255.255.255.0 \
 		and net not 151.101.113.0 mask 255.255.255.0 \
 		" -w $the_dump &
-		if [ -e "$the_dump" ]; then
-			echo "Renaming $the_dump to $the_dump_real, is not pcap-ng an overkill extension?"
-			mv -iv $the_dump $the_dump_real
-		fi		
+		#if [ -e "$the_dump" ]; then
+		#	echo "Renaming $the_dump to $the_dump_real,"
+		#	echo "is not pcapng an overkill extension?"
+		##	mv -iv $the_dump $the_dump_real
+		#fi		
 fi
 echo "Vimeo net is filtered and not traced,"
 echo "			take notice!"; sleep 1.5

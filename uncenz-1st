@@ -207,16 +207,22 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		echo "#####"
 	fi
 
-	# The exercize below appears to be futile, as tcpdump faq (indirectly, by
-	# mentioning ms, three decimal places, in the faq) talks about us, six
-	# decimal places, as regular capture format, so ns, nine decimal places,
-	# such as the dumpcap's timestamps, seems not there for tcpdump.  Still
-	# keeping it till I get in the clear about it.
-	the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap-ng
-	the_dump_real=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
+	# Still not in the clear about the below, but I think I both dumpcap and
+	# tcpdump use pcapng even if you don't git them that extenstion. And...
+	# And, I think for dumpcap, if it is not set to capture as <you, the normal
+	# user> (still so here, was lazy about that... well, in grsecurity-hardened
+	# system the root is not much more powerful than a normal user, so...), the
+	# $the_dump needs to be touch'd.
+	# Likewise for tcpdump, if it is not set to capture as <you, the normal
+	# user>, which in my Gentoo machine means compiled with (the default)
+	# "drop-root" use flag.
+	the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcapng
+	#the_dump_real=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 	export the_dump
-	export the_dump_real
-	sudo -s touch $the_dump
+	#export the_dump_real
+	if [ "$dumper" == "dumpcap" ]; then
+		sudo -s touch $dumper
+	fi
 	#
 	# When I have issues with configuring network (such as setting up bridges)
 	# I like to take the state of the network when I'm online before I disconnect
@@ -258,15 +264,15 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 			sudo -s $dumper -i any -w $the_dump &
 		fi
 		if [ "$dumper" == "tcpdump" ]; then
-			sudo -s $dumper -i any -Z tcpdump -U -vv -w $the_dump &
+			sudo -s $dumper -i any -Z tcpdump -U -v -w $the_dump &
 		fi
 		#sudo -s $dumper -i any -w $the_dump &
 		echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
-		echo $the_dump_real
-		if [ -e "$the_dump" ]; then
-			echo "Renaming $the_dump to $the_dump_real, is not pcap-ng an overkill extension?"
-			mv -iv $the_dump $the_dump_real
-		fi		
+		#echo $the_dump_real
+		#if [ -e "$the_dump" ]; then
+		#	echo "Renaming $the_dump to $the_dump_real, is not pcapng an overkill extension?"
+		#	mv -iv $the_dump $the_dump_real
+		#fi		
 	fi
 
 	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
