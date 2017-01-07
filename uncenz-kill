@@ -13,7 +13,7 @@
 #
 dumper=$(cat .uncenz-dumper)
 echo \$dumper: $dumper
-read FAKE
+#read FAKE
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 ssllast=SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
@@ -29,7 +29,7 @@ ls -l ~/$ssllast \
 	ssllast_hash_active=$(sha256sum \
 		~/$ssllast_active|cut -d' ' -f1)
 echo \$ssllast_hash_active: $ssllast_hash_active
-read FAKE
+#read FAKE
 	ssllast_hash=$(sha256sum \
 		~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
 echo \$ssllast_hash: $ssllast_hash

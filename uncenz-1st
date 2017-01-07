@@ -208,7 +208,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	fi
 
 	# Still not in the clear about the below, but I think I both dumpcap and
-	# tcpdump use pcapng even if you don't git them that extenstion. And...
+	# tcpdump use pcapng even if you don't give them that extenstion. And...
 	# And, I think for dumpcap, if it is not set to capture as <you, the normal
 	# user> (still so here, was lazy about that... well, in grsecurity-hardened
 	# system the root is not much more powerful than a normal user, so...), the
@@ -221,7 +221,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	export the_dump
 	#export the_dump_real
 	if [ "$dumper" == "dumpcap" ]; then
-		sudo -s touch $dumper
+		sudo -s touch $the_dump
 	fi
 	#
 	# When I have issues with configuring network (such as setting up bridges)
