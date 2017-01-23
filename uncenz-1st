@@ -216,7 +216,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	# Likewise for tcpdump, if it is not set to capture as <you, the normal
 	# user>, which in my Gentoo machine means compiled with (the default)
 	# "drop-root" use flag.
-	the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcapng
+	the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 	#the_dump_real=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 	export the_dump
 	#export the_dump_real

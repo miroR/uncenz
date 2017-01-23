@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# include dumpcap/tcpdump run with capture filters
+#
+# And only this one uncenz-include is present in uncenz git as example. If you
+# want a clean trace, empty the cache of your Palemoon/Firefox. Close it.
+#
+# Now fire up uncenz:
+# $ uncenz-1st uncenz-include-vimeo
+#
+# And now start Palemoon/Firefox on this link
+# System attacked, Konqueror went on window-popping spree!
+# https://forums.gentoo.org/viewtopic-t-905472.html
+#
+# Like this:
+# $ palemoon https://forums.gentoo.org/viewtopic-t-905472.html
+# (or $ firefox https://forums.gentoo.org/viewtopic-t-905472.html )
+#
+# Search for vimeo.com/<and some number>, id est, the videos at this page (only
+# on vimeo; the Youtube account is still quenched, and will probably remain so
+# forever, because all the Schmoog stinks too badly).
+#
+# During at least some of the videos you open (in the browser or with mpv or
+# with youtube-dl), there will be no traffic from the download url in the trace.
+#
+# The better but more complicated way is to limit the size of the packets. Some
+# other time I'll make that kind of include.
+#
+dumper=$(cat .uncenz-dumper)
+echo \$dumper: $dumper
+#echo "enter one or more IPv4 hosts in quad decimal, separated by space character"
+echo "enter one IPv4 host in quad decimal notation"
+read hosts
+# Vimeo (not complete), I perfectly understand it's duplicated, can't go and
+# learn now.
+echo "sudo -s $dumper ... -i any -f \"host not $hosts"
+if [ "$dumper" == "dumpcap" ]; then
+	sudo -s touch $the_dump
+	sudo -s $dumper -i any -f "host not $hosts \
+		" -w $the_dump &
+		echo $the_dump_real
+fi
+if [ "$dumper" == "tcpdump" ]; then
+	sudo -s $dumper -i any -Z tcpdump -U -v -f \
+		"host not $hosts \
+		" -w $the_dump &
+fi
+echo "The:"
+echo "$hosts"
+echo "is/are filtered and not traced,"
+echo "			take notice!"; sleep 1.5
+# vim: set tabstop=4 expandtab:
