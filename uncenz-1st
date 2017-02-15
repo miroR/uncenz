@@ -34,6 +34,14 @@
 # either the string "dumpcap" or "tcpdump", no spaces, not extra char, just the
 # usual newline at end, into:
 # .uncenz-dumper_permanent
+function ask()
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 if [ -e ".uncenz-dumper_permanent" ]; then
 	dumper=$(cat .uncenz-dumper_permanent)
 	if [ "$dumper" == "dumpcap" ] || [ "$dumper" == "tcpdump" ]; then
@@ -101,6 +109,25 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
 	exit 0
 fi
 
+# The ~/.gnupg dir must not be there all the time, but only when we need it
+# Since gnupg-2 creates it (without my private key), that one is fine, and I
+# check if it contains my key, and if it does, then I decide.
+# grep for your key not mine, so substitute the below:
+f=$(gpg --list-keys --with-colon 4FBAF0AE | head -3 | tail -1 | cut -d: -f10)
+ff=$(echo $f | sha256sum - | awk '{ print $1 }')
+# Substitute with the SHA256 hash of your fingerprint below here:
+if [ "$ff" == "05ba3cbf1bbfb3891b77a4dd05b2a7f0bc4e5a1bfefa6770023d1da33c290b50" ]; then
+	echo $ff
+	play ~/tvtube.ogg
+	echo "Continue regardless (y), or exit and fix the .gnupg/ keys availability?"
+	ask;
+	# the default (just hitting Enter) is exiting
+	if [ "$?" == 1 ]; then
+		echo "The private key there, exiting by your choice."
+		exit 0
+	fi
+fi
+read FAKE
 #echo
 rm .gradm-S
 sudo -s gradm -S > .gradm-S
@@ -111,7 +138,7 @@ if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
 	echo
 	echo " Do you really want to go online with Gradm disabled? "
 	echo
-	echo "[[play some sound here]]"
+	play ~/tvtube.ogg
 	echo
 	echo "Disconnect, then Ctrl-C, and run uncenz-kill"
 	echo "and then enable Gradm, or..."
@@ -196,7 +223,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		echo " and opened https pages, it may have malfunctioned. "
 		echo
 		echo "							^^^	  ^^^^^^^^^^^^^ "
-		echo "[[play some sound here]]"
+		play ~/tvtube.ogg
 		echo
 		echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
 		echo "or hit Enter to continue."
@@ -230,11 +257,11 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	#	echo
 	#	echo "the iptables, and the link layer conf states"
 	#	echo "		will be taken in 30 sec			 "
-	#	echo "sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &"
-	#	sleep 30 &&  sudo -s uncenz-ipt_conf_states.sh &
+	#	echo "sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &"
+	#	sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &
 	#	sleep 1.5
 	#	echo
-	#
+	
 
 	#
 	# Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
