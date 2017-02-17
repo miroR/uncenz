@@ -109,25 +109,36 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
 	exit 0
 fi
 
-# The ~/.gnupg dir must not be there all the time, but only when we need it
-# Since gnupg-2 creates it (without my private key), that one is fine, and I
-# check if it contains my key, and if it does, then I decide.
-# grep for your key not mine, so substitute the below:
-f=$(gpg --list-keys --with-colon 4FBAF0AE | head -3 | tail -1 | cut -d: -f10)
-ff=$(echo $f | sha256sum - | awk '{ print $1 }')
-# Substitute with the SHA256 hash of your fingerprint below here:
-if [ "$ff" == "05ba3cbf1bbfb3891b77a4dd05b2a7f0bc4e5a1bfefa6770023d1da33c290b50" ]; then
-	echo $ff
-	play ~/tvtube.ogg
-	echo "Continue regardless (y), or exit and fix the .gnupg/ keys availability?"
+# The ~/.gnupg dir must not be there all the time, but I want it to contain my
+# secret key(s) only when we I need it to
+# So I substitute the real one with the one with only public keys.
+#
+# I really could:
+# FILE=.gnupg-sec
+# gpg --list-secret-keys --with-colon > $FILE
+# et cetera, but I think less writing is better here. Won't look nice, is not
+# pretty-printed.  But it will be a good warning!
+#
+# $f should be empty, for tranquil longer time browsing online.
+f=$(gpg --list-secret-keys --with-colon)
+#echo \$f: $f
+#read FAKE
+if [ "$f" != "" ]; then
+	echo $f
+	play -q ~/tvtube.ogg
+	echo
+	echo "Continue regardless (y), or exit and fix the .gnupg/ secret keys availability?"
+#	echo "Hit "n", recommended, and hide your secret keys first before going online."
+#	echo "Pls. see https://www.gnupg.org"
+	echo
 	ask;
 	# the default (just hitting Enter) is exiting
 	if [ "$?" == 1 ]; then
-		echo "The private key there, exiting by your choice."
+		echo "(Some) private key(s) there, exiting by your choice."
 		exit 0
 	fi
 fi
-read FAKE
+#read FAKE
 #echo
 rm .gradm-S
 sudo -s gradm -S > .gradm-S
@@ -138,7 +149,7 @@ if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
 	echo
 	echo " Do you really want to go online with Gradm disabled? "
 	echo
-	play ~/tvtube.ogg
+	play -q ~/tvtube.ogg
 	echo
 	echo "Disconnect, then Ctrl-C, and run uncenz-kill"
 	echo "and then enable Gradm, or..."
@@ -223,7 +234,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		echo " and opened https pages, it may have malfunctioned. "
 		echo
 		echo "							^^^	  ^^^^^^^^^^^^^ "
-		play ~/tvtube.ogg
+		play -q ~/tvtube.ogg
 		echo
 		echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
 		echo "or hit Enter to continue."
