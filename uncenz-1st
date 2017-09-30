@@ -2,30 +2,12 @@
 #
 # uncenz-1st -- first phase, screencasting and packet capturing
 #
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
 # Copyright (C) 2015 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
-# released under BSD license, see LICENSE, or assume general BSD license,
-# meaning you can do basically anything with these scripts except claim that
-# you wrote them
-#
-# Uncenz is a set scripts for my method of engaging against censorship by
-# documenting it to be able to call public or institutional attention, as well
-# as discovering and documenting intrusion/other attacks to be able to seek
-# help.
-
-# The latter is related to the censorship issue since regimatic censorship is
-# often accompanied with an array of possible attacks deliberate by same or
-# related parties or purposefully allowed from non-related parties via sly
-# means. All those possible attacks are intentional or allowed by the powerful
-# subjects on the poor user, such as his/her own provider or possibly beyond.
-#
-# See topic:
-#
-# "Postfix smtp/TLS, Backup/Cloning Method, and Documenting
-# Censorship/Intrusion"
-# http://forums.gentoo.org/viewtopic-t-999436.html
-#
-# on Gentoo Forums.
+# released under BSD license, pls. see LICENSE
 #
 # This is the first phase of my method. We try and start the screencast
 # capturing with FFmpeg and tracing with dumpcap/tcpdump.
@@ -262,9 +244,9 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		sudo -s touch $the_dump
 	fi
 	#
-	# When I have issues with configuring network (such as setting up bridges)
-	# I like to take the state of the network when I'm online before I disconnect
-	# (this is not to be taken every time by default, it's a lot, like debugging)
+	## When I have issues with configuring network (such as setting up bridges)
+	## I like to take the state of the network when I'm online before I disconnect
+	## (this is not to be taken every time by default, it's a lot, like debugging)
 	#	echo
 	#	echo "the iptables, and the link layer conf states"
 	#	echo "		will be taken in 30 sec			 "

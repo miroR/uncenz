@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# uncenz-ipt_conf_states.sh -- script to take the conf and state of the network
+# uncenz-ipt-conf-states.sh -- script to take the conf and state of the network
 #
 # this is (in broader way) part of my uncenz program at:
 # https://github.com/miroR/uncenz
@@ -28,5 +28,5 @@ ip rout show > ip_rout_show_${hst}
 #cat /etc/resolv.conf
 cp -a /etc/resolv.conf resolv_conf_${hst}
 mkdir ipt_${tstamp_hst}.d/
-mv -iv ipt*-L-n-v_${hst} ip_{link,addr,rout}*_${hst} resolv_conf_${hst} ipt_conf_states_${tstamp_hst}.d/
+mv -iv ipt*-L-n-v_${hst} ip_{link,addr,rout}*_${hst} resolv_conf_${hst} ipt_${tstamp_hst}.d/
 

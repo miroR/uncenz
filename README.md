@@ -40,7 +40,7 @@ a few modifications, and uncenz could be used in M$ Windoze with Cygwin maybe?
 For various Unix flavors' users: I can't wait to study Bash and the related
 Posix standards, but haven't found that (ample) time either. So if you find I
 use bashisms that don't work in your Unix flavor, and are able to modify the
-scripts so thay work on your unix, pls. send me the patches, but be patient for
+scripts so they work on your \*unix, pls. send me the patches, but be patient for
 me to apply them (again: I'm not really a programmer, I take time to do
 things...)
 
@@ -50,9 +50,14 @@ Tcpdump could be used instead of the latter, and maybe simply by replacing the
 string dumpcap with tcpdump. But I'm in no hurry yet to try and accomodate for
 Tcpdump, as Dumpcap is faily good too.
 
-Uncenz is a set of scripts for my method of engaging against censorship by
-documenting it to be able to call public or institutional attention, as well as
-discovering and documenting intrusion/other attacks to be able to seek help.
+Uncenz can as be useful in various sorts of network problems analysis
+completely unrelated to censorship, but my primary motivation to write it was
+uncovering censorship related network problems ;-) .
+
+So Uncenz is a set scripts for, among other uses, my method of engaging
+against censorship by documenting it to be able to call public or
+institutional attention, as well as discovering and documenting
+intrusion/other attacks to be able to seek help.
 
 The latter is often (not always, can have completely different motives, e.g.
 theft, behind it, documenting of which being equally or, some would say, more
@@ -68,8 +73,8 @@ http://forums.gentoo.org/viewtopic-t-999436.html
 
 on Gentoo Forums.
 
-Or try and study my collection of (not all censorship related, but most)
-screencasts and traces at:
+Or try and study my collection of (not all censorship related, esp. not the
+later entries, but some were) screencasts and traces at:
 http://www.CroatiaFidelis.hr/foss/cap/
 
 For SSL capturing see:
