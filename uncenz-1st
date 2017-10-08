@@ -65,8 +65,6 @@ function show_help {
 	echo "$0 -- first phase of uncenz,"
 	echo "screencasting and packet capturing"
 	echo
-	echo "version 0.22"
-	echo
 	echo "Usage: $0 [an-include-script-with-capture-filters]"
 	echo ""
 	echo "	Without arguments uncenz captures in promiscuous mode,"
@@ -107,7 +105,7 @@ f=$(gpg --list-secret-keys --with-colon)
 #read FAKE
 if [ "$f" != "" ]; then
 	echo $f
-	play -q ~/tvtube.ogg
+	aplay -q ~/tvtube.wav
 	echo
 	echo "Continue regardless (y), or exit and fix the .gnupg/ secret keys availability?"
 #	echo "Hit "n", recommended, and hide your secret keys first before going online."
@@ -131,7 +129,7 @@ if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
 	echo
 	echo " Do you really want to go online with Gradm disabled? "
 	echo
-	play -q ~/tvtube.ogg
+	aplay -q ~/tvtube.wav
 	echo
 	echo "Disconnect, then Ctrl-C, and run uncenz-kill"
 	echo "and then enable Gradm, or..."
@@ -216,7 +214,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		echo " and opened https pages, it may have malfunctioned. "
 		echo
 		echo "							^^^	  ^^^^^^^^^^^^^ "
-		play -q ~/tvtube.ogg
+		aplay -q ~/tvtube.wav
 		echo
 		echo "Disconnect, then run uncenz-kill, and then Ctrl-C and investigate,"
 		echo "or hit Enter to continue."
@@ -242,6 +240,11 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	#export the_dump_real
 	if [ "$dumper" == "dumpcap" ]; then
 		sudo -s touch $the_dump
+	#	sudo -s chown tcpdump:tcpdump $the_dump
+	fi
+	if [ "$dumper" == "tcpdump" ]; then
+		sudo -s touch $the_dump
+		sudo -s chown tcpdump:tcpdump $the_dump
 	fi
 	#
 	## When I have issues with configuring network (such as setting up bridges)
@@ -254,8 +257,8 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	#	sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &
 	#	sleep 1.5
 	#	echo
-	
-
+	#
+        
 	#
 	# Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
 	#
@@ -284,6 +287,9 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 			sudo -s $dumper -i any -w $the_dump &
 		fi
 		if [ "$dumper" == "tcpdump" ]; then
+			# For "-Z tcpdump" option, in Devuan/Debian based systems,
+			# tcpdump system user/group needs to be created, maybe:
+			# "adduser --system --group --no-create-home tcpdump"
 			sudo -s $dumper -i any -Z tcpdump -U -v -w $the_dump &
 		fi
 		#sudo -s $dumper -i any -w $the_dump &
@@ -295,11 +301,11 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		#fi		
 	fi
 
-	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1024x768 -r 25 -i :1.0 \
+	ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 10 -i :0.0 \
 		-c:v libx264 -preset ultrafast -threads 0 \
 		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 	
-	echo "Monitor screen 1024x768, take notice!"; sleep 1.5
+	echo "Monitor screen 1366x768, take notice!"; sleep 1.5
 
 else
 	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
@@ -307,7 +313,7 @@ else
 	ls -ltr | tail -4 ; sleep 1
 fi
 
-#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 25 -i :1.0 \
+#	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 10 -i :1.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 #

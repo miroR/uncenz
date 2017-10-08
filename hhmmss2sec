@@ -15,43 +15,47 @@
 # Re: php-cgi and nonexisting connections to udp/80 (and udp/0
 # https://forums.grsecurity.net/viewtopic.php?f=3&t=2951&p=16341#p16324
 #
-# and haven't made much progress in this meantime...
+# and have made only modest progress in this meantime...
 #
 # This script converts hh:mm:ss (3 times 2 decimal digits, hh in range 0-24, mm
-# in range 0-60, and ss in range 0-60) in file
+# in range 0-60, and ss in range 0-60) from file such as
 #
-# messages_161029_2021_g0n_TIMEShhmmss
-#      what to call it?
-# dump_161029_2021_g0n_messages_TIMEShhmmss
+# messages_[0-9]{6}_[0-9]{4}_[a-z0-9]{3}.*_TIMEShhmmss
+#     as gotten from uncenz-2nd, and creates
+# dump_[0-9]{6}_[0-9]{4}_[a-z0-9]{3}.*_TIMEShhmmss
+#     which is suitable for input to uncenz-syslog-pcap.sh
+#
+# (the [0-9]{6}_[0-9]{4} is the timestamp yymmdd_hhmm as uncenz-1st assign to
+# the trace, and screencast, that it creates)
 #
 # one entry per line, to sec in normal range of integers, and most importantly
-# for my case of comparison of logs and network traces, getting the relative
-# period of time offset from the starting time for each line.
+# for my case of comparison of logs and network traces (uncenz-syslog-pcap.sh),
+# getting the relative period of time offset from the starting time for each
+# line.
 #
 if [ $# -eq 0 ]; then
     echo "hhmmss2sec  times in syslog to time as in PCAPS"
-    echo -e ""
+    echo ""
     echo "Usage: $0 \$1 \$2 \$3"
-    echo -e "    \$1 is the section of the logs corresponding to the trace"
-    echo -e "        such as dump_161029_2021_g0n.pcap, named such as:"
-    echo -e "        messages_161029_2021_g0n. If hhmmss2sec is run from"
-    echo -e "        uncenz-2nd, that syslog excerpt is already cut by the time"
-    echo -e "        it calls hhmmss2sec (this script)."
-    echo -e "    \$2 is the time of 'exec of /usr/local/bin/uncenz-1st'"
-    echo -e "        It ought to be converted to hh:mm:ss. It will become"
-    echo -e "        the \$zero_value_raw in the script"
-    echo -e "    \$3 is the number of seconds btwn that time and the time"
-    echo -e "        that is recorded in the dumpcap (use capinfos) as"
-    echo -e "        'First packet time'"
-    echo -e "        It will become \$offset in the script"
-    echo "    When hhmmss2sec is called by uncenz-2nd it finds and converts all"
-    echo "        the argument automatically. Unless..."
-    echo "        ...unless it's still broken."
+    echo "    \$1 is the section of the logs corresponding to the trace"
+    echo "        such as dump_161029_2021_g0n.pcap, named such as:"
+    echo "        messages_161029_2021_g0n. If hhmmss2sec is run from"
+    echo "        uncenz-2nd, that syslog excerpt is already cut by the time"
+    echo "        it calls hhmmss2sec (this script)."
+    echo "    \$2 is the time of 'exec of /usr/local/bin/uncenz-1st'"
+    echo "        It ought to be converted to hh:mm:ss. It will become"
+    echo "        the \$zero_value_raw in the script"
+    echo "    \$3 is the number of seconds btwn that time and the time"
+    echo "        that is recorded in the dumpcap (use capinfos) as"
+    echo "        'First packet time'"
+    echo "        It will become \$offset in the script"
+    echo "    When hhmmss2sec is called by uncenz-2nd it should find and convert"
+    echo "        all the arguments automatically."
     exit 0
 fi
 
-function ask()	# this function borrowed from "Advanced BASH Scripting Guide"
-				# (a free book) by Mendel Cooper
+function ask()    # this function borrowed from "Advanced BASH Scripting Guide"
+                  # (a free book) by Mendel Cooper
 {
     echo -n "$@" '[y/[n]] ' ; read ans
     case "$ans" in
@@ -66,95 +70,265 @@ zero_value_raw=$2
 echo \$zero_value_raw: $zero_value_raw 
 offset=$3
 echo \$offset: $offset
-#read FAKE;
-# 2 PROBLEMS HERE
-zero_value=""    # necessary?
-# Nulling previous runs:
-> zero_value    # necessary?
+if [ "$offset" -lt "0" ]; then
+                echo "\$offset: $offset"
+                echo "is negative, which is courious, since it is"
+                echo "normally impossible to happen!"
+                echo "Irregular managing of uncenz, or some other"
+                echo "human or machine error the likely cause."
+                echo "A packet can not be captured with dumpcap or tcpdump"
+                echo "before dumpcap or tcpdump has started."
+                echo "Apportion the section of syslog to this PCAP manually."
+                echo "(And remove it from the batch to be processed.)"
+                echo "$0 is exiting now."
+                #read FAKE
+                exit 0
+fi
+# ts is for timestamp
+ts=$(echo ${logs_section}|sed 's/messages_//')
+if [ -e "dump_${ts}_messages" ]; then
+    echo "The file:"
+    ls -l dump_${ts}_messages 
+    echo "already exists, probably from previous run"
+    echo "Keep it and NOT rerun the procedure and overwrite it:"
+    ask;
+    if [ "$?" == 0 ]; then
+        echo "Keeping the (previously made):"
+        ls -l dump_${ts}_messages
+        echo "$0 is exiting now"
+        exit
+    fi
+fi
+#read FAKE
+# Still unsure if necessary:
+zero_value=""
+# Be able run multiple instance, unique value (meaning the instances must not
+# start in the same second :-) ... And it should be fine just sleeping a little
+# and creating the file once the name is unique...
+zero_value_file=zero_value_$(date +%s)
+while [ -e "$zero_value_file" ]; do
+   echo "Sleeping 1 sec, and retrying."
+   sleep 1
+done
+zero_value_file=zero_value_$(date +%s)
+> $zero_value_file
 echo \$zero_value: $zero_value
-#read FAKE;
-> sec_rel
-echo \$sec_rel: $sec_rel
+echo "ls -l \$zero_value_file: "; ls -l $zero_value_file
+#read FAKE
+# See above about able run multiple instance
+sec_rel_file=sec_rel_$(date +%s)
+while [ -e "$sec_rel_file" ]; do
+   echo "Sleeping 1 sec, and retrying."
+   sleep 1
+done
+sec_rel_file=sec_rel_$(date +%s)
+> $sec_rel_file
+echo \$sec_rel_file: $sec_rel_file
+echo "ls -l \$sec_rel_file: "; ls -l $sec_rel_file
+sec_rel_fmt=sec_rel_fmt_$(date +%s)
+while [ -e "$sec_rel_fmt" ]; do
+   echo "Sleeping 1 sec, and retrying."
+   sleep 1
+done
+sec_rel_fmt=sec_rel_fmt_$(date +%s)
+> $sec_rel_fmt
+echo \$sec_rel_fmt: $sec_rel_fmt
+echo "ls -l \$sec_rel_fmt: "; ls -l $sec_rel_fmt
 
 zero_value_sec=""
-echo "Must calculate \$zero_value_sec, $zero_value_sec (empty if nothing printed), before the loop."
-#read FAKE;
+echo \$zero_value_sec: $zero_value_sec
+echo "Must calculate \$zero_value_sec, $zero_value_sec, before the loop."
+#read FAKE
 
     hh=$(echo $zero_value_raw|cut -d: -f1);
     mm=$(echo $zero_value_raw|cut -d: -f2);
     ss=$(echo $zero_value_raw|cut -d: -f3);
     echo the values are $hh $mm $ss;
-#read FAKE;
+#read FAKE
     zero_value_sec=$(echo $hh*3600 + $mm*60 + $ss|bc)
     echo \$zero_value_sec: $zero_value_sec
-#read FAKE;
+#read FAKE
 
 cat $logs_section | awk '{ print $3 }' > ${logs_section}_TIMEShhmmss
 ls -l $logs_section
-echo "less $logs_section ?"
-ask;
-if [ "$?" == 0 ]; then
-    less $logs_section
+#echo "less $logs_section ?"
+#ask;
+#if [ "$?" == 0 ]; then
+#    less $logs_section
+#fi
+#echo "less ${logs_section}_TIMEShhmmss ?"
+#ask;
+#if [ "$?" == 0 ]; then
+#    less ${logs_section}_TIMEShhmmss
+#fi
+# Correction needed here for cases when $hh:$mm:$ss winds up and the count
+# restart from 00:00:00. It _should_ work out to simply have two
+# ${logs_section}_TIMEShhmmss.  For conversions the virtual $hh:$mm:$ss must
+# always grow, upward from 24:00:00 when time changed to 00:00:00 of the next
+# day, while keeping the original one gotten above for converting to the values
+# that originally were in the logs once another, the first, column is added to
+# each syslog line. It's just the $hh that needs to be temporarily converted.
+# And only for those PCAPs (usually it's the offline ones) that start on one
+# day and continue into the next day.
+#
+# For now, I account for PCAPs straddling btwn two days only, not more (and
+# I'll try to not run --the offline ones of course-- for longer than that.
+#
+# Since we're manipulating ${logs_section}_TIMEShhmmss, let's first check if
+# any of it is not of the form NN:NN:NN:
+if (grep -Ev '[0-9][0-9]:[0-9][0-9]:[0-9][0-9]' ${logs_section}_TIMEShhmmss) ; then
+    echo "\${logs_section}_TIMEShhmmss:"
+    echo "${logs_section}_TIMEShhmmss"
+    echo "should be inspected, it appears to be damaged."
+    echo $0 exiting
+    exit 0
 fi
-echo "less ${logs_section}_TIMEShhmmss ?"
-ask;
-if [ "$?" == 0 ]; then
-    less ${logs_section}_TIMEShhmmss
+cat ${logs_section}_TIMEShhmmss | cut -d: -f1 | uniq > TIMEShhmmss-u
+cat ${logs_section}_TIMEShhmmss | cut -d: -f1 | sort -u > TIMEShhmmss-su
+TIMEShhmmss_u_sum=$(sha256sum TIMEShhmmss-u|cut -d' ' -f1)
+TIMEShhmmss_su_sum=$(sha256sum TIMEShhmmss-su|cut -d' ' -f1)
+if [ "$TIMEShhmmss_u_sum" == "$TIMEShhmmss_su_sum" ]; then
+    echo "The log does not straddle btwn two days."
+    # no need to work this log
+else
+    echo "This log straddles btwn two days."
+    echo "We'll add 24 to all hours starting in the"
+    echo "second of the two days."
+    # Make an array of hours from ${logs_section}_TIMEShhmmss-u, and start comparing them
+    # to see from which 24 needs to be started adding to.
+    arHH=($(cat TIMEShhmmss-u))
+    LOOP=${#arHH[@]}
+    echo \$LOOP:  $LOOP
+    #read FAKE
+    # We need to get the turn_point, what ordinal in the $LOOP is it?
+    # BTW, months ago I wasn't able to figure this method:
+    # grsecurity forums - Libvirt virtualization policies
+    # https://forums.grsecurity.net/viewtopic.php?f=5&t=4675
+    # I would've done it this way back then, but only now, early October 2017,
+    # did I figure it out. Comparing current ordinal with the previous.
+    prev=""; echo $prev; export prev
+    #read FAKE
+    for ((i=0; i< $LOOP; i++)); do
+        if [ -n "$prev" ]; then
+            echo \$prev: $prev
+            if [ "$prev" -gt "${arHH[i]}" ]; then
+                turn_point=$prev
+            fi
+        fi
+        echo \$i: $i
+        echo \${arHH[i]}: ${arHH[i]}
+        prev=""; echo $prev; export prev
+        if [ ! -n "$prev" ]; then
+            prev=${arHH[i]}; echo \$prev: $prev ; export prev
+        fi
+        #read FAKE
+    done
+    echo \$turn_point: $turn_point
+    #read FAKE
+    # I also assume for now that entire duration is less than 24 hours
+    echo ${arHH[0]}
+    limit_hh=$(echo $turn_point + 24 | bc) 
+    echo \$limit_hh: $limit_hh
+    #read FAKE
+    > TIMEShhmmss-tmp
+    # stowing away the uncenz-2nd made ${logs_section}_TIMEShhmmss
+    if [ ! -e "${logs_section}_TIMEShhmmss.orig" ]; then
+        cp -av ${logs_section}_TIMEShhmmss ${logs_section}_TIMEShhmmss.orig
+    else
+        logs_section_TIMEShhmmss_tmp_file=${logs_section}_TIMEShhmmss.orig_$(date +%s)
+        touch $logs_section_TIMEShhmmss_tmp_file
+        cp -av ${logs_section}_TIMEShhmmss $logs_section_TIMEShhmmss_tmp_file
+        logs_section_TIMEShhmmss_orig=$(sha256sum ${logs_section}_TIMEShhmmss.orig|cut -d' ' -f1)
+        logs_section_TIMEShhmmss_tmp=$(sha256sum $logs_section_TIMEShhmmss_tmp_file|cut -d' ' -f1)
+        echo $logs_section_TIMEShhmmss_orig
+        echo $logs_section_TIMEShhmmss_tmp
+        #read FAKE
+        if [ "$logs_section_TIMEShhmmss_orig" == "$logs_section_TIMEShhmmss_tmp" ]; then
+            rm -v $logs_section_TIMEShhmmss_tmp_file
+        fi
+    fi
+    #read FAKE
+    for ((i=0; i< $LOOP; i++)); do
+        orig=$(echo ${arHH[i]})
+        echo ${arHH[i]}+24|bc
+        arHH[i]=$(echo ${arHH[i]}+24|bc)
+        #echo ${arHH[i]}
+        if [ "${arHH[i]}" -lt "$limit_hh" ]; then
+            echo ${arHH[i]} >>TIMEShhmmss-tmp
+        else
+            arHH[i]=$(echo ${arHH[i]}-24|bc)
+            echo ${arHH[i]} >>TIMEShhmmss-tmp
+        fi
+        # subs for substituting string
+        subs=${arHH[i]}
+        echo "\$orig/\$subs :" $orig/$subs
+        cat ${logs_section}_TIMEShhmmss | sed "s/$orig\(:[0-9][0-9]:[0-9][0-9]\)$/$subs\1/" \
+            > ${logs_section}_TIMEShhmmss_RAW
+        # check:
+        #read FAKE
+        echo diff ${logs_section}_TIMEShhmmss ${logs_section}_TIMEShhmmss_RAW
+        #read FAKE
+        diff ${logs_section}_TIMEShhmmss ${logs_section}_TIMEShhmmss_RAW
+        mv -v ${logs_section}_TIMEShhmmss_RAW ${logs_section}_TIMEShhmmss
+        #read FAKE
+    done
 fi
+
 for i in $(cat ${logs_section}_TIMEShhmmss); do
     hh=$(echo $i|cut -d: -f1);
     mm=$(echo $i|cut -d: -f2);
     ss=$(echo $i|cut -d: -f3);
     echo $i is $hh $mm $ss;
-#read FAKE;
+    #read FAKE
     sec=$(echo $hh*3600 + $mm*60 + $ss|bc)
     echo $sec
-#read FAKE;
+    #read FAKE
     # However we only need seconds relative to $zero_value_sec
     # So we need the sec of the first entry to subtract it from any later time
-    echo "\$zero_value at start of loop: " $zero_value
-    echo "\$zero_value_sec at start of loop: " $zero_value_sec
-#read FAKE
+    #echo "\$zero_value at start of loop: " $zero_value
+    #echo "\$zero_value_sec at start of loop: " $zero_value_sec
+    #read FAKE
     if [ "$zero_value" != "$zero_value_sec" ]; then
         if [ i=="zero_value_raw" ]; then
-            echo $sec > zero_value ;
-            zero_value=$(cat zero_value)
-            echo "\$zero_value_sec in the if constuct: " $zero_value_sec
-            echo "\$zero_value in the if constuct: " $zero_value
+            echo $sec > $zero_value_file ;
+            zero_value=$(cat $zero_value_file)
+            #echo "\$zero_value_sec in the if constuct: " $zero_value_sec
+            #echo "\$zero_value in the if constuct: " $zero_value
         fi ;
     fi
-#read FAKE
-    echo "\$zero_value at end of loop: " $zero_value
-    echo "\$zero_value_sec at end of loop: " $zero_value_sec
+    #read FAKE
+    #echo "\$zero_value at end of loop: " $zero_value
+    #echo "\$zero_value_sec at end of loop: " $zero_value_sec
     # relative to the start of uncenz-1st script
     sec_rel_uncenz=$(echo $sec-$zero_value|bc)
     echo \$sec_rel_uncenz: $sec_rel_uncenz
-    # the difference btwn the starts of uncenz scripts in how Wireshark (with
-    # capinfos I found) reckons the timing in the traces are btwn 5 and 6
-    # seconds. I take $offset.
+    # the difference btwn the start of uncenz scripts and First packet in
+    # Wireshark, minus the $offset.
     sec_rel=$(echo $sec_rel_uncenz-$offset|bc)
     echo "\$sec_rel: " $sec_rel
-    # End of this hasty conversion, just stow this $sec_rel value into a file
-    echo $sec_rel >> sec_rel
-    read FAKE
+    # End of this conversion, just stow this $sec_rel value into a file
+    echo $sec_rel >> $sec_rel_file
+    #read FAKE
 done
-> sec_rel_fmt
-for i in $(cat sec_rel); do printf "%05d\n" $i >> sec_rel_fmt ; done ;
-#read FAKE;
-ls -l ${logs_section} sec_rel_fmt
-cat sec_rel_fmt | wc -l
-sec_rel_fmt_wc_l=$(cat sec_rel_fmt | wc -l)
+for i in $(cat $sec_rel_file); do printf "%05d\n" $i >> $sec_rel_fmt ; done ;
+#read FAKE
+ls -l ${logs_section} $sec_rel_fmt
+cat $sec_rel_fmt | wc -l
+sec_rel_fmt_wc_l=$(cat $sec_rel_fmt | wc -l)
 echo \$sec_rel_fmt_wc_l: $sec_rel_fmt_wc_l
 cat ${logs_section}|cut -c8-9999 > PART2
 PART2_wc_l=$(cat PART2 | wc -l)
 echo \$PART2_wc_l: $PART2_wc_l
 ts=$(echo ${logs_section}|sed 's/messages_//')
 echo \$ts: $ts
-read FAKE
-read FAKE
-read FAKE
-read FAKE
+#read FAKE
 if [ "$sec_rel_fmt_wc_l" == "$PART2_wc_l" ]; then
-    paste -d' ' sec_rel_fmt PART2 > dump_${ts}_messages 
+    paste -d' ' $sec_rel_fmt PART2 > dump_${ts}_messages
 fi
-read FAKE
+ls -l dump_${ts}_messages
+#echo "less dump_${ts}_messages ?"
+#ask;
+#if [ "$?" == 0 ]; then
+#    less dump_${ts}_messages
+#fi
+#read FAKE

@@ -1,0 +1,183 @@
+This is prep, and contains a kind of cheatsheet and more...
+
+Also, if you read this, don't skip the very last sentence at the bottom.
+
+I'll post it as well, even though I'm not sure it will survive very long (in the current
+form). But some possible perusers of uncenz might find it useful, esp. for better
+understanding of how uncenz-2nd (should) work(s). 
+
+In the first place, I work, most of the time, with logs which grsecurity fills with all
+execs and chdirs that it catches (which I guess is most if not all), but that is actually
+a heavy logs flooding wich most users never see, but neither do they get to see the
+occasional intrusion attempt, and so neither can they thwart any of such. Consider, how
+could any of the so called normal kernels get you the information that I got from
+grsecurity-hardened below:
+
+Tab (no exec) triggers script on Bash on grsec admin
+https://forums.grsecurity.net/viewtopic.php?f=3&t=4700
+
+So if you're not using grsecurity hardened kernel (abandoned recently in Gentoo, surviving
+in public in the form of well maintained, at least for now, branch named
+unofficial-grsecurity at https://github.com/minipli/linux-unofficial_grsec (for LTS
+kernels 4.9 only), you probably couldn't make much use of this, nor try/apply this in some
+meaningful way. And even if you install some of the available grsecurity kernel packages
+available in different places, chances are the features that I use for this whole
+flooding/intrusion-detection-enabler charade may not be enabled by default. So if you want
+to be able to follow here, you need to recompile the kernel and get the features:
+
+exec_logging
+audit_chdir
+
+compiled. The rest of this preparation page, and also uncenz-2nd and in good part
+hhmmss2sec and uncenz-syslog-pcap.sh (however the idea of the latter two could be used for
+other purposes; not the current implementation though) assume that precondition.
+
+In Debian family (I run Devuan currently on all my machines), I've figured out early
+October 2017, while there is /var/log/messages, it is in all but a few details the same as
+/var/log/kern.log.  But the few loggings that go only in one or the other are important.
+Without going into the details of what few logs only go into messages and what few logs
+only go into kern.log (you can find it for yourself by comparing them in your own system),
+it is the kern.log into which grsec logs all its logs, and it does not log all (although
+it does log most) into messages.
+
+BTW there is also /var/log/syslog in Debian family, but I do not follow the
+attempted assigned naming differences that try to mean differently for kern.log, for
+messages and for syslog.  Those are, each one of those, to me, a variant of system log
+(syslog), and so I won't change the name of the script that should run based on what
+uncenz-2nd produces, the uncenz-syslog-pcap.sh.
+
+The old version, somewhat functional, of uncenz-2nd, was done at the time in which I was
+running only Gentoo and often Qemu in it and was trying to get to terms with using Libvirt
+in Gentoo.
+
+But it's not just that which changes. The string to look up was then was "carrier lost",
+and I think that is due to running "10 Mbps, full duplex", and not "100 Mbps, full duplex"
+like now, the latter logging with "Link is up", "link becomes ready" and "Link is down". I
+wonder does 1000 Mbps keeps same messages in logging as 100 Mbps, but no urgency to
+update. Huge traffic already to keep under control.
+
+Currently I run simple host machine without VMs. And so uncenz-2nd can also be simplified,
+and should also work for readers who would follow the cycles of continuous tracing as in
+the bottom of this page I decribe by posting part of my actual history listing,
+
+This is the cheatsheet. (Pls. see also uncenz script's README.)
+
+ IS/DO/CHECK/OTHER                               | STRING
+ --------                                        | --------
+ end previous/begin new raw section              | exec of \/usr\/local\/bin\/uncenz-1st
+ previous to strict start of section (I get      | Link is up
+     two of them, only after the second          |
+     one I get 'link becomes ready'              |
+     rather than wait up to a minute for the     |
+     link to auto establish upon hotplug, I      |     
+     issue the commands, in this order           | exec of \/bin\/ip (ip a show dev eth1 ) by /\bin\/ip
+     ip a show eth1                              |
+     ifdown eth1 ; ifup eth1                     | exec of \/sbin\/ifup (ifdown eth1 ) by \/sbin\/ifup
+     (why the second command produces the logs   |
+     as on the right? is a symbolic link,        |
+     the '... (if eth1 ) ...' is in the logs     | exec of \/sbin\/ifup (ifup eth1 ) by \/sbin\/ifup
+     usually some 60 lines later                 |
+ Then I get another one:                         | Link is up
+ Only now connection functional, appears         | link becomes ready
+     right after 'Link is up'                    |
+     (strictly start of section)                 |
+ strictly end of section                         | Link is down                          
+ This must appear after "Link is down", if not   | exec of \/usr\/local\/bin\/uncenz-kill
+     some streams may not have been captured     |
+     (human error, do see uncenz's README for    |
+     order of start uncenz-1st, plug in          |
+     connection, unplug, uncenz-kill)            |
+ end previous/begin new raw section              | exec of \/usr\/local\/bin\/uncenz-only-dump.sh
+ usually followed by uncenz-1st, end of  [*]     | exec of \/usr\/bin\/sudo (sudo -s killall dumpcap
+     raw section                                 |
+
+[*] I had a number of issues with the string exec of \/usr\/bin\/sudo (sudo -s killall dumpcap
+    Bash just does not seem to consistently recognize any variable expansion in such way
+    that it would allow me, and I tried many options, it's in this v0.30 version of uncenz
+    (which could be the last before switch from tshark to tcpdump, terribly slow the
+    tshark for uncenz-syslog-pcap.sh; and also for tshark-streams.sh and tshark-hosts-conv.sh,
+    which are a separate programs --well they're Bash scripts only--), it's in v0.30 all
+    my tries. Currently I've settled for:
+    exec of \/usr\/bin\/sudo .sudo -s killall dumpcap
+	which is a '.', meaning any char (which is compromising), and the grep needs to have
+    the flag -E, and then no issues.
+
+That is the usual order those appear. Sometimes, say due to perceived mistyping, or
+forgetfulness, some commands may be issued twice. connection be off and on in seconds due
+to being properly plugged in in second try only, and similar stuff can happen.
+
+Sections under uncenz-only-dump.sh are run when not connected to internet. They are just
+for checking if I still catch something in the witchcraft-like underhanded ways used by
+esp. big subjects. And so they are not to be disregarded.
+
+The strings "exec of \/usr\/local\/bin\/uncenz-only-dump.sh" and "exec of
+\/usr\/local\/bin\/uncenz-1st" also divide raw sections, the internet connected one
+started with uncenz-1st and the offline one started with uncenz-only-dump.sh.
+
+But the main narratives are btwn "Link is up" and "Link is down". And work out the
+presentation of the narrative, in comparison with the screencast, with
+uncenz-syslog-pcap.sh.
+
+I run them in a separate terminal, and these are the lines that I cycle, time and time
+again, hours on end, or rather days on end (until, that is, the next refreshing of the
+system by cloning it from my Air-Gapped master):
+
+...
+ 2023  sudo -s killall dumpcap && uncenz-1st 
+ 2024  uncenz-kill && uncenz-only-dump.sh 
+ 2025  sudo -s ps aux | grep -E 'tcpdump|dumpcap'
+ 2026  sudo -s killall dumpcap && uncenz-1st 
+ 2027  uncenz-kill && uncenz-only-dump.sh 
+ 2028  sudo -s ps aux | grep -E 'tcpdump|dumpcap'
+ 2029  ls -ltr | tail
+ 2030  mplayer  -fs Screen_170929_2103_gdO.mkv 
+ 2031  sudo -s killall dumpcap && uncenz-1st 
+ 2032  uncenz-1st 
+ 2033  sudo -s killall dumpcap && uncenz-1st 
+ 2034  uncenz-kill && uncenz-only-dump.sh 
+...
+ 2044  sudo -s ps aux | grep -E 'tcpdump|dumpcap'
+ 2045  history > /some/where/history_$(date +%y%m%d_%H%M%S)_$(hostname)
+
+That above is a real excerpt gotten with the command in the last line (2045). Currently
+uncenz-only-dump.sh runs dumpcap, and uncenz-1st I have been running only with tcpdump in
+the last months, so the "ps aux ..." line is just my double-checking what I am running at
+the particular time. The "ls -ltr | tail" line also lists the recent casts and dumps,
+which is another occasional double-check. And MPlayer is still the king... I use it when
+I'm checking on something in the cast.
+
+This cycle is fine, it catches all regular stuff, but I still fear the big players
+witchcraft-like out-of-band not-publicly-known protocols, through speakers and via secret
+ME backdoors in the hardware, and other stuff for bridging air-gaps and things.
+
+And I'm afraid I might need to go offline after browsing with pristine fresh clone from my
+master Air-Gapped for just a little while. I have found something really fishy and it
+could be perilous to my systems...
+(
+If this text file survives longer, I'll fill in here the address once I've posted about
+what happened:
+
+LINK HERE
+
+).  But the 25 sessions (not counting the offline go-betweens with uncenz-only-dump.sh) I
+do not intend to peruse one by one in (great, time-honored but gui) Wireshark...  This
+time, after I sort tshark-hosts-conv.sh for runnning non-interactive, I also gotta to have
+all sections cut out of the syslog with uncenz-2nd and be able to present it to web with
+uncenz-syslog-pcap.sh and then, having complete picture to paint, I can explain, to
+myself, and to whom due or to whom is interest/desire to learn, what happened, and ask for
+help/advice, and demand order/protection, call foul on who is to blame, whatever.
+
+In essence, in the first place, I need to improve these scripts these days to be able get
+my systems to safety. If what I found is what I suspect it is, it's likely not innocuous
+at all. And I need to seeve through a lot to figure out...
+
+I wrote this page in two different days, with more than a week between them. On the
+older day the most, on this newer day some updating. And the last two paragraphs just
+above are both of the older day. Now I can say, I mostly sorted the scripts, but not yet
+for web-publishing cases, so the idea is still unfinished. I can go ahead and publish my
+uncenz v0.30 though...
+
+But, on another latest try, some of it may be still broken... The brokenness is probably
+related to the issue at the comment above marked with [*]. Will still sign the tag v0.30
+and push it. But the commit and the tag will be marked as possibly broken. Maybe I get,
+days or longer later, a fix in v0.31?

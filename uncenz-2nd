@@ -12,30 +12,36 @@
 
 function show_help {
   echo "uncenz-2nd -- after run of uncenz-1st,"
-  echo -e "    prepare the corresponding syslog for analysis"
+  echo "    prepare the corresponding syslog for analysis"
   echo ""
   echo "Usage: $0 [\$1] [\$2]"
-  echo -e "    \$1: excerpt from syslog, name must start with string \"messages\""
-  echo -e "        if it is not given, messages is assumed (so you can simply"
-  echo -e "        copy your /var/log/messages into the dir where you intend to"
-  echo -e "        run uncenz-2nd"
+  echo "    \$1: excerpt from syslog, name must start with string \"messages\""
+  echo "        if it is not given, messages is assumed, so you can simply"
+  echo "        copy the right syslog (in Gentoo/Funtoo it is /var/log/messages ;"
+  echo "        however I can't test that currently, and in pre-systemd Debian"
+  echo "        family OSes it is actually /var/log/kern.log --NOT"
+  echo "        /var/log/messages--, in which case you can do:"
+  echo "        \"cp -iav  /var/log/kern.log .\")
+  echo "        into the dir where you intend to run uncenz-2nd"
 # Suggestion: you can take an excerpt for this purpose from your syslog (in
-# Gentoo it's /var/log/messages) like so: 
-# cat /var/log/messages \
+# pre-systemd Debian/Ubuntu and in Devuan it's /var/log/kern.log) like so: 
+# cat /var/log/kern.log \
 #   | tail -10000 > messages_$(date +%y%m%d_%H%M)_$(hostname|cut -c1-3)
-# or "... tail -100000 ... or other number. Importantly, it must contain the
+# or "... tail -100000 ... or other number.
+# (I have not, not feel desireful to, at this time, extend this to systemd's
+# journald.) Importantly, it must contain the
 # logged events corresponding to when the PCAPs, which you stow in this dir,
 # where you have all the perms as user, were taken.
-  echo -e "    \$2: list of PCAPs (optional, if not given all PCAPs in current dir"
-  echo -e "        are listed automatically"
+  echo "    \$2: list of PCAPs (optional, if not given all PCAPs in current dir"
+  echo "        are listed automatically"
   echo ""
-  echo -e "    INCOMPLETE, BEING WORKED ON"
+  echo "    INCOMPLETE, BEING WORKED ON"
 }
 
 if [ -n "$1" ] ; then
-	syslog=$1
-	else
-	syslog=messages
+    syslog=$1
+    else
+    syslog=messages
 fi
 
 if [ -n "$2" ] ; then
@@ -58,9 +64,9 @@ if [ -n "$2" ] ; then
 fi
 echo \$syslog: $syslog
 echo \$PCAPs: $PCAPs
-# I always sprinkle my scripts temporarily with these "read FAKE" lines
+# I always sprinkle my scripts temporarily with these "#read FAKE" lines
 # It allows me to hit Enter to go on if all is well, or if it is not, hit Ctrl-C
-read FAKE;
+#read FAKE;
 # There really should be more checking, but it's not urgent
 if [ "$PCAPs" == "" ]; then
     echo "==================================================="
@@ -78,8 +84,70 @@ else
     fi
 fi
 
-function ask()	# this function borrowed from "Advanced BASH Scripting Guide"
-				# (a free book) by Mendel Cooper
+# [ar]ray [S]ea[rch] of reference points for searching through and eventually
+# carving out sections out of $syslog
+# The "...sudo (sudo -s killall..." line showed problems, solved(?) by double
+# escaping, both the '(' and it's '\', will work?
+# exec\x20of\x20\/usr\/bin\/sudo\x20(sudo\x20-s\x20killall\x20dumpcap
+arSrch=($(cat<<SETARSRCH
+exec\x20of\x20\/usr\/local\/bin\/uncenz-only-dump.sh
+exec\x20of\x20\/usr\/bin\/sudo\x20.sudo\x20-s\x20killall\x20dumpcap
+exec\x20of\x20\/usr\/local\/bin\/uncenz-1st
+Link\x20is\x20up
+(ifdown\x20eth1\x20)
+(ifup\x20eth1\x20)
+link\x20becomes\x20ready
+Link\x20is\x20down
+exec\x20of\x20\/usr\/local\/bin\/uncenz-kill
+SETARSRCH
+))
+## uncomment for testing if, say, you modified arSrch
+#LOOP=${#arSrch[@]}
+#echo \$LOOP:  $LOOP
+#for ((i=0; i < "$LOOP" ; i++ )) 
+#do
+#    echo \$i: $i
+#    echo "${arSrch[i]}"
+#    srch_string=$(echo ${arSrch[i]}|sed 's/\\x20/ /g')
+#    echo \$srch_string: $srch_string
+#    #read FAKE;
+#    echo grep -m1 "$srch_string" $syslog
+#    grep -m1 "$srch_string" $syslog
+#    #read FAKE
+#done
+#read FAKE
+echo "The following are the current search strings used throughout this script (hit Enter):"
+#read FAKE
+arSrch_only_dump=$(echo ${arSrch[0]}|sed 's/\\x20/ /g')
+echo \$arSrch_only_dump: ; echo "        $arSrch_only_dump"; echo
+
+arSrch_only_kill=$(echo ${arSrch[1]}|sed 's/\\x20/ /g')
+echo \$arSrch_only_kill: ; echo "        $arSrch_only_kill"; echo
+
+arSrch_uncenz_1st=$(echo ${arSrch[2]}|sed 's/\\x20/ /g')
+echo \$arSrch_uncenz_1st: ; echo "        $arSrch_uncenz_1st"; echo
+
+arSrch_Link_up=$(echo ${arSrch[3]}|sed 's/\\x20/ /g')
+echo \$arSrch_Link_up: ; echo "        $arSrch_Link_up"; echo
+
+arSrch_ifdown=$(echo ${arSrch[4]}|sed 's/\\x20/ /g')
+echo \$arSrch_ifdown: ; echo "        $arSrch_ifdown"; echo
+
+arSrch_ifup=$(echo ${arSrch[5]}|sed 's/\\x20/ /g')
+echo \$arSrch_ifup: ; echo "        $arSrch_ifup"; echo
+
+arSrch_link_ready=$(echo ${arSrch[6]}|sed 's/\\x20/ /g')
+echo \$arSrch_link_ready: ; echo "        $arSrch_link_ready"; echo
+
+arSrch_Link_down=$(echo ${arSrch[7]}|sed 's/\\x20/ /g')
+echo \$arSrch_Link_down: ; echo "        $arSrch_Link_down"; echo
+
+arSrch_uncenz_kill=$(echo ${arSrch[8]}|sed 's/\\x20/ /g')
+echo \$arSrch_uncenz_kill: ; echo "        $arSrch_uncenz_kill"; echo
+#read FAKE
+
+function ask()  # this function borrowed from "Advanced BASH Scripting Guide"
+                # (a free book) by Mendel Cooper
 {
     echo -n "$@" '[y/[n]] ' ; read ans
     case "$ans" in
@@ -92,325 +160,735 @@ function ask()	# this function borrowed from "Advanced BASH Scripting Guide"
 
 for PCAP in $(echo $PCAPs); do
 
-    unset mark_top mark_btm wc_l_btm wc_l_btm_cl_200 wc_l_btm_hd_200 \
-        wc_l_btm_cl_rel wc_l_btm_hd_rel wc_l_btm_cl_cdt wc_l_btm_hd_cdt
+    unset mark_top mark_btm \
+        wc_l_btm
 
     echo \$PCAP: $PCAP
-    read FAKE
+    #read FAKE
+    # In continuous tracing (see uncenz-2nd.prepare) regularly these two types
+    # alternate:
+    # dump_[0-9]{6}_[0-9]{4}_[a-z0-9]{3}{,.*}.pcap
+    # and
+    # dump_[0-9]{6}_[0-9]{4}_[a-z0-9]{3+}{,.*}_SOLO.pcap
+    # The main difference is the infix "_SOLO" (screencasting is not done when
+    # capturing offline, "solo" dump capturing). It's different processing for
+    # one and for the other type.
     i=$(echo $PCAP|sed 's/dump_//'|sed 's/\.pcap//')
     echo \$i: $i
-    read FAKE
+    #read FAKE
     ls -l dump_${i}.pcap
-    read FAKE
-    search_ts=$(capinfos $PCAP | grep 'First packet time' | cut -c22-99|awk \
-        '{ print $2 }'| cut -d. -f1|cut -c1-5)
-    echo \$search_ts: $search_ts
-    mark_top=$(grep -a 'exec of \/usr\/local\/bin\/uncenz-1st' $syslog | grep \
-        $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
-    echo \$mark_top: $mark_top                  # identifier that I want to
-                                                #+extract from
-    read FAKE
-    if [ -z "$mark_top" ]; then
-        # \$mark_top not grep'd out means all successive grepping and if
-        # conditions would not yield a meaningful result.
-        # But it often is only because the \$search_ts is seconds later in the
-        # next minute. Of course it could also be much later (or even much
-        # earlier, but that would be very very rarely possible, see below),
-        # but, pls. just don't use uncenz in such way. Some day, I'll try and
-        # account for even those cases in this script, I hope. Not yet.
-        # So we need to increase the minutes by 1, and search for the new
-        # string.
-        echo \$search_ts: $search_ts
-        hh=$(echo $search_ts| cut -d: -f1)
-        mm=$(echo $search_ts| cut -d: -f2)
-        echo \$hh: $hh
-        echo \$mm: $mm
-        mm_plus=$(echo $mm + 1 | bc)
-        echo \$mm_plus: $mm_plus
-        read FAKE
-        search_ts=$(echo $hh:$mm_plus)
-        echo \$search_ts: $search_ts
-        grep -a 'exec of \/usr\/local\/bin\/uncenz-1st' $syslog
-        read FAKE
-        mark_top=$(grep -a 'exec of \/usr\/local\/bin\/uncenz-1st' $syslog \
-            | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
-        echo \$mark_top: $mark_top
-        # A rarer but possible case is it was the minute earlier, so:
-        if [ -z "$mark_top" ];then
-            echo \$search_ts: $search_ts
-            hh=$(echo $search_ts| cut -d: -f1)
-            mm=$(echo $search_ts| cut -d: -f2)
-            echo \$hh: $hh
-            echo \$mm: $mm
-            mm_minus=$(echo $mm - 2 | bc)
-            echo \$mm_minus: $mm_minus
-            read FAKE
-            search_ts=$(echo $hh:$mm_minus)
-            echo \$search_ts: $search_ts
-            grep -a 'exec of \/usr\/local\/bin\/uncenz-1st' $syslog
-            read FAKE
-            mark_top=$(grep -a 'exec of \/usr\/local\/bin\/uncenz-1st' \
-                $syslog | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
-            echo \$mark_top: $mark_top
-        fi
-        read FAKE
+    if [ -e "dump_${i}_messages" ]; then
+        echo "The file:"
+        ls -l dump_${i}_messages
+        echo "which $0 creates) exists."
+        echo "(usually from some previous run)"
+        echo "Keep it, and NOT process dump_${i}.pcap (again)?"
+        ask;
+        if [ "$?" == 0 ]; then continue ; fi
     fi
-    echo \$mark_top: $mark_top
-    read FAKE
-    capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
-        '{ print $2 }'| cut -d. -f1
-    search_ts=$(capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
-        '{ print $2 }'| cut -d. -f1|cut -c1-5)
-    echo \$search_ts: $search_ts
-    ls -l $PCAP
-    mark_btm=$(grep -a 'exec of \/usr\/local\/bin\/uncenz-kill' $syslog | \
-        grep $search_ts - | cut -d'[' -f2 | cut -d']' -f1)
-    echo \$mark_btm: $mark_btm                  # (initial) identifier that I
-                                                #+want to extract to, i.e. to
-                                                #+"exec of ...uncenz-kill"
-    read FAKE
-    if [ -z "$mark_btm" ];then
-        echo "Pls. see explanation in the script for \$mark_top above"
-        # So we need to increase the minutes by 1, and search for the new
-        # string.
-        echo \$search_ts: $search_ts
-        hh=$(echo $search_ts| cut -d: -f1)
-        mm=$(echo $search_ts| cut -d: -f2)
-        echo \$hh: $hh
-        echo \$mm: $mm
-        mm_plus=$(echo $mm + 1 | bc)
-        echo \$mm_plus: $mm_plus
-        read FAKE
-        search_ts=$(echo $hh:$mm_plus)
-        echo \$search_ts: $search_ts
-        read FAKE
-        mark_btm=$(grep -a 'exec of \/usr\/local\/bin\/uncenz-kill' $syslog | \
-            grep $search_ts - | cut -d'[' -f2 | cut -d']' -f1)
-        echo \$mark_btm: $mark_btm
+    if [ -e "dump_${i}_withSyslog" ]; then
+        echo "The file:"
+        ls -l dump_${i}_withSyslog
+        echo "which uncenz-syslog-pcap.sh,"
+        echo "called by $0, creates, exists"
+        echo "(usually from some previous run)"
+        echo "Keep it, and NOT process dump_${i}.pcap (again)?"
+        ask;
+        if [ "$?" == 0 ]; then continue ; fi
     fi
-    echo \$mark_btm: $mark_btm
-    read FAKE
-    grep -aE "$mark_top.*exec of \/usr\/local\/bin\/uncenz-1st" $syslog
-    grep -aE "$mark_btm.*exec of \/usr\/local\/bin\/uncenz-kill" $syslog
-    mark_top_ts=$(echo $mark_top*1000000|bc|cut -d. -f1)
-    echo \$mark_top_ts: $mark_top_ts
-    mark_btm_ts=$(echo $mark_btm*1000000|bc|cut -d. -f1)
-    echo \$mark_btm_ts: $mark_btm_ts
-    read FAKE
-    if [[ "$mark_btm_ts" -lt "$mark_top_ts" ]]; then
-        echo "It appears there were excessive uncenz-1st issued."
-        echo "All successive grepping and if conditions would not yield"
-        echo "a meaningful result. Pls. solve the syslog extracting for:"
+    #read FAKE
+    num_packets=$(capinfos -c dump_${i}.pcap | \
+        grep "Number of packets" | sed 's/Number of packets://' | \
+        cut -d= -f2|sed 's/\([0-9]\) k/\1000/')
+    echo \$num_packets: $num_packets
+    if [ ! $num_packets -gt "0" ]; then
         echo "dump_${i}.pcap"
-        echo "manually. (And you can remove it from the batch to be processed.)"
-        # It can probably happen when I e.g. mistakenly start uncenz-1st two
-        # times, and the exec ...uncenz-kill to be found is actually the one
-        # that belongs to a previous session. Of course this can be solved
-        # programmatically, but it's rare case, no time.
+        echo "is an empty packet trace, containing no packets."
+        echo "To signify so, touching an empty:"
+        touch dump_${i}_messages
+        ls -l dump_${i}_messages
+        echo "No other processing necessary."
         continue
-        read FAKE
-    fi
-    wc_l_btm=$(grep -aE -A30000 \
-        "$mark_top.*exec of \/usr\/local\/bin\/uncenz-1st" $syslog | \
-        grep -a -B30000 -m1 \
-        "$mark_btm.*exec of \/usr\/local\/bin\/uncenz-kill" | wc -l)
-    echo \$wc_l_btm: $wc_l_btm                  # word count lines (wc -l) to
-                                                #+bottom, i.e. to
-                                                #+"exec of ...uncenz-kill"
-    read FAKE
-    # Alright, we got \$mark_top and \$mark_btm, and that would almost do.
-    # Almost. The \$mark_top does it, well, for me, because I really almost
-    # never plug the cable if I didn't start uncenz-1st.
-    # But the \$mark_btm doesn't completely satisfy, because, esp. with the
-    # bridge that I set with Netifrc, and with the virtual bridges that Libvirt
-    # creates, I get a few fake 'carrier lost', and some dhcpcd/dmasq/<some
-    # other libvirt induced> activity that I'm still interested about, and
-    # which happens after in reality there is no connection.
-    # The last 'carrier lost' line is one target, and the other can be
-    # substituted with a different one, the below is probably not necessarily a
-    # permanent solution.
-    # All the below can only be done if $mark_btm is initialized and not
-    # null/empty --I'm not a programmer, I'm still struggling with some
-    # notions--. It can be null/empty string, and then the script would run
-    # idle, not returning command prompt. For that reason the condition
-    # for $mark_btm further above.
-    #
-    echo grep -a -B200 -A1000 $mark_btm $syslog \| grep -a ... \"carrier lost\"
-    # Is the range below sufficient? (it was -B200 -A1000) no, it's
-    # excessive... in cases when uncenz-1st is shorter back than 200. So
-    # condition first...
-    read FAKE
-    grep -a -B200 -A1000 $mark_btm $syslog | \
-        grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'
-    read FAKE
-    grep -a -B200 -A1000 $mark_btm $syslog | \
-        grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'
-    grep -a -B200 -A1000 $mark_btm $syslog | \
-        grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'| \
-        cut -d'[' -f2 | cut -d']' -f1
-    grep -a -B200 -A1000 $mark_btm $syslog | grep -a -B1000 -m1 \
-        'exec of \/usr\/local\/bin\/uncenz-1st' | wc -l
-    read FAKE
-    grep -a -B200 -A1000 $mark_btm $syslog | grep -a -B1000 -m1 \
-        'exec of \/usr\/local\/bin\/uncenz-1st' > TMP; echo TMP made
-    read FAKE
-    wc_l_btm_cl_200=$(grep -a -B200 -A1000 $mark_btm $syslog | \
-        grep -a -B1000 -m1 'exec of \/usr\/local\/bin\/uncenz-1st' | \
-        grep -a -B1000 "carrier lost" | wc -l)
-    echo \$wc_l_btm_cl_200: $wc_l_btm_cl_200    # word count lines (wc -l) from
-                                                #+200 lines before $mark_btm,
-                                                #+but to "carrier lost"
-    wc_l_btm_cl_x00=$wc_l_btm_cl_200
-    echo \$wc_l_btm_cl_200: $wc_l_btm_cl_200
-    wc_l_btm_cl_rel=$(echo $wc_l_btm_cl_200 - 200|bc)
-    echo \$wc_l_btm_cl_rel: $wc_l_btm_cl_rel
-    mark_btm_ref=$(grep -a -B200 -A1000 $mark_btm $syslog | \
-        grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'| \
-        cut -d'[' -f2 | cut -d']' -f1)
-    echo \$mark_btm_ref: $mark_btm_ref
-    mark_btm_ref_ts=$(echo $mark_btm_ref*1000000|bc|cut -d. -f1)
-    echo \$mark_btm_ref_ts: $mark_btm_ref_ts
-    echo \$mark_btm_ts: $mark_btm_ts
-    read FAKE
-    if [[ "$mark_btm_ref_ts" -lt "$mark_btm_ts" ]]; then
-        echo "We need to re-evaluate."
-        # Try and not grep back 200, but 100, I'm not an expert...
-        read FAKE
-        grep -a -B100 -A1000 $mark_btm $syslog | \
-            grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'
-        read FAKE
-        grep -a -B100 -A1000 $mark_btm $syslog | \
-            grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'
-        grep -a -B100 -A1000 $mark_btm $syslog | \
-            grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'| \
-            cut -d'[' -f2 | cut -d']' -f1
-        mark_btm_ref=$(grep -a -B100 -A1000 $mark_btm $syslog | \
-            grep -a -m1 'exec of \/usr\/local\/bin\/uncenz-1st'| \
-            cut -d'[' -f2 | cut -d']' -f1)
-        echo \$mark_btm_ref: $mark_btm_ref
-        mark_btm_ref_ts=$(echo $mark_btm_ref*1000000|bc|cut -d. -f1)
-        echo \$mark_btm_ref_ts: $mark_btm_ref_ts
-        echo \$mark_btm_ts: $mark_btm_ts
-        read FAKE
-        wc_l_btm_cl_100=$(grep -a -B100 -A1000 $mark_btm $syslog | \
-            grep -a -B1000 -m1 'exec of \/usr\/local\/bin\/uncenz-1st' | \
-            grep -a -B1000 "carrier lost" | wc -l)
-        echo \$wc_l_btm_cl_100: $wc_l_btm_cl_100    # word count lines (wc -l)
-                                                    #+from 100 lines before
-                                                    #+$mark_btm, but to
-                                                    #+"carrier lost"
-        wc_l_btm_cl_x00=$wc_l_btm_cl_100
-        echo \$wc_l_btm_cl_100: $wc_l_btm_cl_100
-        wc_l_btm_cl_rel=$(echo $wc_l_btm_cl_100 - 100|bc)
-        echo \$wc_l_btm_cl_rel: $wc_l_btm_cl_rel
-    #else
-    #    echo "Pass. No need to do anything here."
-    fi
-    echo \$wc_l_btm_cl_x00: $wc_l_btm_cl_x00    # word count lines (wc -l) from
-                                                #+x00 (either 200 or 100) lines
-                                                #+before $mark_btm, +but to
-                                                #+"carrier lost"
-    read FAKE
-    echo \$wc_l_btm_cl_rel: $wc_l_btm_cl_rel    # word count lines (wc -l) to
-                                                #+bottom, but to "carrier lost",
-                                                #+relative to $wc_l_btm
-    read FAKE
-    # this search string is what, it seems to me, will get me all Libvirt
-    # related, also after $mark_btm
-    wc_l_btm_hd_x00=$(grep -a -B200 -A10000 $mark_btm $syslog | \
-        grep -a -B10000 -m1 'exec of \/usr\/local\/bin\/uncenz-1st' | \
-        grep -a -B10000 \
-        "\/bin\/hostname (hostname ) by \/bin\/hostname\[dhcpcd-run-hook" | \
-        wc -l)
-    read FAKE
-    echo \$wc_l_btm_hd_x00: $wc_l_btm_hd_x00    # word count lines (wc -l) from
-                                                #+200 lines before $mark_btm,
-                                                #+but to "hostname[dhcpcd"
-    read FAKE
-    wc_l_btm_hd_rel=$(echo $wc_l_btm_hd_x00 - 200|bc)
-    echo \$wc_l_btm_hd_rel: $wc_l_btm_hd_rel    # word count lines (wc -l) to
-                                                #+bottom, but to
-                                                #+"hostname[dhcpcd", relative to
-                                                #+$wc_l_btm
-    read FAKE
-    echo \$mark_top: $mark_top
-    echo \$mark_btm: $mark_btm
-    echo \$wc_l_btm: $wc_l_btm
-    echo \$wc_l_btm_cl_rel: $wc_l_btm_cl_rel    
-    echo \$wc_l_btm_hd_rel: $wc_l_btm_hd_rel    
-    read FAKE
-    if [ "$wc_l_btm_cl_rel" -gt "0" ]; then
-        # cdt for candidate
-        wc_l_btm_cl_cdt=$(echo $wc_l_btm + $wc_l_btm_cl_rel|bc)
-        echo \$wc_l_btm_cl_cdt: $wc_l_btm_cl_cdt
     else
-        echo \$wc_l_btm_cl_rel less than 0
-    fi
-    if [ "$wc_l_btm_hd_rel" -gt "0" ]; then
-        wc_l_btm_hd_cdt=$(echo $wc_l_btm + $wc_l_btm_hd_rel|bc)
-        echo \$wc_l_btm_hd_cdt: $wc_l_btm_hd_cdt
-    else
-        echo \$wc_l_btm_hd_rel less than 0
-    fi
-    if [ "$wc_l_btm_cl_cdt" ]; then
-        echo \$wc_l_btm_cl_cdt: $wc_l_btm_cl_cdt
-    else
-        echo \$wc_l_btm_cl_cdt not exist
-    fi
-    read FAKE
-    if [ "$wc_l_btm_hd_cdt" ]; then
-        echo \$wc_l_btm_hd_cdt: $wc_l_btm_hd_cdt
-    else
-        echo \$wc_l_btm_hd_cdt not exist
-    fi
-    read FAKE
-    if [ -v "$wc_l_btm_hd_cdt" ] && [ -v "$wc_l_btm_cl_cdt" ]; then
-        echo exist \$wc_l_btm_hd_cdt and \$wc_l_btm_cl_cdt
-        read FAKE
-    else
-        if [ "$wc_l_btm_hd_cdt" ] && [ ! "$wc_l_btm_cl_cdt" ]; then
-            wc_l_btm_fin=$wc_l_btm_hd_cdt
-            echo exist \$wc_l_btm_hd_cdt not \$wc_l_btm_cl_cdt
-            read FAKE
+        if (echo $i|grep _SOLO); then
+            echo "We are dealing with offline-capture dump_${i}.pcap"
+            search_ts=$(capinfos $PCAP | grep 'First packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1|cut -c1-5)
+            echo \$search_ts: $search_ts
+            mark_top=$(grep -a "$arSrch_only_dump" $syslog | grep \
+                $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+            echo \$mark_top: $mark_top                  # identifier, or if you wish:
+                                                        #+reference point that I
+                                                        #+want to extract from
+            #read FAKE
+            if [ -z "$mark_top" ]; then
+                # \$mark_top not grep'd out means all successive grepping and if
+                # conditions would not yield a meaningful result.
+                # But see note at mark_top gotten for string "...uncenz-1st".
+                # mark_top for uncenz-only-dump.sh started section is based on it.
+                echo \$search_ts: $search_ts
+                hh=$(echo $search_ts| cut -d: -f1)
+                mm=$(echo $search_ts| cut -d: -f2)
+                echo \$hh: $hh
+                echo \$mm: $mm
+                mm_plus=$(echo $mm + 1 | bc)
+                echo \$mm_plus: $mm_plus
+                #read FAKE
+                printf "%02d" $mm_plus
+                printf "%02d" $mm_plus > mm_plus_r
+                echo -n "cat mm_plus_r: "; cat mm_plus_r; echo
+                mm_plus_r=$(cat mm_plus_r)
+                echo \$mm_plus_r: $mm_plus_r
+                #read FAKE
+                search_ts=$(echo $hh:$mm_plus_r)
+                echo \$search_ts: $search_ts
+                #read FAKE
+                mark_top=$(grep -a "$arSrch_only_dump" $syslog \
+                    | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+                echo \$mark_top: $mark_top
+                # A rarer but possible case is it was the minute earlier, so:
+                for num in $(echo 1 1); do
+                    if [ -z "$mark_top" ];then
+                        echo \$search_ts: $search_ts
+                        hh=$(echo $search_ts| cut -d: -f1)
+                        mm=$(echo $search_ts| cut -d: -f2)
+                        echo \$hh: $hh
+                        echo \$mm: $mm
+                        if [ $mm == "00" ]; then
+                            mm=60
+                            hh=$(echo $hh - 1 | bc)
+                            echo \$hh: $hh
+                            echo \$mm: $mm
+                            #read FAKE
+                        fi
+                        mm_minus=$(echo $mm - $num | bc)
+                        echo \$mm_minus: $mm_minus
+                        printf "%02d" $mm_minus
+                        printf "%02d" $mm_minus > mm_minus_r
+                        mm_minus_r=$(cat mm_minus_r)
+                        #read FAKE
+                        echo \$mm_minus_r: $mm_minus_r
+                        #read FAKE
+                        search_ts=$(echo $hh:$mm_minus_r)
+                        echo \$search_ts: $search_ts
+                        echo "Number of lines matching $arSrch_only_dump:"
+                        grep -a "$arSrch_only_dump" $syslog | wc -l
+                        #read FAKE
+                        mark_top=$(grep -a "$arSrch_only_dump" \
+                            $syslog | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+                        echo \$mark_top: $mark_top
+                    fi
+                done
+                #read FAKE
+            fi
+            echo \$mark_top: $mark_top
+            #read FAKE
+            capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1
+            search_ts=$(capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1|cut -c1-5)
+            echo \$search_ts: $search_ts
+            ls -l $PCAP
+            mark_btm_try=$(grep -aE "$arSrch_only_kill" $syslog | \
+                grep $search_ts | cut -d'[' -f2 | cut -d']' -f1)
+            echo \$mark_btm_try: $mark_btm_try          # identifier, tentative,
+                                                        #+that I want to extract
+                                                        #+to, i.e. to
+                                                        #+"exec of ...killall dumpcap"
+            #read FAKE
+            # Packets can be sparsed many minutes away from each other in
+            # offline-captures, unlike bustling online-captures.
+            # For offline, once we have a $mark_btm_try, we will
+            # extract the messages_${i}_try and check it for
+            # $arSrch_uncenz_1st and use $arSrch_only_kill before it as the
+            # real $mark_btm.
+            grep -aE "$mark_top.*$arSrch_only_dump" $syslog
+            #read FAKE
+            ### at one time it looked to me this was needed, now confused about it:
+            # arSrch_only_kill_escaped=$(echo $arSrch_only_kill|sed "s/(/\\\x28/")
+            # echo \$arSrch_only_kill_escaped: $arSrch_only_kill_escaped
+            # echo grep -aE "$mark_btm_try.*$arSrch_only_kill_escaped" $syslog
+            # grep -aE "$mark_btm_try.*$arSrch_only_kill_escaped" $syslog
+            ### maybe solved, see further below (search Bash 101)
+            if [ ! -z "$mark_btm_try" ]; then
+                echo "\$mark_btm_try: $mark_btm_try"
+                wc_l_btm_try=$(grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog | \
+                    grep -a -B300000 -m1 \
+                    "$mark_btm_try.*$arSrch_only_kill" | wc -l)
+                echo \$wc_l_btm_try: $wc_l_btm_try      # wc count lines (wc -l) to
+                                                        #+"exec of ...uncenz-kill"
+                                                        #+(tentative)
+            # But $mark_btm_try can be in long no-packets silence, nowhere
+            # close its session-ending $arSrch_only_kill, and it needs be tried
+            # harder to get.
+            else
+                # brazen copy from just above, almost lost
+                echo "\$mark_btm_try: $mark_btm_try"
+                wc_l_btm_try=$(grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog | \
+                    grep -aE -B300000 -m1 \
+                    "$mark_btm_try.*$arSrch_only_kill" | wc -l)
+                echo \$wc_l_btm_try: $wc_l_btm_try      # wc count lines (wc -l) to
+                                                        #+"exec of ...uncenz-kill"
+                                                        #+(tentative)
+                ### wandering here, almost lost (repeating code from some 40-50
+                # lines below
+                grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog \
+                    | grep -m1 "$arSrch_uncenz_1st"
+                num_arSrch_only_kill=$(
+                    grep -aE -B300000 -m1 "$arSrch_uncenz_1st" $syslog \
+                        | grep -aE "$arSrch_only_kill" | wc -l
+                    )
+                echo \$num_arSrch_only_kill: $num_arSrch_only_kill
+                #read FAKE
+                # grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                # #read FAKE
+                # mark_btm_try=$(
+                #     grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                #     )
+                # echo \$mark_btm_try: $mark_btm_try
+                ### I get "grep: Unmatched ( or \(". Trying what previously fixed
+                # it (and than the need for it vanished, bug in Bash?)
+                # arSrch_only_kill_escaped=$(echo $arSrch_only_kill|sed "s/(/\\\x28/")
+                # echo \$arSrch_only_kill_escaped: $arSrch_only_kill_escaped
+                # echo grep -aE "$mark_btm_try.*$arSrch_only_kill_escaped" $syslog
+                # grep -aE "$mark_btm_try.*$arSrch_only_kill_escaped" $syslog
+                # #read FAKE
+                ### With these I get no such error, but nothing grep'd out either, yet.
+                # grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_escaped"
+                # #read FAKE
+                # grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_escaped" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                # #read FAKE
+                # mark_btm_try=$(
+                #     grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_escaped" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                #     )
+                # echo \$mark_btm_try: $mark_btm_try
+                ### grep: Unmatched ( or \(
+                # arSrch_only_kill_backslashed=$(echo $arSrch_only_kill|sed "s/(/\\(/")
+                # echo \$arSrch_only_kill_backslashed: $arSrch_only_kill_backslashed
+                # echo grep -aE "$mark_btm_try.*$arSrch_only_kill_backslashed" $syslog
+                # grep -aE "$mark_btm_try.*$arSrch_only_kill_backslashed" $syslog
+                # #read FAKE
+                # grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_backslashed"
+                # #read FAKE
+                # grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_backslashed" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                # #read FAKE
+                # mark_btm_try=$(
+                #     grep -aE -A300000 \
+                #     "$mark_top.*$arSrch_only_dump" $syslog \
+                #     | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                #     | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill_backslashed" \
+                #     | cut -d'[' -f2 | cut -d']' -f1
+                #     )
+                # Only this worked! To get the "\(" in variable expansion in
+                # double quotes, "\\\(" needed. Bash 101 actually...
+                # Setting "\\\(" in the array at start
+                # Some further 20 lines below previously worked with this:
+                # echo \$mark_btm_try: $mark_btm_try
+                # arSrch_only_kill_backslashed=$(echo $arSrch_only_kill|sed "s/(/\\\(/")
+                # echo \$arSrch_only_kill_backslashed: $arSrch_only_kill_backslashed
+                # echo grep -aE "$mark_btm_try.*$arSrch_only_kill_backslashed" $syslog
+                # #read FAKE
+                # Now converting back all $arSrch_only_kill_backslashed to
+                # $arSrch_only_kill
+                echo "Number of lines matching $arSrch_only_kill:"
+                grep -aE "$mark_btm_try.*$arSrch_only_kill" $syslog | wc -l
+                #read FAKE
+                grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog \
+                    | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill"
+                #read FAKE
+                grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog \
+                    | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                    | cut -d'[' -f2 | cut -d']' -f1
+                #read FAKE
+                mark_btm_try=$(
+                    grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog \
+                    | grep -aE -B300000 -m1 "$arSrch_uncenz_1st" \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                    | cut -d'[' -f2 | cut -d']' -f1
+                    )
+                echo \$mark_btm_try: $mark_btm_try
+            fi
+            echo \$mark_btm_try: $mark_btm_try
+            #read FAKE
+            # this test (20 lines) needed here?
+            mark_top_ts=$(echo $mark_top*1000000|bc|cut -d. -f1)
+            echo \$mark_top_ts: $mark_top_ts
+            #read FAKE
+            if [ ! -z "$mark_btm_try" ]; then
+                echo "\$mark_btm_try: $mark_btm_try"
+                mark_btm_try_ts=$(echo $mark_btm_try*1000000|bc|cut -d. -f1)
+                #read FAKE
+            else
+                echo "Irregular managing of uncenz."
+                echo "This PCAP need to be manually carved out messages for."
+                echo "(And remove it from the batch to be processed.)"
+                #read FAKE
+                continue
+            fi
+            echo \$mark_btm_try_ts: $mark_btm_try_ts
+            #read FAKE
+            if [[ "$mark_btm_try_ts" -lt "$mark_top_ts" ]]; then
+                echo "Mark here with some error note..."
+                continue
+                #read FAKE
+            fi
+            # now extract messages_${i}_try and grep it
+            grep -aE -A$wc_l_btm_try \
+                "$mark_top.*$arSrch_only_dump" \
+                $syslog > messages_${i}_try
+            ls -l messages_${i}_try
+            #read FAKE
+            echo "Lines to first \$arSrch_uncenz_1st: "
+            grep -aE -B300000 -m1 "$arSrch_uncenz_1st" messages_${i}_try \
+                    | wc -l
+            #read FAKE
+            # I need to get the lines to last $arSrch_only_kill before
+            # first $arSrch_uncenz_1st. Make more calculations.
+            # The first $arSrch_uncenz_1st
+            grep -aE -m1 "$arSrch_uncenz_1st" messages_${i}_try
+            #read FAKE
+            echo "Number of \$arSrch_only_kill before \$arSrch_uncenz_1st: "
+            grep -aE -B300000 -m1 "$arSrch_uncenz_1st" messages_${i}_try \
+                    | grep -aE "$arSrch_only_kill" | wc -l
+            num_arSrch_only_kill=$(
+                grep -aE -B300000 -m1 "$arSrch_uncenz_1st" messages_${i}_try \
+                    | grep -aE "$arSrch_only_kill" | wc -l
+                )
+            echo \$num_arSrch_only_kill: $num_arSrch_only_kill
+            if [ "$num_arSrch_only_kill" -gt "0" ];then
+                    # All this only needed in some corner cases, such as when search_ts
+                # found, but way later than corresponding $num_arSrch_only_kill
+                #read FAKE
+                # And now take the last one.
+                #echo "Good or bad? next?"
+                #read FAKE
+                grep -aE -B300000 -m1 \
+                    "$arSrch_uncenz_1st" messages_${i}_try \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill"
+                #echo \$last_arSrch_only_kill: $last_arSrch_only_kill
+                #read FAKE
+                # Now get the reference point for the last $arSrch_only_kill
+                # before $arSrch_uncenz_1st
+                grep -aE -B300000 -m1 \
+                    "$arSrch_uncenz_1st" messages_${i}_try \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                    | cut -d'[' -f2 | cut -d']' -f1
+                mark_btm=$(
+                    grep -aE -B300000 -m1 \
+                    "$arSrch_uncenz_1st" messages_${i}_try \
+                    | grep -aE -m$num_arSrch_only_kill "$arSrch_only_kill" \
+                    | cut -d'[' -f2 | cut -d']' -f1
+                    )
+            else
+                mark_btm=$mark_btm_try
+            fi
+            echo "\$mark_btm: $mark_btm"
+            #read FAKE
+            if [ -z "$mark_btm" ];then
+                #echo "Pls. see explanation in the script for \$mark_top for uncenz-1st"
+                # So we need to increase the minutes by 1, and search for the new
+                # string.
+                # Possibly will user later. But read next comments below.
+                #echo \$search_ts: $search_ts
+                #hh=$(echo $search_ts| cut -d: -f1)
+                #mm=$(echo $search_ts| cut -d: -f2)
+                #echo \$hh: $hh
+                #echo \$mm: $mm
+                # offline capture can be minutes without any packets
+                # and "...sudo -s killall dumpcap..." be much later than last packet
+                # grep here to show what is next up to "...sudo -s killall dumpcap..."
+                # which is ${arSrch[1]}, just like uncenz-only-dump.sh is ${arSrch[0]}
+                #echo "${arSrch[0]}"
+                #echo "${arSrch[1]}"
+                #arSrch_only_dump=$(echo ${arSrch[0]}|sed 's/\\x20/ /g')
+                #echo \$arSrch_only_dump: $arSrch_only_dump
+                #arSrch_only_kill=$(echo ${arSrch[1]}|sed 's/\\x20/ /g')
+                #echo \$arSrch_only_kill: $arSrch_only_kill
+                grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog | \
+                    grep -aE -B300000 -m1 \
+                    "$mark_btm.*$arSrch_only_kill" | wc -l
+                    # notice that $mark_btm is empty yet, but no harm
+                wc_l_btm=$(grep -aE -A300000 \
+                    "$mark_top.*$arSrch_only_dump" $syslog | \
+                    grep -aE -B300000 -m1 \
+                    "$mark_btm.*$arSrch_only_kill" | wc -l)
+                echo "Apparently, in the $syslog,"
+                echo "from:"
+                echo "$mark_top.*$arSrch_only_dump"
+                echo "to:"
+                echo "$mark_btm.*$arSrch_only_kill"
+                echo "there are: $wc_l_btm lines."
+                echo "Will use the new reference point." 
+                grep -aE \
+                    "$mark_top.*$arSrch_only_dump" $syslog
+                #read FAKE
+                grep -aE -A$wc_l_btm \
+                    "$mark_top.*$arSrch_only_dump" $syslog | wc -l
+                #read FAKE
+                mark_btm=$(grep -aE -A$wc_l_btm \
+                    "$mark_top.*$arSrch_only_dump" $syslog | \
+                    grep -aE -m1 "$arSrch_only_kill" | \
+                    cut -d'[' -f2 | cut -d']' -f1)
+                echo \$mark_btm: $mark_btm
+                #read FAKE
+                if [ -z "$mark_btm" ];then
+                    echo \$mark_btm: $mark_btm
+                    echo "Look up the logs, pls. Maybe there were system crashes and restarts"
+                    echo "around this point? They discontinue the timestamp codes in brackets"
+                    echo "and this script can not compare killall dumpcap's"
+                    echo "\$mark_btm $mark_btm"
+                    echo "to next start of uncenz-1st or other reference point."
+                    #read FAKE
+                    continue
+                    #read FAKE
+                fi
+                echo \$mark_btm: $mark_btm
+            fi
+            echo \$mark_btm: $mark_btm
+            #read FAKE
+            grep -aE "$mark_top.*$arSrch_only_dump" $syslog
+            grep -aE "$mark_btm.*$arSrch_only_kill" $syslog
+            mark_top_ts=$(echo $mark_top*1000000|bc|cut -d. -f1)
+            echo \$mark_top_ts: $mark_top_ts
+            #read FAKE
+            if [ ! -z "$mark_btm" ]; then
+                echo "\$mark_btm: $mark_btm"
+                mark_btm_ts=$(echo $mark_btm*1000000|bc|cut -d. -f1)
+                #read FAKE
+            else
+                echo "Irregular managing of uncenz."
+                echo "This PCAP need to be manually carved out messages for."
+                echo "(And remove it from the batch to be processed.)"
+                #read FAKE
+                continue
+            fi
+            echo \$mark_btm_ts: $mark_btm_ts
+            #read FAKE
+            if [[ "$mark_btm_ts" -lt "$mark_top_ts" ]]; then
+                echo "It appears there were excessive uncenz-only-dump.sh issued."
+                echo "All successive grepping and if conditions would not yield"
+                echo "a meaningful result. Pls. solve the syslog extracting for:"
+                echo "dump_${i}.pcap"
+                echo "manually. (And remove it from the batch to be processed.)"
+                # It can probably happen when I e.g. mistakenly start uncenz-only-dump.sh
+                # two times, and the exec ...uncenz-kill to be found is actually the one
+                # that belongs to a previous session. Of course this can be solved
+                # programmatically, but it's rare case, no time.
+                continue
+                #read FAKE
+            fi
+            wc_l_btm=$(grep -aE -A300000 \
+                "$mark_top.*$arSrch_only_dump" $syslog | \
+                grep -aE -B300000 -m1 \
+                "$mark_btm.*$arSrch_only_kill" | wc -l)
+            echo \$wc_l_btm: $wc_l_btm                  # wc count lines (wc -l) to
+                                                        #+bottom, i.e. to
+                                                        #+"exec of ...uncenz-kill"
+            #read FAKE
+            # Alright, we got \$mark_top and \$mark_btm, and that would almost do.
+            #
+            #echo grep -a -B200 -A1000 $mark_btm $syslog \| grep -a ... \"Link is up\"
+            #if (grep "Link is up"
+            #echo should raise alert if it were found
+            echo \$mark_top: $mark_top
+            echo \$mark_btm: $mark_btm
+            #read FAKE
+            # result
+            grep -aE -A$wc_l_btm \
+                "$mark_top.*$arSrch_only_dump" \
+                $syslog > messages_${i}
+        else
+            echo "We are dealing with online-capture dump_${i}.pcap"
+            search_ts=$(capinfos $PCAP | grep 'First packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1|cut -c1-5)
+            echo \$search_ts: $search_ts
+            mark_top=$(grep -a "$arSrch_uncenz_1st" $syslog | grep \
+                $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+            echo \$mark_top: $mark_top                  # identifier that I want to
+                                                        #+extract from
+            #read FAKE
+            if [ -z "$mark_top" ]; then
+                # \$mark_top not grep'd out means all successive grepping and if
+                # conditions would not yield a meaningful result.
+                # But it often is only because the \$search_ts is seconds later in the
+                # next minute. Of course it could also be much later (or even much
+                # earlier, but that would be very very rarely possible, see below),
+                # but, pls. just don't use uncenz in such way. Some day, I'll try and
+                # account for even those cases in this script, I hope. Not yet.
+                # So we need to increase the minutes by 1, and search for the new
+                # string.
+                echo \$search_ts: $search_ts
+                hh=$(echo $search_ts| cut -d: -f1)
+                mm=$(echo $search_ts| cut -d: -f2)
+                echo \$hh: $hh
+                echo \$mm: $mm
+                mm_plus=$(echo $mm + 1 | bc)
+                echo \$mm_plus: $mm_plus
+                printf "%02d" $mm_plus
+                printf "%02d" $mm_plus > mm_plus_r
+                echo -n "cat mm_plus_r: "; cat mm_plus_r; echo
+                mm_plus_r=$(cat mm_plus_r)
+                echo \$mm_plus_r: $mm_plus_r
+                #read FAKE
+                search_ts=$(echo $hh:$mm_plus_r)
+                echo \$search_ts: $search_ts
+                grep -a "$arSrch_uncenz_1st" $syslog
+                #read FAKE
+                mark_top=$(grep -a "$arSrch_uncenz_1st" $syslog \
+                    | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+                echo \$mark_top: $mark_top
+                if [ -z "$mark_top" ]; then
+                    # A rarer but possible case is it was the minute or two minutes earlier, so:
+                    for num in $(echo 1 1); do
+                        if [ -z "$mark_top" ];then
+                            echo \$search_ts: $search_ts
+                            hh=$(echo $search_ts| cut -d: -f1)
+                            mm=$(echo $search_ts| cut -d: -f2)
+                            echo \$hh: $hh
+                            echo \$mm: $mm
+                            mm_minus=$(echo $mm - $num | bc)
+                            echo \$mm_minus: $mm_minus
+                            printf "%02d" $mm_minus
+                            printf "%02d" $mm_minus > mm_minus_r
+                            mm_minus_r=$(cat mm_minus_r)
+                            #read FAKE
+                            search_ts=$(echo $hh:$mm_minus_r)
+                            echo \$search_ts: $search_ts
+                            echo "Number of lines matching $arSrch_uncenz_1st:"
+                            grep -a "$arSrch_uncenz_1st" $syslog | wc -l
+                            #read FAKE
+                            mark_top=$(grep -a "$arSrch_uncenz_1st" \
+                                $syslog | grep $search_ts -  | cut -d'[' -f2 | cut -d']' -f1)
+                            echo \$mark_top: $mark_top
+                            #read FAKE
+                        fi
+                    done
+                fi
+                #read FAKE
+            fi
+            echo \$mark_top: $mark_top
+            #read FAKE
+            if [ -z "$mark_top" ]; then
+                echo "I can't find any logs for this PCAP"
+                echo "Likely your $syslog does not belong to this PCAP:"
+                ls -l $PCAP
+                echo continue
+            fi
+            capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1
+            search_ts=$(capinfos $PCAP | grep 'Last packet time' | cut -c22-99|awk \
+                '{ print $2 }'| cut -d. -f1|cut -c1-5)
+            echo \$search_ts: $search_ts
+            ls -l $PCAP
+            mark_btm=$(grep -a "$arSrch_uncenz_kill" $syslog | \
+                grep $search_ts - | cut -d'[' -f2 | cut -d']' -f1)
+            echo \$mark_btm: $mark_btm                  # (initial) identifier that I
+                                                        #+want to extract to, i.e. to
+                                                        #+"exec of ...uncenz-kill"
+            #read FAKE
+            if [ -z "$mark_btm" ];then
+                # Pls. see explanation in the script for \$mark_top above
+                # So we need to increase the minutes by 1, and search for the new
+                # string.
+                echo \$search_ts: $search_ts
+                hh=$(echo $search_ts| cut -d: -f1)
+                mm=$(echo $search_ts| cut -d: -f2)
+                echo \$hh: $hh
+                echo \$mm: $mm
+                mm_plus=$(echo $mm + 1 | bc)
+                echo \$mm_plus: $mm_plus
+                #read FAKE
+                printf "%02d" $mm_plus
+                printf "%02d" $mm_plus > mm_plus_r
+                echo -n "cat mm_plus_r: "; cat mm_plus_r; echo
+                mm_plus_r=$(cat mm_plus_r)
+                echo \$mm_plus_r: $mm_plus_r
+                #read FAKE
+                search_ts=$(echo $hh:$mm_plus_r)
+                echo \$search_ts: $search_ts
+                #read FAKE
+                mark_btm=$(grep -a "$arSrch_uncenz_kill" $syslog | \
+                    grep $search_ts - | cut -d'[' -f2 | cut -d']' -f1)
+                echo \$mark_btm: $mark_btm
+            fi
+            echo \$mark_btm: $mark_btm
+            #read FAKE
+            grep -aE "$mark_top.*$arSrch_uncenz_1st" $syslog
+            grep -aE "$mark_btm.*$arSrch_uncenz_kill" $syslog
+            mark_top_ts=$(echo $mark_top*1000000|bc|cut -d. -f1)
+            echo \$mark_top_ts: $mark_top_ts
+            #read FAKE
+            if [ ! -z "$mark_btm" ]; then
+                echo "\$mark_btm: $mark_btm"
+                mark_btm_ts=$(echo $mark_btm*1000000|bc|cut -d. -f1)
+                #read FAKE
+            else
+                echo "Irregular managing of uncenz."
+                echo "This PCAP:"
+                ls -l $PCAP
+                echo "needs to be manually carved out messages for."
+        # One of the cases this happens is when uncenz-kill is issued,
+        # but not followed through, and packets are captured when all
+        # should have been disconnected already. Not grave error, but
+        # confusing for analysis.
+                echo "(And if it is the case, remove it from the batch to be processed.)"
+                #read FAKE
+                continue
+            fi
+            echo \$mark_btm_ts: $mark_btm_ts
+            #read FAKE
+            mark_btm_ts=$(echo $mark_btm*1000000|bc|cut -d. -f1)
+            echo \$mark_btm_ts: $mark_btm_ts
+            #read FAKE
+            if [[ "$mark_btm_ts" -lt "$mark_top_ts" ]]; then
+                echo "It appears there were excessive uncenz-1st issued."
+                echo "All successive grepping and if conditions would not yield"
+                echo "a meaningful result. Pls. solve the syslog extracting for:"
+                echo "dump_${i}.pcap"
+                echo "manually. (And remove it from the batch to be processed.)"
+                # It can probably happen when I e.g. mistakenly start
+                # uncenz-1st more than one time, or issue uncenz-kill without finishing
+                # it for a while and packets actually continue being captured,
+                # and other irregular managing.  These cases need to be
+                # manually solved.
+                continue
+                #read FAKE
+            fi
+            wc_l_btm=$(grep -aE -A300000 \
+                "$mark_top.*$arSrch_uncenz_1st" $syslog | \
+                grep -a -B300000 -m1 \
+                "$mark_btm.*$arSrch_uncenz_kill" | wc -l)
+            echo \$wc_l_btm: $wc_l_btm                  # wc count lines (wc -l) to
+                                                        #+bottom, i.e. to
+                                                        #+"exec of ...uncenz-kill"
+            #read FAKE
+            # Alright, we got \$mark_top and \$mark_btm, and that would almost do.
+            #
+            # All the below can only be done if $mark_btm is initialized and not
+            # null/empty --I'm not a programmer, I'm still struggling with some
+            # notions--. It can be null/empty string, and then the script would run
+            # idle, not returning command prompt. For that reason the condition
+            # for $mark_btm further above.
+            #
+            echo \$mark_btm: $mark_btm
+            echo \$syslog: $syslog
+            grep -a -B200 -A1000 $mark_btm $syslog | \
+                wc -l
+            #read FAKE
+            if (grep -a -B200 -A1000 $mark_btm $syslog | \
+                grep -a -m1 "$arSrch_uncenz_1st"); then
+                grep_ahead=1000
+            else
+                grep_ahead=30000
+            fi
+            echo \$grep_ahead: $grep_ahead
+            grep -a -B200 -A$grep_ahead $mark_btm $syslog | \
+                grep -a -m1 "$arSrch_uncenz_1st"| \
+                wc -l
+            grep -a -B200 -A$grep_ahead $mark_btm $syslog | \
+                grep -a -m1 "$arSrch_uncenz_1st"| \
+                cut -d'[' -f2
+            grep -a -B200 -A$grep_ahead $mark_btm $syslog | \
+                grep -a -m1 "$arSrch_uncenz_1st"| \
+                cut -d'[' -f2 | cut -d']' -f1
+            mark_btm_ref=$(grep -a -B200 -A$grep_ahead $mark_btm $syslog | \
+                grep -a -m1 "$arSrch_uncenz_1st"| \
+                cut -d'[' -f2 | cut -d']' -f1)
+            #read FAKE
+            echo \$mark_btm_ref: $mark_btm_ref
+            mark_btm_ref_ts=$(echo $mark_btm_ref*1000000|bc|cut -d. -f1)
+            echo \$mark_btm_ref_ts: $mark_btm_ref_ts
+            echo \$mark_btm_ts: $mark_btm_ts
+            #read FAKE
+            if [[ "$mark_btm_ref_ts" -lt "$mark_btm_ts" ]]; then
+                echo "We need to re-evaluate."
+                # Try and not grep back 200, but 100, I'm not an expert...
+                #read FAKE
+                grep -a -B100 -A$grep_ahead $mark_btm $syslog | \
+                    grep -a -m1 "$arSrch_uncenz_1st"
+                #read FAKE
+                grep -a -B100 -A$grep_ahead $mark_btm $syslog | \
+                    grep -a -m1 "$arSrch_uncenz_1st"
+                grep -a -B100 -A$grep_ahead $mark_btm $syslog | \
+                    grep -a -m1 "$arSrch_uncenz_1st"| \
+                    cut -d'[' -f2 | cut -d']' -f1
+                mark_btm_ref=$(grep -a -B100 -A$grep_ahead $mark_btm $syslog | \
+                    grep -a -m1 "$arSrch_uncenz_1st"| \
+                    cut -d'[' -f2 | cut -d']' -f1)
+                echo \$mark_btm_ref: $mark_btm_ref
+                mark_btm_ref_ts=$(echo $mark_btm_ref*1000000|bc|cut -d. -f1)
+                echo \$mark_btm_ref_ts: $mark_btm_ref_ts
+                echo \$mark_btm_ts: $mark_btm_ts
+                #read FAKE
+                if [[ "$mark_btm_ref_ts" -lt "$mark_btm_ts" ]]; then
+                    echo "Look up the logs, pls. Maybe there were system crashes and restarts"
+                    echo "around this point? They discontinue the timestamp codes in brackets"
+                    echo "and this script can not compare uncenz-kill's"
+                    echo "\$mark_btm $mark_btm"
+                    echo "to next start of uncenz-1st or other reference point."
+                fi
+            fi
+            echo
+            echo \$mark_top: $mark_top
+            echo \$wc_l_btm: $wc_l_btm
+            echo
+            #read FAKE
+            # result
+            grep -aE -A$wc_l_btm \
+                "$mark_top.*$arSrch_uncenz_1st" \
+                $syslog > messages_${i}
         fi
-        if [ ! "$wc_l_btm_hd_cdt" ] && [ "$wc_l_btm_cl_cdt" ]; then
-            wc_l_btm_fin=$wc_l_btm_cl_cdt
-            echo not exist \$wc_l_btm_hd_cdt exists \$wc_l_btm_cl_cdt
-            read FAKE
-        fi
-        if [ ! "$wc_l_btm_hd_cdt" ] && [ ! "$wc_l_btm_cl_cdt" ]; then
-            wc_l_btm_fin=$wc_l_btm
-            echo not exist \$wc_l_btm_hd_cdt not exist \$wc_l_btm_cl_cdt
-            read FAKE
-            echo wc_l_btm_fin=\$wc_l_btm
-        fi
-        echo end if
-        read FAKE
     fi
-    echo
-    echo \$mark_top: $mark_top
-    echo \$wc_l_btm_fin: $wc_l_btm_fin
-    echo
-    read FAKE
-    # result
-    grep -aE -A$wc_l_btm_fin \
-        "$mark_top.*exec of \/usr\/local\/bin\/uncenz-1st" \
-        $syslog > messages_${i}
-    ls -l messages_${i}
-    echo "less messages_${i} ?"
-    ask;
-    if [ "$?" == 0 ]; then
-        less messages_${i}
-    fi
+    #ls -l messages_${i}
+    #echo "less messages_${i} ?"
+    #ask;
+    #if [ "$?" == 0 ]; then
+    #    less messages_${i}
+    #fi
     # The work continues now preparing the given dump_${i}.pcap for calling
     # hhmmss2sec on it, and then later calling
-    # uncenz-syslog-pcap.sh on further resuls.
+    # uncenz-syslog-pcap.sh on further results.
     ls -l dump_${i}.pcap
     ls -l messages_${i}
     capinfos dump_${i}.pcap | grep 'First packet time'
     echo \$mark_top: $mark_top
     grep $mark_top messages_${i}
-    read FAKE
+    #read FAKE
     # We already ran this similarly to get $mark_top, from $PCAP we take
     # seconds too
     PCAP_top_ts=$(capinfos $PCAP | grep 'First packet time' | cut -c22-99|awk \
@@ -419,7 +897,7 @@ for PCAP in $(echo $PCAPs); do
     messages_top_ts=$(grep $mark_top messages_${i} | cut -d' ' -f3)
     echo \$messages_top_ts: $messages_top_ts
     echo \$PCAP_top_ts: $PCAP_top_ts
-    read FAKE
+    #read FAKE
     # But all these need to be converted to seconds, for those rare very mild
     # Y2K-like (I know today's kids don't remember, but I do) scenarios like:
     # $messages_top_ts: 20:23:59
@@ -428,26 +906,33 @@ for PCAP in $(echo $PCAPs); do
     messages_top_ts_hh=$(echo $messages_top_ts|cut -d: -f1);
     messages_top_ts_mm=$(echo $messages_top_ts|cut -d: -f2);
     messages_top_ts_ss=$(echo $messages_top_ts|cut -d: -f3);
-    echo $messages_top_ts is $hh $mm $ss;
+    echo $messages_top_ts is $messages_top_ts_hh $messages_top_ts_mm $messages_top_ts_ss;
     messages_top_ts_sec=$(echo $messages_top_ts_hh*3600 + \
         $messages_top_ts_mm*60 + $messages_top_ts_ss|bc)
     echo \$messages_top_ts_sec: $messages_top_ts_sec
-    read FAKE
+    #read FAKE
     PCAP_top_ts_hh=$(echo $PCAP_top_ts|cut -d: -f1);
     PCAP_top_ts_mm=$(echo $PCAP_top_ts|cut -d: -f2);
     PCAP_top_ts_ss=$(echo $PCAP_top_ts|cut -d: -f3);
-    echo $PCAP_top_ts is $hh $mm $ss;
+    echo $PCAP_top_ts is $PCAP_top_ts_hh $PCAP_top_ts_mm $PCAP_top_ts_ss;
     PCAP_top_ts_sec=$(echo $PCAP_top_ts_hh*3600 + $PCAP_top_ts_mm*60 + \
         $PCAP_top_ts_ss|bc)
     echo \$PCAP_top_ts_sec: $PCAP_top_ts_sec
-    read FAKE
+    #read FAKE
     zero_value_raw=$messages_top_ts
     offset=$(echo $PCAP_top_ts_sec - $messages_top_ts_sec|bc)
     logs_section=messages_${i}
     echo \$zero_value_raw: $zero_value_raw
     echo \$offset: $offset
     echo \$logs_section: $logs_section
-    read FAKE
+    echo "Next is calling hhmmss2sec with this command:"
+    echo hhmmss2sec $logs_section $zero_value_raw $offset
+    #read FAKE
     hhmmss2sec $logs_section $zero_value_raw $offset
+    #read FAKE
+    echo uncenz-syslog-pcap.sh dump_${i}.pcap dump_${i}_messages
+    #read FAKE
+    uncenz-syslog-pcap.sh dump_${i}.pcap dump_${i}_messages
+    #read FAKE
 done
 echo "All \$PCAPs have been attempted to deal with."
