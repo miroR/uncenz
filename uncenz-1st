@@ -104,18 +104,27 @@ f=$(gpg --list-secret-keys --with-colon)
 #echo \$f: $f
 #read FAKE
 if [ "$f" != "" ]; then
-	echo $f
-	aplay -q ~/tvtube.wav
-	echo
-	echo "Continue regardless (y), or exit and fix the .gnupg/ secret keys availability?"
-#	echo "Hit "n", recommended, and hide your secret keys first before going online."
-#	echo "Pls. see https://www.gnupg.org"
-	echo
-	ask;
-	# the default (just hitting Enter) is exiting
-	if [ "$?" == 1 ]; then
-		echo "(Some) private key(s) there, exiting by your choice."
-		exit 0
+	# see:
+	# Safe GnuPG setup (with offlined master secret key)
+	# https://dev1galaxy.org/viewtopic.php?id=1929
+	# too ugly:
+	#echo $f
+	gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+	col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
+	if [ "$col15" == "#" ] ;then
+		echo "You have offlined the primary secret key. Probably fine to proceed."
+	else
+		aplay -q ~/tvtube.wav
+		gpg --list-secret-keys --with-colons
+		echo
+		echo "Continue regardless (y), or exit and fix the .gnupg/ primary secret key availability?"
+		echo
+		ask;
+		# the default (just hitting Enter) is exiting
+		if [ "$?" == 1 ]; then
+			echo "Primary secret key is not offlined, exiting by user's choice."
+			exit 0
+		fi
 	fi
 fi
 #read FAKE
