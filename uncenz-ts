@@ -7,10 +7,10 @@
 # released under BSD license, pls. see LICENSE
 #
 # "ts" is for "time stamp"
-ts_var=`date +%y%m%d_%H%M`
+ts_var=$(date +%y%m%d_%H%M)
 echo $ts_var
 if [ -e ".uncenz-ts" ] ; then
-	ts_var_old=`cat .uncenz-ts`
+	ts_var_old=$(cat .uncenz-ts)
 	#echo $ts_var_old
 	echo $ts_var_old > .uncenz-ts.old
 #	read FAKE
@@ -25,7 +25,7 @@ if [ -e ".uncenz-ts" ] ; then
 # the .uncenz-1st.pid
 # We really may only kill it if either ffmpeg or dumpcap/tcpdump are running. However
 # this is small inconvenience that I can live with, no time.
-		kill `cat .uncenz-1st.pid`
+		kill $(cat .uncenz-1st.pid)
 	else # echo "is different" ; 
 #		read FAKE
 		echo $ts_var > .uncenz-ts

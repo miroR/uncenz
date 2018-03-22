@@ -12,10 +12,6 @@
 # This is the first phase of my method. We try and start the screencast
 # capturing with FFmpeg and tracing with dumpcap/tcpdump.
 #
-# If you don't want to reply to this question below every time, you can set
-# either the string "dumpcap" or "tcpdump", no spaces, not extra char, just the
-# usual newline at end, into:
-# .uncenz-dumper_permanent
 function ask()
 {
     echo -n "$@" '[y/n] ' ; read ans
@@ -24,6 +20,10 @@ function ask()
         *) return 1 ;;
     esac
 }
+# If you don't want to reply to this question below every time, you can set
+# either the string "dumpcap" or "tcpdump", no spaces, not extra char, just the
+# usual newline at end, into:
+# .uncenz-dumper_permanent
 if [ -e ".uncenz-dumper_permanent" ]; then
 	dumper=$(cat .uncenz-dumper_permanent)
 	if [ "$dumper" == "dumpcap" ] || [ "$dumper" == "tcpdump" ]; then
@@ -63,9 +63,12 @@ function show_help {
 	echo "==============================================================="
 	echo
 	echo "$0 -- first phase of uncenz,"
-	echo "screencasting and packet capturing"
+	echo "starting screencasting and packet capturing"
 	echo
-	echo "Usage: $0 [an-include-script-with-capture-filters]"
+	echo "Usage: $0 <an-include-script-with-capture-filters> <another-one>"
+	echo "Or even:"
+	echo "$0 "" <another-one>"
+	echo "(to run, at end, just the other extra one)."
 	echo ""
 	echo "	Without arguments uncenz captures in promiscuous mode,"
 	echo "	on all available interfaces."
@@ -74,7 +77,7 @@ function show_help {
 	echo "	it starts the $dumper with whatever its capture filter contains."
 	echo "	\$include_filter_run is named with no spaces, and resides"
 	echo "	where the $0 is regularly run from, usually in"
-	echo "	/usr/local/bin ."
+	echo "	/usr/local/bin (still hardwired, at this time)."
 	echo
 }
 
@@ -169,7 +172,7 @@ echo "\$hostname_sh: "; echo $hostname_sh
 #
 ffpidof=$(pidof ffmpeg)
 echo "\$ffpidof: "; echo $ffpidof
-ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
+ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}')
 echo "\$ffpid: "; echo $ffpid
 dupidof=$(pidof $dumper)
 echo "\$dupidof: "; echo $dupidof
@@ -182,7 +185,7 @@ echo "\$dupidof: "; echo $dupidof
 if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	# We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
 	# be able to kill the process of the main script, this uncenz-1st one.
-	ps aux | grep [u]ncenz-1st | awk '{ print $2 }' >  .uncenz-1st.pid
+	ps aux | grep [u]ncenz-1st | grep -v grep | awk '{ print $2 }' >  .uncenz-1st.pid
 	echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
 	#read FAKE
 	#
@@ -234,7 +237,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		echo "#####"
 	fi
 
-	# Still not in the clear about the below, but I think I both dumpcap and
+	# Still not in the clear about the below, but I think that both dumpcap and
 	# tcpdump use pcapng even if you don't give them that extenstion. And...
 	# And, I think for dumpcap, if it is not set to capture as <you, the normal
 	# user> (still so here, was lazy about that... well, in grsecurity-hardened
@@ -242,14 +245,14 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	# $the_dump needs to be touch'd.
 	# Likewise for tcpdump, if it is not set to capture as <you, the normal
 	# user>, which in my Gentoo machine means compiled with (the default)
-	# "drop-root" use flag.
+	# "drop-root" use flag. [Note while preparing v0.40: I've been running
+	# Devuan only for almost one year now. Reports how this works for Gentoo
+	# would be appreciated.]
 	the_dump=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 	#the_dump_real=dump_$(cat .uncenz-ts)_${hostname_sh}.pcap
 	export the_dump
-	#export the_dump_real
 	if [ "$dumper" == "dumpcap" ]; then
 		sudo -s touch $the_dump
-	#	sudo -s chown tcpdump:tcpdump $the_dump
 	fi
 	if [ "$dumper" == "tcpdump" ]; then
 		sudo -s touch $the_dump
@@ -271,22 +274,16 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 	#
 	# Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
 	#
-	
-	if [ "$1" ]; then
+	if [ "$1" ] && [ -n "$1" ]; then
 		include_filter_run=$1
 		echo \$include_filter_run: $include_filter_run
-		# This is wrong! This checks for file in current dir.
-		#if [ -e "$include_filter_run" ]; then ...
-		#
-		# Of course it would also need to check if it is executable, but, sorry, rush,
-		# no time, and this suffices for my purposes.
-		# So, will just check for...
-		if [ -e "/usr/local/bin/$include_filter_run" ]; then 
+		if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then 
 				/usr/local/bin/$include_filter_run
 			else
 				echo "The include script you gave:"
 				echo "$include_filter_run"
-				echo "does not exist, or is not in the /usr/local/bin/ directory."
+				echo "does not exist, or is not in the /usr/local/bin/ directory,"
+				echo "or is not executable"
 				sleep 3
 				show_help
 				exit 0
@@ -302,7 +299,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 			sudo -s $dumper -i any -Z tcpdump -U -v -w $the_dump &
 		fi
 		#sudo -s $dumper -i any -w $the_dump &
-		echo "No hosts are filtered, all are traced, take notice!"; sleep 1.5
+		echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
 		#echo $the_dump_real
 		#if [ -e "$the_dump" ]; then
 		#	echo "Renaming $the_dump to $the_dump_real, is not pcapng an overkill extension?"
@@ -314,7 +311,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		-c:v libx264 -preset ultrafast -threads 0 \
 		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 	
-	echo "Monitor screen 1366x768, take notice!"; sleep 1.5
+	echo "Monitor screen 1366x768, take notice!"; sleep 0.5
 
 else
 	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
@@ -329,20 +326,77 @@ fi
 #	echo "Monitor screen 800x600, take notice!"; sleep 1.5
 #
 # We need to find the pid of each of the above processes.
-ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}')
+ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}')
 if [ "$dumper" == "dumpcap" ]; then
-	dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | egrep '[d]umpcap' | grep -v grep | awk '{ print $2}'`
 fi
 if [ "$dumper" == "tcpdump" ]; then
-	dupid=`sudo -s ps aux | egrep '[t]cpdump' | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | egrep '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
 
 echo \$ffpid is: # ff for ffmpeg
 echo $ffpid
+# Note that if $dumper is tcpdump you get two pids, because it shows as two
+# processes, one owned by sudo, the other by user tcpdump
+# I've been using only tcpdump since months now. Reports for dumpcap as $dumper
+# welcome.
 echo \$dupid is: # du for $dumper
 echo $dupid
 
+# In my grsec-hardened Devuan (the embattled
+# https://github.com/minipli/linux-unofficial_grsec/ of uncertain future, and
+# so is the security of GNU/Linux because of it, thanks to the stinking Schmoog
+# who succeeded to become the sole ponsor --the spies that they are-- of, hear
+# me well: Linux security, namely spender and PaX Team gave up after all the
+# ripping of their code under the underhanded schemes of the aforementioned)
+# [In my grsec-hardened Devuan], and it is, in essence, Debian corrected for
+# systemd intrusion, the log file into which rsyslog logs all the grsec
+# exec_logging and audit_chdir for me is /var/log/kern.log. During my years
+# with Gentoo it used to be /var/log/messages. Edit according to where you get
+# the logging.
+sudo -s tail -1 /var/log/kern.log
+sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
+# 'str0' stands for 'string 0', i.e. from where in the log we will later, at
+# termination of this session, grep out the excerpt of the log.
+str0=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+echo \$str0: $str0
+# I've learned to use mktemp a little in the meantime, but not yet so well, and
+# it's too many changes needed. Only uncenz-2nd uses mktemp at this time...
+echo $str0 > .uncenz-log_str0
+cat .uncenz-log_str0
+read FAKE
 echo "To end a session issue \"uncenz-kill <Enter>\" from its terminal."
+
+# An/more logging/other include(s) might be added here. I'll tie it to $2
+# (ermh, for now).  Pls. note that if you give empty string for $1 arg, then
+# you can easily/effectively get a $2 <another-include> to be run Like:
+# uncenz-1st "" <another-include>
+# That other script must also reside in /usr/local/bin and other conditions.
+# See the include with $1 above.
+# Also note that this will silently just be ignored if any of the conditions do
+# not hold.
+if [ "$2" ] && [ -n "$2" ]; then
+	include_script_2=$2
+	echo \$include_script_2: $include_script_2
+	if [ -e "/usr/local/bin/$include_script_2" ] && [ -x "/usr/local/bin/$include_script_2" ]; then 
+			/usr/local/bin/$include_script_2
+		else
+			echo "The include script you gave:"
+			echo "$include_script_2"
+			echo "does not exist, or is not in the /usr/local/bin/ directory,"
+			echo "or is not executable"
+			sleep 3
+			show_help
+			exit 0
+	fi
+# Uncomment 4 lines below if you're struggling to get this to work.
+#else
+#			echo "The include script you gave:"
+#			echo "$include_script_2"
+#			echo "has not been supplied on the command line, or is an empty string,"
+fi
+# I added a similar snippet in the uncenz-kill, without which this $2 include
+# may not work (say if it's about extracting from another log).
 
 exit 0
 # vim: set tabstop=4 expandtab:

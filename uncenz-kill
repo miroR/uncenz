@@ -11,10 +11,79 @@
 # results if you try and run concurrent sessions or if you try and run another
 # nonrelated instance of ffmpeg or dumpcap/tcpdump process.
 #
+function show_help {
+	echo
+	echo "==============================================================="
+	echo
+	echo "$0 -- the exit/terminate script of uncenz,"
+	echo "quits/terminates the the screencasting and packet capturing"
+	echo
+	echo "Usage: $0 <the-other-include>"
+	echo "        (if run in the uncenz-1st)"
+	echo ""
+	echo "	Without arguments uncenz captures in promiscuous mode,"
+	echo "	on all available interfaces."
+	echo
+	echo "	With first argument, an executable file \$include_filter_run,"
+	echo "	it starts the $dumper with whatever its capture filter contains."
+	echo "	\$include_filter_run is named with no spaces, and resides"
+	echo "	where the $0 is regularly run from, usually in"
+	echo "	/usr/local/bin ."
+	echo
+}
+
+hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
+# Optional include here, named 2 because it's (usually) the back script (that's
+# why the 2b) of the include 2 in uncenz-1st. Often both scripts must be there
+# for this optional include, completely ignored if not there, to work. Only in
+# uncenz-kill it's the first argument to $0, not the second.
+if [ "$1" ] && [ -n "$1" ]; then
+	include_script_2b=$1
+	echo \$include_script_2b: $include_script_2b
+	if [ -e "/usr/local/bin/$include_script_2b" ] && [ -x "/usr/local/bin/$include_script_2b" ]; then 
+			/usr/local/bin/$include_script_2b
+		else
+			echo "The include script you gave:"
+			echo "$include_script_2b"
+			echo "does not exist, or is not in the /usr/local/bin/ directory,"
+			echo "or is not executable"
+			show_help
+			sleep 3
+			echo "But you probably need to run the rest of $0"
+			sleep 2
+	fi
+else
+			# Maybe better do nothing here, such as: 'echo -n', or no else at all?
+			echo "The include script you gave:"
+			echo "$include_script_2b"
+			echo "has not been supplied on the command line, or is an empty string,"
+fi
+
+# First thing to (regularly) do (the above snippet just opens more options) is
+# take the excerpt from system log. We already have what to stick in the same
+# $str0 (see uncenz-1st) taken after uncenz-1st did all it's starting of cast
+# and trace taking/dumping.
+str0=$(cat .uncenz-log_str0)
+echo \$str0: $str0
+# In the same fashion we take the string for grep'ing on system log below, but
+# we call it str1 this time.
+sudo -s tail -1 /var/log/kern.log
+sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
+# 'str1' stands for 'string 0', i.e. from where in the log we will later, at
+# termination of this session, grep out the excerpt of the log.
+str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+echo \$str1: $str1
+# (just no need to stick it into a file)
+# 300000 is just a very likely sufficiently high integer
+sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
+	| grep -aE -B300000 $str1 \
+	> ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
+chmod 600 ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
+ls -l ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
+read FAKE
 dumper=$(cat .uncenz-dumper)
 echo \$dumper: $dumper
 #read FAKE
-hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
 ssllast=SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
 echo \$ssllast: $ssllast
@@ -50,7 +119,7 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
 	echo " and opened https pages, it may have malfunctioned. "
 	echo
 	echo "							^^^	  ^^^^^^^^^^^^^ "
-	echo "[[play some sound here]]"
+	aplay -q ~/tvtube.wav
 	echo
 	echo "But if no SSL-key logging browser was active, all may still be fine."
 	echo
@@ -65,12 +134,12 @@ fi
 #read FAKE
 rm ~/$ssllast_active
 
-ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep x11grab | awk '{ print $2}'`
+ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
 if [ "$dumper" == "dumpcap" ]; then
-	dupid=`sudo -s ps aux | egrep '[d]umpcap' | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | egrep '[d]umpcap' | grep -v grep | awk '{ print $2}'`
 fi
 if [ "$dumper" == "tcpdump" ]; then
-	dupid=`sudo -s ps aux | egrep '[t]cpdump' | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | egrep '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
 
 echo \$ffpid is: # ff for ffmpeg
@@ -82,6 +151,13 @@ echo $dupid
 echo "To kill ffmpeg and dumpcap/tcpdump, hit Enter"
 echo "Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump"
 echo "with issuing: Ctrl-C"
+echo "(but the excerpt from system log for the session will not include"
+echo "what you do next from here)"
+# it already does not include the uncenz-{1st,kill}'s script messages (well it
+# does but only a few), for that matter, and it shouldn't. This need be
+# streamlined for events concerning your work on the internet, not these tools
+# (although I might include a debugging option for logging the script's
+# messages in the future).
 
 read FAKE
 
