@@ -8,27 +8,6 @@ aware that a few things from my scripts definitely need to be done, and are
 usually done in programs, differently, but I currently simply don't know nor
 have time to learn to do better.
 
-These first few lines concern the very latest updates.
-
-The scripts are here which I haven't thought out completely about how to use
-some of them:
-
-hhmmss2sec
-
-dump_perl_repl.sh
-
-uncenz-ipt_conf_states.sh
-
-dump_dLo.sh
-
-The purpose of each of them is explained inside their own text.
-
-And there is the include functionality, pls. read in the example script:
-
-uncenz-include-vimeo
-
-Now generally about uncenz and how to use it.
-
 Lest I forgot: while this can surely be rewritten completely and employed under
 M$ Windoze (nota bene: similar considerations apply to Schmapple Mac,
 the-other-rich-man-who-has-no-more-riches-any-longer OS), I
@@ -45,10 +24,9 @@ me to apply them (again: I'm not really a programmer, I take time to do
 things...)
 
 Requirements to use uncenz (the scripts themselves you can just unpack into
-your /usr/local/bin ) are: FFmpeg, Dumpcap (comes with Wireshark). Surely
-Tcpdump could be used instead of the latter, and maybe simply by replacing the
-string dumpcap with tcpdump. But I'm in no hurry yet to try and accomodate for
-Tcpdump, as Dumpcap is faily good too.
+your /usr/local/bin ) are: FFmpeg, Tcpdump (or Dumpcap which comes with
+Wireshark). But for full use of these sets of scripts, you need to modify them
+for your own machine.
 
 Uncenz can as be useful in various sorts of network problems analysis
 completely unrelated to censorship, but my primary motivation to write it was
@@ -63,7 +41,7 @@ The latter is often (not always, can have completely different motives, e.g.
 theft, behind it, documenting of which being equally or, some would say, more
 useful!) [often] related to the censorship issue since regimatic censorship is
 often accompanied with an array of possible attacks deliberate by same or
-related parties or purposefully allowed from non-related parties via sly means.
+related parties or purposefully allowed to non-related parties via sly means.
 Often those attacks are intentional or allowed by the powerful subjects on the
 poor user, such as his/her own provider or possibly beyond.
 
@@ -75,14 +53,13 @@ on Gentoo Forums.
 
 Or try and study my collection of (not all censorship related, esp. not the
 later entries, but some were) screencasts and traces at:
-http://www.CroatiaFidelis.hr/foss/cap/
+https://www.CroatiaFidelis.hr/foss/cap/
 
 For SSL capturing see:
 https://wiki.wireshark.org/SSL
 
-You certainly need to understand and modify a few things if,
-say, your display is not 1024x768 or 800x600 (which are offered in the script by
-mere uncommenting some lines and commenting out other lines), and probably other
+You certainly need to understand and modify a few things if, say, your display
+is not 1366x768 (but find more in the uncenz-1st script), and probably other
 things.
 
 Currently the only way to set up some of the functionality in uncenz for your
@@ -91,13 +68,10 @@ environment is: uncommenting and modifying the scripts :-) .
 E.g., if you don't use grsecurity hardened kernel, you need to do some
 uncommenting. I'll make it an include, some day. (Not in a hurry.)
 
-However, the dumpcap line can now be dealt with via a completely new include of
-your own.
-
 And, for complete use, $SSLKEYLOGFILE on Wireshark's Wiki above needs to be
 understood and applied. It makes little sense to record the network, without
 logging the SSL-keys, so if you can't set your SSL-keys to be logged, there's
-little use of uncenz for your either. Set off on the steep learning curve,
+little use of uncenz for you either. Set off on the steep learning curve,
 Tuxian!
 
 No attempt is made to explain the SSL capturing in this set of scripts, but the
@@ -107,11 +81,10 @@ the session can be found more easily and extracted, if presentation of the
 session where censorship happened is needed, when the effemeral keys need to be
 published.
 
-Pls. also note that with this initial presentation of this program-to-be, or
-this idea for a program to develop, you probably will not get any meaningful
-results if you try and run concurrent sessions. Limiting it to one session
-allowed per minute is confortable for me. Else, delete what uncenz-ts wrote,
-and start sooner.
+Pls. also note that with this presentation of this program-that-should-become,
+you probably will not get any meaningful results if you try and run concurrent
+sessions (of uncenz-1st). Limiting it to one session allowed per minute is
+confortable for me.  Else, delete what uncenz-ts wrote, and start sooner.
 
 My method (tested only on typical wired connection) cosists of two phases:
 
@@ -123,8 +96,10 @@ non-experts, before any prolonged online absolutely not under their complete
 control (complete control of own machines is the goal)
 
 first) starting the first phase of uncenz by running the script uncenz-1st
-(optionally with the first argument being an include script) which starts
-network packet capturing and ffmpeg screencast capturing
+(optionally with the first argument being an include filter-script) which starts
+network packet capturing and ffmpeg screencast capturing, or empty, and a
+second arg for additional second-type include (likely another log-extraction
+include, but could be other), see the uncenz-1st and uncez-kill for those args.
 
 second) physically connecting to the internet via the provider's router (the
 packet capturing being on, and the screencasting being on) by connecting the
@@ -139,66 +114,53 @@ socket
 fifth) killing the still running uncenz-1st started processes (never kill it
 before first disconnecting physically) by issuing uncenz-kill
 
-Now comes the part that is unfinished and/or broken. Just skip to BROKEN-END
-(else try to figure out my idea btwn BROKEN-START and BROKEN-END. Should be
-realized some day...)
+phase second)
 
-BROKEN-START
-( Pls also note that the script in the repo:
-hhmmss2sec
-is a recent try in this direction)
+All these documenting files usually (although it may not be essential to do so)
+need to be transferred in some secure air-gapped way off the online system.
+They all need to be put in the same empty directory, where then they can be
+worked with,
 
-This first phase gets you files such as Screen_150131_0232_XXX.mkv and
-dump_150131_0232_XXX.pcap if uncenz naming is used (where XXX is the first
-three letters of your hostname).
+first) the scripts from the workPCAPs (to be able to run on its results the
+uncenz-2nd the real second phase of uncenz set of scripts).
 
-This uncenz-2nd script, for now, only does one thing and not too well.
+For work PCAPs see https://github.com/miroR/workPCAPs . It will make use of
+scripts from:
+https://github.com/miroR/tshark-streams and
+https://github.com/miroR/tshark-hosts-conv 
+to do (the tshark-streams) extracting of the streams on your captured trace,
+and (the tshark-hosts-conv) a good listing of hosts and conversations as well
+as extracting of each conversation to a separate PCAP.
 
-It takes two arguments or assumes their defaults.
+second) the uncenz-2nd. It can, from v0.40, open all documents of the event:
+mplayer <the-screencast> in background, open all the PCAPs (just mentioned
+above) and view in Vim all the text files that tshark-hosts-conv took, along
+with the excerpt of the log file that got written with your logger (rsyslog in
+Devuan/Debian) during the event.
 
-$1 is usually previously archived system log --the file that during the time of
-screencasting/packet capturing from the first phase was logged into in the
-online computer under name of /var/log/messages or other name. If it is not
-named "messages" (the default), you need to provide $1
+There are also other includes/snippets of code that can be uncommented to get
+more functionalities to work. Peruse the scripts to get familiar with all that
+is offered.
 
-$2 is a list of (timestamp-named) files (given as arg 2, else uncenz-2nd
-construes the list if files follow the naming in my method, which they do if
-they were produced with uncenz-1st). Haven't yet tested providing arg 2. This
-script lists fine the uncenz-1st made files as explained next.
+Again, this works on my machines, with programs installed in my machines, such
+as extracting from /var/log/kern.log that rsyslog logs into, with my choice of
+editor (Vim) and other programs. And in this phase of the project, all those
+are hardwired. And almost all of them can be made into variables, which would
+then make for a real program, as it could then work with programs of your
+choice on your system. But I'd first need to get results of how it was applied
+on other systems, and what modifications needed to be made for these set of
+scripts to to work on other systems. No planning of doing that myself, at this
+time.
 
-All these documenting files usually need to be transferred in some secure
-air-gapped way off the online system. They all need to be put in the same empty
-directory, where then they can be worked with this uncenz-2nd, the second phase
-of uncenz set of scripts.
-
-So we're not anymore in the online system for the uncenz-2nd, but, say in our
-air-gapped system safe off the internet.
-
-uncenz-2nd runs a for loop on the system log (default "messages", the archived
-messages from the online system logged into when all the uncenz-1st sessions
-were taken) for each of the items in the list of timestamps (the timestamps are
-the same as the timestamps made with the uncenz-1st. uncenz-2nd recovers those.
-
-uncenz-2nd first greps for 'ffmpeg -f x11grab' lines containing the timestamp
-for each item of the list, and takes, for each item of the list separately (in
-the for loop), a number of --after-context lines from there.
-
-uncenz-2nd then, on that portion of the system log stowed temporarily in
-$syslog_${i}_leg_tmp.log grep's for only the first occurence of 'carrier lost',
-and taking the --before-context, it stows all that was logged in $syslog during
-that particular run of uncenz-1st in the final file for each iteration which
-it names $syslog_${i}_leg.log
-BROKEN-END
-
-That is what this script currently does. The aim is, however, to get it to do
-so much more, such as, exampli gratia, list the exact connections made during a
-particular session from /var/log/conntrackd-stats.log (for which
+That is what this set of scripts currently does/can do. The aim is, however, to
+get it to do so more, yet, such as, exampli gratia, list the exact connections
+made during a particular session from /var/log/conntrackd-stats.log (for which
 conntrack-tools need to be installed and conntrackd run as daemon). And some
 other parameters and whatever else might be necessary to make censorship
 irrefutably undeniable and intrusions identified and undeniable with as little
 effort as possible, and all that workable for non-expert users.
 
-If I make it (which can not happen soon, I'm too busy elsewhere). And if others
+If I make it (which can not happen soon, I'm not so talented). And if others
 do, thanks for using my idea (but see paragraph below).
 
 During all the time that I have been slowly progressing toward this point in
@@ -209,13 +171,3 @@ me know if there exists something similar to my idea. Not a good thing
 inventing hot water. (And while you're possibly trying to contact me, be aware
 of the censorship and related attacks. Use, if you can, the uncenz to document
 that you tried to contact me!)
-
-There is a simple standalone script, separate from the set, that will often be
-more practical to use: just dumpcamp'ing. Much simpler, but it's akin to
-recording only voice and not picture ;-) . You can't show with blatant evidence
-to non-experts (which is very much needed!) the censorship that happened, in
-cases where stuff like, e.g.  clickjacking and such visual events happened.
-
-That standalone no-ffmpeg is all in just one standalone script:
-
-uncenz-only-dump.sh

@@ -319,6 +319,7 @@ else
 	ls -ltr | tail -4 ; sleep 1
 fi
 
+# A sample modification:
 #	ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 10 -i :1.0 \
 #		-c:v libx264 -preset ultrafast -threads 0 \
 #		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
