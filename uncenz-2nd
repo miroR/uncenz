@@ -26,12 +26,31 @@ function ask()
         *) return 1 ;;
     esac
 }
+# When this rewrite was introduced, it could only work on all the PCAPs in a
+# dir. Introducing (ah, getopts would be best, but the strategy to go for is
+# far from clear to me yet) the list of PCAPs as first option (as in workPCAPs
+# main script of some time by now).
+if [ $# -eq 0 ]; then
+	echo "give (a list of) file(s)"
+	exit 0
+fi
+
 # You need to be in the directory where you ran uncenz-1st. First the
 # PCAP-work.sh should be run (see workPCAPs link above). And the results of its
 # run remaining in this same dir, also the dump_<the-time-stamp>_messages and
-# the screencasts need to be in this same directory.Or elsewhere (but that's
+# the screencasts need to be in this same directory. Or elsewhere (but that's
 # yet TO DO). Also dump_<the-time-stamp>_r represents another log extracted. 
-for i in $(ls -1 *.pcap|sed 's/\.pcap//'); do
+PCAPs=$1
+echo \$PCAPs: $PCAPs
+read FAKE
+PCAPs_tr=$(ls -1 $1 | tr '\012' ' ')
+echo \$PCAPs_tr: $PCAPs_tr
+read FAKE
+echo "ls -1 \$PCAPs|sed 's/\.pcap//'"
+echo "ls -1 $PCAPs|sed 's/\.pcap//'"
+ls -1 $PCAPs|sed 's/\.pcap//'
+read FAKE
+for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	ls -l $i.pcap
 	read FAKE
 	TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
@@ -80,13 +99,18 @@ for i in $(ls -1 *.pcap|sed 's/\.pcap//'); do
 	ls -l ${i}_tHostsConv/
 	read FAKE 
 	cd  ${i}_tHostsConv 
-	ls -1tr . ../${i}_messages  ../${i}_r| grep -v '\.pcap\|SSLKEYLOGFILE.txt'|grep -v '\.:'|grep '[[:print:]]'
+	ls -1tr . ../${i}_messages  ../${i}_r | grep -v '\.pcap\|SSLKEYLOGFILE.txt'\
+		| grep -v '\.:'|grep '[[:print:]]'
 	read FAKE 
-	ls -l $(ls -1tr . ../${i}_messages ../${i}_r | grep -v '\.pcap\|SSLKEYLOGFILE.txt'|grep -v '\.:'|grep '[[:print:]]')
+	ls -l $(ls -1tr . ../${i}_messages ../${i}_r \
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt'|grep -v '\.:'|grep '[[:print:]]')
 	echo "View these files in Vim?" 
 	ask 
 	if [ "$?" == 0 ]
-		then vim -p $(ls -1tr . ../${i}_messages ../${i}_r | grep -v '\.pcap\|SSLKEYLOGFILE.txt' | grep -v '\.:'|grep '[[:print:]]')
+		then vim -p \
+			$(ls -1tr . ../${i}_messages ../${i}_r \
+			| grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
+			| grep -v '\.:'|grep '[[:print:]]')
 	fi
 	cd - 
 	read FAKE 
