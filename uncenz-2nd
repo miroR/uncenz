@@ -12,7 +12,7 @@
 # https://github.com/miroR/uncenz
 #
 # recommended to run on results of:
-# https://github.com/miroR/workPCAPs 
+# https://github.com/miroR/workPCAPs
 #
 # Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
 #
@@ -39,7 +39,7 @@ fi
 # PCAP-work.sh should be run (see workPCAPs link above). And the results of its
 # run remaining in this same dir, also the dump_<the-time-stamp>_messages and
 # the screencasts need to be in this same directory. Or elsewhere (but that's
-# yet TO DO). Also dump_<the-time-stamp>_r represents another log extracted. 
+# yet TO DO). Also dump_<the-time-stamp>_r represents another log extracted.
 PCAPs=$1
 echo \$PCAPs: $PCAPs
 read FAKE
@@ -62,70 +62,81 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	ls -l ${i}_tHostsConv/
 	read FAKE
 	scr=$(echo $i|sed 's/dump_\(.*\)/Screen_\1.mkv/')
-	ls -l ./$scr 
-	ask 
+	ls -l ./$scr
+	ask
 	if [ "$?" == 0 ]
-		then mplayer -really-quiet ./$scr & scr_pid=$! 
+		then mplayer -really-quiet ./$scr & scr_pid=$!
 		echo $scr_pid > $TMP/${i}_scr.pid
 		echo $(cat $TMP/${i}_scr.pid)
-		read FAKE 
-	fi 
+		read FAKE
+	fi
 	cd ${i}_tHostsConv/
 	ls -1tr *.pcap
-	read FAKE 
+	read FAKE
 	echo "View these PCAPs, one by one?"
-	ask 
+	ask
 	if [ "$?" == 0 ]; then
 		num_pid=0
 		for j in $(ls -1tr *.pcap); do
 			wireshark $j &
 			pid=$!
 			echo $pid
-			echo $pid > $TMP/${i}_${num_pid}
+			echo $pid > $TMP/${i}_${num_pid}.pid
 			read FAKE
-			ls -l $TMP/${i}_${num_pid}
+			ls -l $TMP/${i}_${num_pid}.pid
 			read FAKE
-			cat $TMP/${i}_${num_pid}
+			cat $TMP/${i}_${num_pid}.pid
 			read FAKE
 			let num_pid=$num_pid+1
 			echo $num_pid: $num_pid
 			read FAKE
-		done 
-	fi 
-	read FAKE 
-	ls -1tr *.pcap
-	cd - 
-	read FAKE 
-	ls -l ${i}_tHostsConv/
-	read FAKE 
-	cd  ${i}_tHostsConv 
-	ls -1tr . ../${i}_messages  ../${i}_r | grep -v '\.pcap\|SSLKEYLOGFILE.txt'\
-		| grep -v '\.:'|grep '[[:print:]]'
-	read FAKE 
-	ls -l $(ls -1tr . ../${i}_messages ../${i}_r \
-		| grep -v '\.pcap\|SSLKEYLOGFILE.txt'|grep -v '\.:'|grep '[[:print:]]')
-	echo "View these files in Vim?" 
-	ask 
-	if [ "$?" == 0 ]
-		then vim -p \
-			$(ls -1tr . ../${i}_messages ../${i}_r \
-			| grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
-			| grep -v '\.:'|grep '[[:print:]]')
+		done
 	fi
-	cd - 
-	read FAKE 
+	read FAKE
+	ls -1tr *.pcap
+	cd -
+	read FAKE
 	ls -l ${i}_tHostsConv/
-	read FAKE 
+	read FAKE
+	cd  ${i}_tHostsConv
+	ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r ../${i}_rn \
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt'\
+		| grep -v '\.:'|grep '[[:print:]]'
+	read FAKE
+	touch $TMP/${i}_list
+	# ../${i}_tHostsConv/tsh*log is old-style, will be abandoned
+	# for ../${i}_tHostsConv.log
+	for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
+		../${i}_tHostsConv/tsh*log ../${i}_r ../${i}_rn \
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt' | grep -v '\.:' \
+		| grep '[[:print:]]'); do
+		if [ -e "$file" ]; then
+			echo "$file" >> $TMP/${i}_list
+		fi
+	done
+	echo "The list of files to view in Vim is prepared."
+	echo "And if you want to add other files for viewing now,"
+	echo "edit the list."
+	echo "Open the list in Vim for editing?"
+	ask
+	if [ "$?" == 0 ]; then
+		vim $TMP/${i}_list
+	fi
+	echo "Now view these files in Vim?"
+	ask
+	if [ "$?" == 0 ]; then
+		vim -p \
+			$(cat $TMP/${i}_list)
+	fi
+	cd -
+	read FAKE
+	ls -l ${i}_tHostsConv/
+	read FAKE
 	echo "Terminate all windows opened with this run of $0?"
 	ask
 	if [ "$?" == 0 ]; then
-		echo cat $TMP/${i}_scr.pid
-		cat $TMP/${i}_scr.pid
-		kill $(cat $TMP/${i}_scr.pid)
-		sleep 0.1
-		rm -v $TMP/${i}_scr.pid
-		for wsh in $(ls -1 $TMP/${i}_*); do
-			pid=$(cat $wsh)
+		for curjobs in $(ls -1 $TMP/${i}*.pid); do
+			pid=$(cat $curjobs)
 			echo \$pid: $pid
 			echo kill $pid
 			kill $pid
@@ -135,7 +146,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	fi
 	trap "rm -rf $TMP/" EXIT INT TERM
 	export TMP
-done 
+done
 ls -l $TMP
 read FAKE
 trap "rm -rf $TMP/" EXIT INT TERM
