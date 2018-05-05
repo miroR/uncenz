@@ -20,18 +20,21 @@
 #
 function ask()
 {
-    echo -n "$@" '[y/n] ' ; read ans
-    case "$ans" in
-        y*|Y*) return 0 ;;
-        *) return 1 ;;
-    esac
+	echo -n "$@" '[y/n] ' ; read ans
+	case "$ans" in
+		y*|Y*) return 0 ;;
+		*) return 1 ;;
+	esac
 }
 # When this rewrite was introduced, it could only work on all the PCAPs in a
 # dir. Introducing (ah, getopts would be best, but the strategy to go for is
 # far from clear to me yet) the list of PCAPs as first option (as in workPCAPs
 # main script of some time by now).
 if [ $# -eq 0 ]; then
-	echo "give (a list of) file(s)"
+	echo "give (a list of) PCAP(s)"
+	echo "(if globbing, you need to quote it, e.g.:"
+	echo "uncenz-2nd \"*.pcap\")"	# I'm really not an expert to
+									# nimbly rewrite this more comfortably
 	exit 0
 fi
 
@@ -100,7 +103,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	read FAKE
 	cd  ${i}_tHostsConv
 	ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r ../${i}_rn \
-		| grep -v '\.pcap\|SSLKEYLOGFILE.txt'\
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1'\
 		| grep -v '\.:'|grep '[[:print:]]'
 	read FAKE
 	touch $TMP/${i}_list
@@ -108,7 +111,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	# for ../${i}_tHostsConv.log
 	for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
 		../${i}_tHostsConv/tsh*log ../${i}_r ../${i}_rn \
-		| grep -v '\.pcap\|SSLKEYLOGFILE.txt' | grep -v '\.:' \
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
 		| grep '[[:print:]]'); do
 		if [ -e "$file" ]; then
 			echo "$file" >> $TMP/${i}_list
@@ -129,8 +132,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 			$(cat $TMP/${i}_list)
 	fi
 	cd -
-	read FAKE
-	ls -l ${i}_tHostsConv/
 	read FAKE
 	echo "Terminate all windows opened with this run of $0?"
 	ask
