@@ -67,11 +67,11 @@ if [ $# -eq 0 ]; then
 	echo "the script should manipulate it and get you all the files listed."
 	echo
 	echo "Also the url without listing can be given e.g.:"
-	echo "http://www.CroatiaFidelis.hr/foss/cap/cap-161015-qemu-devuan/"
+	echo "https://www.CroatiaFidelis.hr/foss/cap/cap-161015-qemu-devuan/"
 	echo "or:"
-	echo "http://www.CroatiaFidelis.hr/foss/cap/cap-161015-qemu-devuan"
+	echo "https://www.CroatiaFidelis.hr/foss/cap/cap-161015-qemu-devuan"
 	echo ", but only if that dir contains exactly the ls-1 listing,"
-	echo "not some other like ls-1pgX where X is [1-9]."
+	echo "not some other like ls-1someMore."
 	echo "Not all the necessary checking is performed, no time,"
 	echo "and if some of the normal requirements is not there (such as"
 	echo "missing http:// at the beginning of the url, the script"
@@ -263,7 +263,21 @@ if [ -s "the_subdirs.txt" ]; then
 		cat ${the_list}_cor | grep $the_subdir \
 			| sed "s@\(.*\)@wget -nc $the_url\1@" >> dLo.sh_subdir
 	done
-	all_subdirs=$(cat the_subdirs.txt | tr '\012' '\|' | sed "s/|$//")
+	echo "cat the_subdirs.txt|sed 's/\(.*\)/\1\//'"
+	cat the_subdirs.txt|sed 's/\(.*\)/\1\//' >  the_subdirs.txtR
+	read FAKE
+	all_subdirs=$(cat the_subdirs.txt|sed 's/\(.*\)/\1\//'|sed 's/ //g')
+	echo \$all_subdirs: $all_subdirs
+	read FAKE
+	echo cat the_subdirs.txtR
+	cat the_subdirs.txtR
+	read FAKE
+	mv -v the_subdirs.txtR the_subdirs.txt
+	echo cat the_subdirs.txt
+	cat the_subdirs.txt
+	read FAKE
+	echo "cat the_subdirs.txt | tr '\012' '\|' | sed \"s/|$//\""
+	all_subdirs=$(cat the_subdirs.txt | tr '\012' '|' | sed "s/|$//")
 	echo \$all_subdirs: $all_subdirs
 	read FAKE
 	cat ${the_list}_cor | grep -Ev $all_subdirs \
