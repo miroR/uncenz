@@ -103,13 +103,13 @@ echo "Do you want me to remove empty *SSLKEYLOGFILE.txt's?"
 # go past this point without giving it a "y"... Sleeping a little will
 # hopefully correct it. Script still too fresh for me to remove all the read
 # FAKE's.
-ask
-if [ "$?" == 0 ]; then
-	for sslkeylogfile in $(ls -1 *SSLKEYLOGFILE.txt); do
-		if [ ! -s "$sslkeylogfile" ]; then
-			ls -l $sslkeylogfile
-			rm -v $sslkeylogfile
-		fi
-	done
-fi
+#ask
+#if [ "$?" == 0 ]; then
+for sslkeylogfile in $(ls -1 *SSLKEYLOGFILE.txt); do
+	if [ ! -s "$sslkeylogfile" ]; then
+		ls -l $sslkeylogfile
+		rm -v $sslkeylogfile
+	fi
+done
+#fi
 if [ -e "prev" ]; then rm -f prev ; fi

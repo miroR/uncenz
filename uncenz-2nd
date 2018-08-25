@@ -11,7 +11,7 @@
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
-# recommended to run on results of:
+# This script runs on the produce of:
 # https://github.com/miroR/workPCAPs
 #
 # Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
@@ -38,11 +38,12 @@ if [ $# -eq 0 ]; then
 	exit 0
 fi
 
-# You need to be in the directory where you ran uncenz-1st. First the
-# PCAP-work.sh should be run (see workPCAPs link above). And the results of its
-# run remaining in this same dir, also the dump_<the-time-stamp>_messages and
-# the screencasts need to be in this same directory. Or elsewhere (but that's
-# yet TO DO). Also dump_<the-time-stamp>_r represents another log extracted.
+# You need to be in the directory where you ran uncenz-1st (or where you copied
+# over all its produce, i.e. the dump_<the-time-stamp>_messages and the
+# screencasts and other. The dump_<the-time-stamp>_r represents another log
+# extracted. That can be by any script you wrote and ran as third arg to
+# uncenz-1st. First the PCAP-work.sh is run (see workPCAPs link above). Then
+# this script.
 PCAPs=$1
 echo \$PCAPs: $PCAPs
 read FAKE
@@ -57,12 +58,12 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	ls -l $i.pcap
 	read FAKE
 	TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
-	tmp_dir=$TMP
-	export tmp_dir
 	ls -ld $TMP
 	ls -l $TMP
 	read FAKE
+	ls -ld ${i}_tHostsConv/
 	ls -l ${i}_tHostsConv/
+	ls -ld ${i}_tHostsConv/
 	read FAKE
 	scr=$(echo $i|sed 's/dump_\(.*\)/Screen_\1.mkv/')
 	ls -l ./$scr
@@ -74,53 +75,134 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 		read FAKE
 	fi
 	cd ${i}_tHostsConv/
+	echo "ls -1tr *.pcap"
 	ls -1tr *.pcap
 	read FAKE
-	echo "View these PCAPs, one by one?"
-	ask
-	if [ "$?" == 0 ]; then
-		num_pid=0
-		for j in $(ls -1tr *.pcap); do
-			wireshark $j &
-			pid=$!
-			echo $pid
-			echo $pid > $TMP/${i}_${num_pid}.pid
+	echo "Possible old (previous) PCAPlists: "
+	for old_PCAPlist in $(ls -1 ../${i}_PCAPlist_*); do
+		if [ -e "$old_PCAPlist" ]; then
+		echo "Possible candidate for resumption:"
+			ls -l $old_PCAPlist
+			cat $old_PCAPlist
+			ls -l $old_PCAPlist
+		echo "(possible candidate for resumption)"
+		read FAKE
+		fi
+	done
+	for old_PCAPlist in $(ls -1 ../${i}_PCAPlist_*); do
+		echo "Seen all lists, can currently resume only one of them."
+		echo "Resume the old PCAPlist: "
+		ls -l $old_PCAPlist
+		cat $old_PCAPlist
+		echo " ?"
+		ask
+		if [ "$?" == 0 ]; then
+			cat $old_PCAPlist > $TMP/${i}_PCAPlist
+		else
+			echo "I guess then, we should start by opening all \${i}*.pcap"
+			#But it can't be in this else clause. Where?
+			echo "(another loop for that)"
+		fi
+	done
+	if [ ! -e "$TMP/${i}_PCAPlist" ] || [ ! -s "$TMP/${i}_PCAPlist" ]; then
+		echo "Create the PCAPlist: "
+		echo "${i}_PCAPlist ?"
+		ask
+		if [ "$?" == 0 ]; then
+			ls -1tr *.pcap > $TMP/${i}_PCAPlist
+			echo "cat $TMP/${i}_PCAPlist"
+			cat $TMP/${i}_PCAPlist
 			read FAKE
-			ls -l $TMP/${i}_${num_pid}.pid
-			read FAKE
-			cat $TMP/${i}_${num_pid}.pid
-			read FAKE
-			let num_pid=$num_pid+1
-			echo $num_pid: $num_pid
-			read FAKE
-		done
+		else
+			echo "User doesn't want to open PCAPs in this run."
+		fi
 	fi
-	read FAKE
-	ls -1tr *.pcap
+	if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
+		echo "Open these PCAPs with Wireshark?"
+		ask
+		if [ "$?" == 0 ]; then
+			num_pid=0
+			for j in $(cat $TMP/${i}_PCAPlist); do
+				wireshark -ossl.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+				pid=$!
+				echo $pid
+				echo $pid > $TMP/${i}_${num_pid}.pid
+				#read FAKE
+				ls -l $TMP/${i}_${num_pid}.pid
+				#read FAKE
+				cat $TMP/${i}_${num_pid}.pid
+				#read FAKE
+				let num_pid=$num_pid+1
+				echo $num_pid: $num_pid
+				#read FAKE
+			done
+		else
+			echo "User doesn't want to open PCAPs in this run"
+			echo "(but the PCAPlist has been created and is not empty)."
+		fi
+	fi
 	cd -
 	read FAKE
+	ls -dl ${i}_tHostsConv/
 	ls -l ${i}_tHostsConv/
+	ls -dl ${i}_tHostsConv/
 	read FAKE
 	cd  ${i}_tHostsConv
-	ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r ../${i}_rn \
+	ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r \
 		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1'\
 		| grep -v '\.:'|grep '[[:print:]]'
 	read FAKE
 	touch $TMP/${i}_list
-	# ../${i}_tHostsConv/tsh*log is old-style, will be abandoned
-	# for ../${i}_tHostsConv.log
-	for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
-		../${i}_tHostsConv/tsh*log ../${i}_r ../${i}_rn \
-		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
-		| grep '[[:print:]]'); do
-		if [ -e "$file" ]; then
-			echo "$file" >> $TMP/${i}_list
+	echo "Possible old (previous) lists: "
+	for old_list in $(ls -1 ../${i}_list_*); do
+		if [ -e "$old_list" ]; then
+		echo "Possible candidate for resumption:"
+			ls -l $old_list
+			cat $old_list
+			ls -l $old_list
+		echo "(possible candidate for resumption)"
+		read FAKE
 		fi
 	done
+	for old_list in $(ls -1 ../${i}_list_*); do
+		echo "You've seen all lists, we can currently resume only one of them."
+		echo "Resume the old list: "
+		ls -l $old_list
+		cat $old_list
+		echo " ?"
+		ask
+		if [ "$?" == 0 ]; then
+			cat $old_list > $TMP/${i}_list	
+		fi
+	done
+	# ../${i}_tHostsConv/tsh*log is old-style, will be abandoned
+	# for ../${i}_tHostsConv.log
+	if [ ! -e "$TMP/${i}_list" ] || [ ! -s "$TMP/${i}_list" ]; then
+		echo "No list resumed. Creating the list:"
+		echo "${i}_list"
+		echo "now mandatory."
+		for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
+			../${i}_tHostsConv/tsh*log ../${i}_r \
+			| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
+			| grep '[[:print:]]'); do
+			if [ -e "$file" ]; then
+				echo "$file" >> $TMP/${i}_list
+			fi
+		done
+	fi
+	if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
+		# Adding the PCAPlist to be shown as the previous to last tab in Vim
+		echo $TMP/${i}_PCAPlist >> $TMP/${i}_list
+	fi
+	# Adding the list to be shown as the last tab in Vim
+	echo $TMP/${i}_list >> $TMP/${i}_list
 	echo "The list of files to view in Vim is prepared."
-	echo "And if you want to add other files for viewing now,"
+	echo "And if you want to add other files for viewing next,"
 	echo "edit the list."
+	echo "Until you reach/unless you've reached the needed choice,"
+	echo "there be more optional re-editing the list and re-viewing,"
 	echo "Open the list in Vim for editing?"
+	echo "(it will also open in a tab in Vim for editing later)"
 	ask
 	if [ "$?" == 0 ]; then
 		vim $TMP/${i}_list
@@ -130,6 +212,70 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	if [ "$?" == 0 ]; then
 		vim -p \
 			$(cat $TMP/${i}_list)
+	fi
+	#echo $ts
+	# At this stage, two different lists to save, one to called simply list,
+	# the other PCAPlist.
+	# Both, if saved, will get this timestamp:
+	ts=$(date +%y%m%d_%H%M)
+	echo $ts # ts is for timestamp
+	read FAKE
+	if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
+		echo "The PCAPlist: "
+		ls -l $TMP/${i}_PCAPlist
+		cat $TMP/${i}_PCAPlist
+		echo "The editing, if any, was/should have been done in Vim."
+		echo "Do you want to save that PCAPlist as:"
+		echo "${i}_PCAPlist_${ts} ?"
+		ask
+		if [ "$?" == 0 ]; then
+			touch ../${i}_PCAPlist_${ts}
+			echo "cat $TMP/${i}_PCAPlist"
+			cat $TMP/${i}_PCAPlist
+			read FAKE
+			echo "ls -l ../${i}_PCAPlist_${ts}"
+			ls -l ../${i}_PCAPlist_${ts}
+			cat $TMP/${i}_PCAPlist > ../${i}_PCAPlist_${ts}
+			ls -l ../${i}_PCAPlist_${ts}
+			read FAKE
+			cat ../${i}_PCAPlist_${ts}
+			read FAKE
+		else
+			echo "PCAPlist not saved by user choice"
+		fi
+	fi
+	echo "The list: "
+	ls -l $TMP/${i}_list
+	echo "cat $TMP/${i}_list"
+	cat $TMP/${i}_list
+	echo "Do you want to save that list as:"
+	echo "${i}_list_${ts} ?"
+	ask
+	if [ "$?" == 0 ]; then
+		touch ../${i}_list_${ts}
+		echo "cat $TMP/${i}_list"
+		cat $TMP/${i}_list
+		read FAKE
+		echo "ls -l ../${i}_list_${ts}"
+		ls -l ../${i}_list_${ts}
+		read FAKE
+		echo \$TMP: $TMP
+		cat $TMP/${i}_list|wc -l
+		list_nr_lines=$(cat $TMP/${i}_list|wc -l)
+		if (grep PCAPlist $TMP/${i}_list); then
+			# two last entries are $TMP/PCAPlist and $TMP/list, remove them
+			list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
+		else
+			# last entryis $TMP/list, remove it
+			list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
+		fi
+		echo \$list_nr_lines: $list_nr_lines
+		echo \$list_nr_lines_minus: $list_nr_lines_minus
+		cat $TMP/${i}_list | head -${list_nr_lines_minus} | grep -v _tHostsConv.log > ../${i}_list_${ts}
+		ls -l ../${i}_list_${ts}
+		cat ../${i}_list_${ts}
+	else
+		echo "list not saved by user choice"
 	fi
 	cd -
 	read FAKE

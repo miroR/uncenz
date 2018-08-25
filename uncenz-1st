@@ -55,7 +55,7 @@ else
 		;;
 	esac
 	echo \$dumper: $dumper
-echo $dumper > .uncenz-dumper
+	echo $dumper > .uncenz-dumper
 read FAKE
 fi
 function show_help {
@@ -92,20 +92,17 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
 	exit 0
 fi
 
-# The ~/.gnupg dir must not be there all the time, but I want it to contain my
-# secret key(s) only when we I need it to
-# So I substitute the real one with the one with only public keys.
+# Previously, I would move my real ~/.gnupg dir, the ones with all the
+# secret key(s), offline before connecting and substituted it with one with
+# only public keys. Recently I learned to offline secret keys.
 #
 # I really could:
 # FILE=.gnupg-sec
 # gpg --list-secret-keys --with-colon > $FILE
-# et cetera, but I think less writing is better here. Won't look nice, is not
-# pretty-printed.  But it will be a good warning!
+# but below is better.
 #
 # $f should be empty, for tranquil longer time browsing online.
 f=$(gpg --list-secret-keys --with-colon)
-#echo \$f: $f
-#read FAKE
 if [ "$f" != "" ]; then
 	# see:
 	# Safe GnuPG setup (with offlined master secret key)
@@ -114,20 +111,69 @@ if [ "$f" != "" ]; then
 	#echo $f
 	gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
 	col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
-	if [ "$col15" == "#" ] ;then
+	if [ "$col15" == "#" ]; then
 		echo "You have offlined the primary secret key. Probably fine to proceed."
 	else
-		aplay -q ~/tvtube.wav
-		gpg --list-secret-keys --with-colons
-		echo
-		echo "Continue regardless (y), or exit and fix the .gnupg/ primary secret key availability?"
-		echo
-		ask;
-		# the default (just hitting Enter) is exiting
-		if [ "$?" == 1 ]; then
-			echo "Primary secret key is not offlined, exiting by user's choice."
-			exit 0
-		fi
+		gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+		# Check how many keys are not offlined
+		num_keys=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'|wc -l)
+		ord_key=0
+		while [ "$ord_key" -lt "$num_keys" ] ; do
+			echo
+			ord_key_plus=$(echo $ord_key + 1 | bc)
+			col15_each=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'| head -${ord_key_plus} | tail -1)
+			if [ "$col15_each" == "#" ]; then
+				echo "You have offlined the primary secret key of the iterated key. Pass for this one."
+			else 
+				if [ "$col15_each" == "+" ]; then
+					if [ -e ".uncenz-keys_allow" ]; then
+						key_sha=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $5}'| head -${ord_key_plus} | tail -1| sha256sum - | cut -d' ' -f1)
+						grep $key_sha .uncenz-keys_allow
+						if ( grep $key_sha .uncenz-keys_allow ); then
+							echo "This key is allowed unofflined by user's configuration"
+						else
+							aplay -q ~/tvtube.wav
+							echo "Put the SHA256 (the 64 hex string above) of the 5th column"
+							echo "of the gpg command used (see script) of this  key in"
+							echo ".uncenz-keys_allow in this dir if you want to"
+							echo "allow it unofflined and avoid this nagging"
+						
+							echo "This key has not been allowed by your configuration for going online."
+							echo "It may be at risk from possible intrusion techniques."
+							echo "Continue regardless (y), or exit and fix this"
+							echo "key's primary secret key availability in .gnupg/?"
+							echo
+							ask;
+							# the default (just hitting Enter) is exiting
+							if [ "$?" == 1 ]; then
+								echo "Primary secret key is not offlined, exiting by user's choice."
+								exit 0
+							fi
+						fi
+					else
+						aplay -q ~/tvtube.wav
+						echo "Put the SHA256 (the 64 hex string above) of the 5th column"
+						echo "of the gpg command used (see script) of this  key in"
+						echo ".uncenz-keys_allow in this dir if you want to"
+						echo "allow it unofflined and avoid this nagging."
+					
+						echo "This key is has not been allowed by your configuration for going online."
+						echo "It may be at risk from possible intrusion techniques."
+						echo "Continue regardless (y), or exit and"
+						echo "fix this key's primary secret key availability in .gnupg/?"
+						echo
+						ask;
+						# the default (just hitting Enter) is exiting
+						if [ "$?" == 1 ]; then
+							echo "Primary secret key is not offlined, exiting by user's choice."
+							exit 0
+						fi
+					fi
+				fi
+			fi
+			ord_key=$(echo $ord_key + 1 | bc)
+			#echo \$ord_key: $ord_key
+		done
 	fi
 fi
 #read FAKE
@@ -151,22 +197,13 @@ if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
 	read FAKE
 	echo
 	echo "#####"
-# Can't do the below w/o adding <user> to proc modify allowed group, I think.
-#else if [ "$gradm_S" == "The RBAC system is currently enabled." ]; then
-#		echo sysctl kernel.grsecurity.tpe
-#		sudo -s sysctl kernel.grsecurity.tpe
-#		echo sysctl kernel.grsecurity.tpe_restrict_all
-#		sudo -s sysctl kernel.grsecurity.tpe_restrict_all
-#		echo "should reenable these?"
-#		read FAKE
-#	fi
 fi
 
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
 hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
 echo "\$hostname_sh: "; echo $hostname_sh
-#read FAKE
+read FAKE
 #
 # We must not start ffmpeg nor dumpcap/tcpdump if another session is running.
 #
@@ -312,6 +349,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 		Screen_$(cat .uncenz-ts)_${hostname_sh}.mkv &
 	
 	echo "Monitor screen 1366x768, take notice!"; sleep 0.5
+	read FAKE
 
 else
 	echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo

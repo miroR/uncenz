@@ -29,4 +29,8 @@ ip rout show > ip_rout_show_${hst}
 cp -a /etc/resolv.conf resolv_conf_${hst}
 mkdir ipt_${tstamp_hst}.d/
 mv -iv ipt*-L-n-v_${hst} ip_{link,addr,rout}*_${hst} resolv_conf_${hst} ipt_${tstamp_hst}.d/
-
+ls -ld ipt_${tstamp_hst}.d/
+ls -l ipt_${tstamp_hst}.d/
+echo "----"
+echo "$0 done."
+echo "===="
