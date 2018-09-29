@@ -42,7 +42,10 @@ fi
 # over all its produce, i.e. the dump_<the-time-stamp>_messages and the
 # screencasts and other. The dump_<the-time-stamp>_r represents another log
 # extracted. That can be by any script you wrote and ran as third arg to
-# uncenz-1st. First the PCAP-work.sh is run (see workPCAPs link above). Then
+# uncenz-1st.
+# Similarly dump_<the-time-stamp>-msg_r_PDU.txt is some produce by your own
+# scripts. 
+# First the PCAP-work.sh is run (see workPCAPs link above). Then
 # this script.
 PCAPs=$1
 echo \$PCAPs: $PCAPs
@@ -105,20 +108,22 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 		fi
 	done
 	if [ ! -e "$TMP/${i}_PCAPlist" ] || [ ! -s "$TMP/${i}_PCAPlist" ]; then
-		echo "Create the PCAPlist: "
+		echo "NOT create the PCAPlist (open no PCAPs with wireshark)"
+		echo "default is: do create list of PCAPs to open (just hit Enter)"
 		echo "${i}_PCAPlist ?"
 		ask
 		if [ "$?" == 0 ]; then
+			echo "User doesn't want to open PCAPs in this run."
+		else
 			ls -1tr *.pcap > $TMP/${i}_PCAPlist
 			echo "cat $TMP/${i}_PCAPlist"
 			cat $TMP/${i}_PCAPlist
 			read FAKE
-		else
-			echo "User doesn't want to open PCAPs in this run."
 		fi
 	fi
 	if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
 		echo "Open these PCAPs with Wireshark?"
+		echo "(option after decline [the default]: open each PCAP with delay)"
 		ask
 		if [ "$?" == 0 ]; then
 			num_pid=0
@@ -137,8 +142,38 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 				#read FAKE
 			done
 		else
-			echo "User doesn't want to open PCAPs in this run"
-			echo "(but the PCAPlist has been created and is not empty)."
+			echo "NOT open these PCAPs with Wireshark with delay btwn opening each PCAP?"
+			echo "default is: do open (just hit Enter)"
+			ask
+			if [ "$?" == 0 ]; then
+				echo "User doesn't want to open PCAPs in this run"
+				echo "(but the PCAPlist has been created and is not empty)."
+			else
+				num_pid=0
+				echo "For default delay of 2sec just Enter, for your own delay, type it in: "
+				echo "(must be and int like 3, or a float like 0.4, and I'm not checking much)"
+				# reason: with delay, you can get them opened in the order you set
+				read delay
+				if [ -n "delay" ]; then
+					delay=2
+				#else it's what you typed
+				fi
+				for j in $(cat $TMP/${i}_PCAPlist); do
+					wireshark -ossl.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+					pid=$!
+					echo $pid
+					echo $pid > $TMP/${i}_${num_pid}.pid
+					#read FAKE
+					ls -l $TMP/${i}_${num_pid}.pid
+					#read FAKE
+					cat $TMP/${i}_${num_pid}.pid
+					#read FAKE
+					let num_pid=$num_pid+1
+					echo $num_pid: $num_pid
+					sleep $delay
+					#read FAKE
+				done
+			fi
 		fi
 	fi
 	cd -
@@ -149,7 +184,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	read FAKE
 	cd  ${i}_tHostsConv
 	ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r \
-		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1'\
+		../${i}-msg_r_PDU.txt \
+		| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' \
 		| grep -v '\.:'|grep '[[:print:]]'
 	read FAKE
 	touch $TMP/${i}_list
@@ -183,6 +219,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 		echo "now mandatory."
 		for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
 			../${i}_tHostsConv/tsh*log ../${i}_r \
+			../${i}-msg_r_PDU.txt \
 			| grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
 			| grep '[[:print:]]'); do
 			if [ -e "$file" ]; then
@@ -207,9 +244,12 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 	if [ "$?" == 0 ]; then
 		vim $TMP/${i}_list
 	fi
-	echo "Now view these files in Vim?"
+	echo "NOT view these files in Vim (not launch Vim with them in tabs?"
+	echo "(Enter for launching Vim to open those files):"
 	ask
 	if [ "$?" == 0 ]; then
+		echo "User didn't choose to run Vim with the files in tabs."
+	else
 		vim -p \
 			$(cat $TMP/${i}_list)
 	fi
@@ -266,8 +306,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
 			# two last entries are $TMP/PCAPlist and $TMP/list, remove them
 			list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
 		else
-			# last entryis $TMP/list, remove it
-			list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
+			# last entry is $TMP/list, remove it
+			list_nr_lines_minus=$(echo $list_nr_lines-1|bc)
 		fi
 		echo \$list_nr_lines: $list_nr_lines
 		echo \$list_nr_lines_minus: $list_nr_lines_minus

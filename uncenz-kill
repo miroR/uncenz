@@ -16,23 +16,17 @@ function show_help {
 	echo "==============================================================="
 	echo
 	echo "$0 -- the exit/terminate script of uncenz,"
-	echo "quits/terminates the the screencasting and packet capturing"
+	echo "quits/terminates the screencasting and packet capturing"
 	echo
 	echo "Usage: $0 <the-other-include>"
 	echo "        (if run in the uncenz-1st)"
 	echo ""
-	echo "	Without arguments uncenz captures in promiscuous mode,"
-	echo "	on all available interfaces."
-	echo
-	echo "	With first argument, an executable file \$include_filter_run,"
-	echo "	it starts the $dumper with whatever its capture filter contains."
-	echo "	\$include_filter_run is named with no spaces, and resides"
-	echo "	where the $0 is regularly run from, usually in"
-	echo "	/usr/local/bin ."
+	echo "Pls. see also uncenz-1st."
 	echo
 }
 
-hostname_sh=$(hostname|sed 's/\(...\).*/\1/')
+hst=$(hostname|sed 's/\(...\).*/\1/')
+ts=$(cat .uncenz-ts)
 # Optional include here, named 2 because it's (usually) the back script (that's
 # why the 2b) of the include 2 in uncenz-1st. Often both scripts must be there
 # for this optional include, completely ignored if not there, to work. Only in
@@ -77,17 +71,17 @@ echo \$str1: $str1
 # 300000 is just a very likely sufficiently high integer
 sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
 	| grep -aE -B300000 $str1 \
-	> ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
-chmod 600 ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
-ls -l ~/dump_$(cat .uncenz-ts)_${hostname_sh}_messages
+	> ~/dump_${ts}_${hst}_messages
+chmod 600 ~/dump_${ts}_${hst}_messages
+ls -l ~/dump_${ts}_${hst}_messages
 read FAKE
 dumper=$(cat .uncenz-dumper)
 echo \$dumper: $dumper
 #read FAKE
-echo "\$hostname_sh: "; echo $hostname_sh
-ssllast=SSLLAST_$(cat .uncenz-ts)_${hostname_sh}.txt
+echo \$hst: $hst
+ssllast=SSLLAST_${ts}_${hst}.txt
 echo \$ssllast: $ssllast
-ssllast_active=SSLLAST_$(cat .uncenz-ts)_${hostname_sh}_active.txt
+ssllast_active=SSLLAST_${ts}_${hst}_active.txt
 echo \$ssllast_active: $ssllast_active
 read FAKE
 tail -1 $SSLKEYLOGFILE > ~/$ssllast_active
@@ -100,7 +94,7 @@ ls -l ~/$ssllast \
 echo \$ssllast_hash_active: $ssllast_hash_active
 #read FAKE
 	ssllast_hash=$(sha256sum \
-		~/SSLLAST_$(cat .uncenz-ts.old)_${hostname_sh}.txt|cut -d' ' -f1)
+		~/SSLLAST_$(cat .uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
 echo \$ssllast_hash: $ssllast_hash
 read FAKE
 	echo \$ssllast_hash_active, then \$ssllast_hash:
@@ -134,12 +128,12 @@ fi
 #read FAKE
 rm ~/$ssllast_active
 
-ffpid=`sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
+ffpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
 if [ "$dumper" == "dumpcap" ]; then
-	dupid=`sudo -s ps aux | egrep '[d]umpcap' | grep -v grep | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | grep -E '[d]umpcap' | grep -v grep | awk '{ print $2}'`
 fi
 if [ "$dumper" == "tcpdump" ]; then
-	dupid=`sudo -s ps aux | egrep '[t]cpdump' | grep -v grep | awk '{ print $2}'`
+	dupid=`sudo -s ps aux | grep -E '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
 
 echo \$ffpid is: # ff for ffmpeg
