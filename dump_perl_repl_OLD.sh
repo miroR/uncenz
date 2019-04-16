@@ -50,8 +50,8 @@ function ask() # borrowed from Advanced Bash Scripting Guide, by Mendel Cooper
 # script fails in unpredicted way if files in its current dirs are not workable
 # PCAPs.
 if [ ! -e "$1" ]; then
-	echo "Must give a file with a list of ethers to search and replace as $1"
-	echo "the orig ethernet MAC, "," the fake ethernet MAC, such as: "
+	echo "Must give a file with a list of ethers to search and replace as \$1"
+	echo "the orig ethernet MAC, \",\" (comma) the fake ethernet MAC, such as: "
 	echo "\x00\x11\x33\x44\x55\x66,\xff\xee\xdd\xcc\xbb\xaa"
 	echo "i.e. one pair per line."
 	# can also be any other string, but in hex, such as for some serial, of
@@ -67,7 +67,7 @@ read FAKE
 
 touch Found.txt
 echo "Created (if it didn't exist) and will be writing to Found.txt."
-echo "You should issue \"tailf Found.txt\" in another teminal."
+echo "You should issue \"tail -f Found.txt\" in another teminal."
 echo "to see what gets found and printed by the sript. Especially"
 echo "if you are debugging after uncommenting the \"read FAKE\" lines."
 for i in $(ls -1 *.pcap|sed 's/\.pcap//'); do

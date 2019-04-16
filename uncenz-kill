@@ -69,9 +69,17 @@ str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
 echo \$str1: $str1
 # (just no need to stick it into a file)
 # 300000 is just a very likely sufficiently high integer
-sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
-	| grep -aE -B300000 $str1 \
-	> ~/dump_${ts}_${hst}_messages
+if [ -n "$str0" ] && [ -n "$str1" ]; then
+    if [ "$str0" != "$str1" ]; then
+        sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
+        	| grep -aE -B300000 $str1 \
+        	> ~/dump_${ts}_${hst}_messages
+    else
+        # that is if "$str0" == "$str1"
+        sudo -s cat /var/log/kern.log | grep $str0 \
+        	> ~/dump_${ts}_${hst}_messages
+    fi
+fi
 chmod 600 ~/dump_${ts}_${hst}_messages
 ls -l ~/dump_${ts}_${hst}_messages
 read FAKE

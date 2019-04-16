@@ -58,10 +58,10 @@ for cur in $(ls -1 dump*.pcap|sed 's/dump_//'|sed 's/\.pcap//'); do
 		ls -l $ssllast_dir/SSLLAST_${prev}.txt
 		cur_s=""
 		prev_s=""
-		prev_s=$(cat $ssllast_dir/SSLLAST_${prev}.txt);
+		prev_s=$(cat $ssllast_dir/SSLLAST_${prev}.txt)
 		echo "\$prev_s: " $prev_s;
 		#read FAKE
-		cur_s=$(cat $ssllast_dir/SSLLAST_${cur}.txt);
+		cur_s=$(cat $ssllast_dir/SSLLAST_${cur}.txt)
 		echo "\$cur_s: " $cur_s;
 		#read FAKE
 		ls -l $ssllast_dir/SSLLAST_${prev}.txt
@@ -91,6 +91,19 @@ for cur in $(ls -1 dump*.pcap|sed 's/dump_//'|sed 's/\.pcap//'); do
 	echo $cur > prev ; echo cat prev ; cat prev
 	#read FAKE
 done
+# This ought to be the last (if the previous loop ran):
+echo \$cur: $cur
+read FAKE
+cur_tail_1=$(ls -1 dump*.pcap|tail -1|sed 's/dump_//'|sed 's/\.pcap//')
+if [ "$cur" == "$cur_tail_1" ]; then
+	cur_s=$(cat $ssllast_dir/SSLLAST_${cur}.txt)
+	cat $SSLKEYLOGFILE | grep -A30000 "$cur_s" | grep -v "$cur_s" \
+		| wc -l
+	cat $SSLKEYLOGFILE | grep -A30000 "$cur_s" | grep -v "$cur_s" \
+		> dump_${prev}_SSLKEYLOGFILE.txt
+	touch dump_${cur}_SSLKEYLOGFILE.txt -r dump_${cur}.pcap 
+	ls -l dump_${cur}_SSLKEYLOGFILE.txt
+fi
 echo "sleeping 3 sec"
 sleep 3
 #echo "Do you want me to remove empty *SSLKEYLOGFILE.txt's?"
