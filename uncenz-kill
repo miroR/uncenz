@@ -73,15 +73,15 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
     if [ "$str0" != "$str1" ]; then
         sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
         	| grep -aE -B300000 $str1 \
-        	> ~/dump_${ts}_${hst}_messages
+        	> /home/$USER/dump_${ts}_${hst}_messages
     else
         # that is if "$str0" == "$str1"
         sudo -s cat /var/log/kern.log | grep $str0 \
-        	> ~/dump_${ts}_${hst}_messages
+        	> /home/$USER/dump_${ts}_${hst}_messages
     fi
 fi
-chmod 600 ~/dump_${ts}_${hst}_messages
-ls -l ~/dump_${ts}_${hst}_messages
+chmod 600 /home/$USER/dump_${ts}_${hst}_messages
+ls -l /home/$USER/dump_${ts}_${hst}_messages
 read FAKE
 dumper=$(cat .uncenz-dumper)
 echo \$dumper: $dumper
@@ -92,10 +92,10 @@ echo \$ssllast: $ssllast
 ssllast_active=SSLLAST_${ts}_${hst}_active.txt
 echo \$ssllast_active: $ssllast_active
 read FAKE
-tail -1 $SSLKEYLOGFILE > ~/$ssllast_active
-echo stored ~/$ssllast_active ...
-chmod 600 ~/$ssllast_active
-ls -l ~/$ssllast \
+tail -1 $SSLKEYLOGFILE > /home/$USER/$ssllast_active
+echo stored /home/$USER/$ssllast_active ...
+chmod 600 /home/$USER/$ssllast_active
+ls -l /home/$USER/$ssllast \
 	~/$ssllast_active
 	ssllast_hash_active=$(sha256sum \
 		~/$ssllast_active|cut -d' ' -f1)
@@ -121,7 +121,7 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
 	echo " and opened https pages, it may have malfunctioned. "
 	echo
 	echo "							^^^	  ^^^^^^^^^^^^^ "
-	aplay -q ~/tvtube.wav
+	aplay -q /home/$USER/tvtube.wav
 	echo
 	echo "But if no SSL-key logging browser was active, all may still be fine."
 	echo
@@ -131,10 +131,10 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
 	echo
 	echo "#####"
 fi
-#echo "Here removing: rm ~/$ssllast_active"
+#echo "Here removing: rm /home/$USER/$ssllast_active"
 #sleep 2;
 #read FAKE
-rm ~/$ssllast_active
+rm /home/$USER/$ssllast_active
 
 ffpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
 if [ "$dumper" == "dumpcap" ]; then

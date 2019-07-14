@@ -238,24 +238,103 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     #
     uncenz-ts
     ts=$(cat .uncenz-ts)
+    tsh=${ts}_${hst}
+    ts_old=$(cat .uncenz-ts.old)
+    tsh_old=${ts_old}_${hst}
     #
     # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
     # as "150207_0636" for 2015-02-06 06:36.
+    #
+	# I have seen $SSLKEYLOGFILE on poorly maintained system, non-updated
+	# browser, diminishing, i.e. losing keys. We need to check that the
+	# append-only $SSLKEYLOGFILE is not losing content.
+	kl_size=$(ls -l $SSLKEYLOGFILE | awk '{ print $5 }')
+	kl_wc_l=$(wc -l $SSLKEYLOGFILE | awk '{ print $1 }')
+	kl_hash=$(sha256sum $SSLKEYLOGFILE | awk '{ print $1 }')
+	# We don't want to create but one only key log check file for all three above:
+	echo $kl_size $kl_wc_l $kl_hash > ~/.kl_${tsh}_chk
+	chmod 600 ~/.kl_${tsh}_chk
+	# All the 50 or more lines of code below only check if the previous session
+	# has lost keys... Boohoohoo... Still needed, I'd say...
+	# Aarrgh, we'll need to do a check when uncenz-kill is run too...
+	# In previous session, the ~/.kl_${tsh_old}_chk was made
+	# When there were no previous sessions, we should copy the key log file to
+	# a fake old key log check file, else the code just next might break with
+	# errors.
+	ls -l ~/.kl_${tsh_old}_chk
+	if [ ! -e "$HOME/.kl_${tsh_old}_chk" ]; then
+		cp -ia ~/.kl_${tsh}_chk ~/.kl_${tsh_old}_chk
+		echo "NOTE: we created a bogus old key log check file"
+		echo "If you'll be running uncenz in this dir, it won't be happening again."
+		echo "It happens only in the first session."
+		read FAKE
+	fi
+	# Needed only for learning/debugging. Should be commented out (3 ln).
+	echo "cat ~/.kl_${tsh_old}_chk"
+	cat ~/.kl_${tsh_old}_chk
+	read FAKE
+	kl_size_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $1 }')
+	kl_wc_l_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $2 }')
+	kl_hash_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $3 }')
+	# ~/.kl_${tsh}_chk must have at least the same number of lines as old
+	if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
+		# in which case the size and hash must also be same
+		if [ "$kl_size" != "$kl_size_old" ]; then
+			echo "Same number of lines ($kl_wc_l), but different size then before."
+			echo "Check whether loss of data occurred with the key log!"
+			read FAKE
+		# The else needed only for learning/debugging. Should be commented it.
+		else
+			echo \$kl_size: $kl_size
+			echo \$kl_size_old: $kl_size_old
+			read FAKE
+		fi
+		if [ "$kl_hash" != "$kl_hash_old" ]; then
+			echo "Same number of lines ($kl_wc_l), but different hash then before."
+			echo "Check whether loss of data occurred with the key log!"
+			read FAKE
+		# The else needed only for learning/debugging. Should be commented it.
+		else
+			echo \$kl_hash: $kl_hash
+			echo \$kl_hash_old: $kl_hash_old
+			read FAKE
+		fi
+	else
+		# The first old number of lines, head'ed out, must have same size and
+		# hash as in ~/.kl_${tsh_old}_chk.
+		head -${kl_wc_l_old} $SSLKEYLOGFILE > ~/.kl_${tsh}_part
+		chmod 600 ~/.kl_${tsh}_part
+		kl_size_part=$(ls -l ~/.kl_${tsh}_part|awk '{ print $5 }')
+		kl_hash_part=$(sha256sum ~/.kl_${tsh}_part|awk '{ print $1 }')
+		if [ "$kl_size_part" != "$kl_size_old" ]; then
+			echo "For the portion of old number of lines ($kl_wc_l_old), sizes don't match."
+			echo "Check whether loss of data occurred with the key log!"
+			read FAKE
+		fi
+		if [ "$kl_hash_part" != "$kl_hash_old" ]; then
+			echo "For the portion of old number of lines ($kl_wc_l_old), hashes don't match."
+			echo "Check whether loss of data occurred with the key log!"
+			read FAKE
+		fi
+		# Uncomment (1 ln) if script works well:
+		#rm -v ~/.kl_${tsh}_part
+	fi
+			
     #
     # Pretty dirty, but does it for me, this below is for the purpose that I
     # more easily find out if my browser, if active, is still
     # logging SSL-keys. It will just compare the previous SSLLAST to the new
     # just taken, by their hashes, and tell me to decide if they shouldn't
     # differ, if they do.
-    tail -1 $SSLKEYLOGFILE > ~/SSLLAST_${ts}_${hst}.txt
-    echo stored ~/SSLLAST_${ts}_${hst}.txt ...
-    chmod 600 ~/SSLLAST_${ts}_${hst}.txt
-    #ls -l ~/SSLLAST_$(cat .uncenz-ts.old)_${hst}.txt \
-    #    ~/SSLLAST_${ts}_${hst}.txt
+    tail -1 $SSLKEYLOGFILE > ~/SSLLAST_${tsh}.txt
+    echo stored ~/SSLLAST_${tsh}.txt ...
+    chmod 600 ~/SSLLAST_${tsh}.txt
+    #ls -l ~/SSLLAST_${tsh_old}.txt \
+    #    ~/SSLLAST_${tsh}.txt
         ssllast_hash=$(sha256sum \
-            ~/SSLLAST_${ts}_${hst}.txt|cut -d' ' -f1)
+            ~/SSLLAST_${tsh}.txt|cut -d' ' -f1)
         ssllast_hash_old=$(sha256sum \
-            ~/SSLLAST_$(cat .uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
+            ~/SSLLAST_${tsh_old}.txt|cut -d' ' -f1)
         #echo \$ssllast_hash, then \$ssllast_hash_old:
         #echo $ssllast_hash
         #echo $ssllast_hash_old
@@ -285,7 +364,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
         #echo "#####"
     fi
 
-    the_dump=dump_${ts}_${hst}.pcap
+    the_dump=dump_${tsh}.pcap
     export the_dump
     if [ "$dumper" == "dumpcap" ]; then
         sudo -s touch $the_dump
@@ -340,14 +419,14 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
 
     ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 10 -i :0.0 \
         -c:v libx264 -preset ultrafast -threads 0 \
-        Screen_${ts}_${hst}.mkv &
+        Screen_${tsh}.mkv &
 
     echo "Monitor screen 1366x768, take notice!"; sleep 0.5
     read FAKE
 # A sample modification (just: the six '#' column cut and paste above this line):
 #   ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 10 -i :1.0 \
 #       -c:v libx264 -preset ultrafast -threads 0 \
-#       Screen_${ts}_${hst}.mkv &
+#       Screen_${tsh}.mkv &
 #
 #   echo "Monitor screen 800x600, take notice!"; sleep 1.5
 #   read FAKE
