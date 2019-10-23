@@ -132,7 +132,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         if [ "$?" == 0 ]; then
             num_pid=0
             for j in $(cat $TMP/${i}_PCAPlist); do
-                wireshark -ossl.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+                if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
+                    wireshark -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+                else
+                    wireshark $j &
+                fi
                 pid=$!
                 echo $pid
                 echo $pid > $TMP/${i}_${num_pid}.pid
@@ -158,12 +162,18 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "(must be an int like 3, or a float like 0.4, and I'm not checking much)"
                 # reason: with delay, you can get them opened in the order you set
                 read delay
-                if [ -n "delay" ]; then
+                if [ ! -n "$delay" ]; then
                     delay=2
                 #else it's what you typed
                 fi
+        echo \$delay: $delay
+        #read FAKE
                 for j in $(cat $TMP/${i}_PCAPlist); do
-                    wireshark -ossl.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+                    if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
+                        wireshark -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+                    else
+                        wireshark $j &
+                    fi
                     pid=$!
                     echo $pid
                     echo $pid > $TMP/${i}_${num_pid}.pid
@@ -222,7 +232,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "${i}_list"
         echo "now mandatory."
         for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
-            ../${i}_tHostsConv/tsh*log ../${i}_r \
+            ../${i}_tHostsConv/tsh*log ../${i}_r_dt ../${i}_r_tb ../${i}_r \
             ../${i}-msg_r_PDU.txt \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
             | grep '[[:print:]]'); do
@@ -235,16 +245,16 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         if [ -e "${i}.conv-ip_l" ]; then
             grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>" $TMP/${i}_list
             #echo "Shows correctly?"
-			echo "Not open in tab only ${i}.conv-ip_l,"
-			echo "but open also ${i}.conv-ip"
-			echo "and ${i}_tHostsConv.log ?"
+            echo "Not open in tab only ${i}.conv-ip_l,"
+            echo "but open also ${i}.conv-ip"
+            echo "and ${i}_tHostsConv.log ?"
             ask
             if [ "$?" == 0 ]; then
-            	echo "By user choice, all these three will be opened: "
-				ls -l ${i}.conv-ip_l
-				${i}.conv-ip
-				${i}_tHostsConv.log
-			else
+                echo "By user choice, all these three will be opened: "
+                ls -l ${i}.conv-ip_l
+                ${i}.conv-ip
+                ${i}_tHostsConv.log
+            else
                 grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>\|${i}_list" \
                     $TMP/${i}_list > ${i}_list
                 diff ${i}_list $TMP/${i}_list
@@ -331,16 +341,17 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo \$TMP: $TMP
         cat $TMP/${i}_list|wc -l
         list_nr_lines=$(cat $TMP/${i}_list|wc -l)
-        if (grep PCAPlist $TMP/${i}_list); then
-            # two last entries are $TMP/PCAPlist and $TMP/list, remove them
-            list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
-        else
-            # last entry is $TMP/list, remove it
-            list_nr_lines_minus=$(echo $list_nr_lines-1|bc)
-        fi
+        #if (grep PCAPlist $TMP/${i}_list); then
+        #    # two last entries are $TMP/PCAPlist and $TMP/list, remove them
+        #    list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
+        #else
+        #    # last entry is $TMP/list, remove it
+        #    list_nr_lines_minus=$(echo $list_nr_lines-1|bc)
+        #fi
         echo \$list_nr_lines: $list_nr_lines
+        cat $TMP/${i}_list | grep -v '_PCAPlist\|_list' > ../${i}_list_${ts}
+        list_nr_lines_minus=$(cat ../${i}_list_${ts}|wc -l)
         echo \$list_nr_lines_minus: $list_nr_lines_minus
-        cat $TMP/${i}_list | head -${list_nr_lines_minus} | grep -v _tHostsConv.log > ../${i}_list_${ts}
         ls -l ../${i}_list_${ts}
         cat ../${i}_list_${ts}
     else
