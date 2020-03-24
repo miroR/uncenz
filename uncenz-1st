@@ -90,6 +90,68 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
     exit 0
 fi
 
+homes=( $(ls -1 /home) )
+homes_num=${#homes[@]}
+echo \$homes_num: $homes_num
+num=0
+while [ "$num" -lt "$homes_num" ]; do
+    echo \$homes[$num]: ${homes[$num]}
+    let num+=1
+done
+homes_this_sslk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
+echo \$homes_this_sslk: $homes_this_sslk
+read FAKE
+homes_prev_sslk=""
+num=0 ; while [ "$num" -lt "$homes_num" ]; do
+    echo \$homes[$num]: ${homes[$num]}
+    echo "        /home/${homes[$num]}"
+    echo "        /home/${homes[$num]}/.kl/.sslkey.log"
+    sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
+    echo "ls -l ... awk"
+    sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }'
+    read FAKE
+    homes_cur_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+    echo \$homes_cur_sslk: $homes_cur_sslk
+    read FAKE
+	#/home/${homes[$num]}/.kl/.sslkey.log
+    if [ "X${homes_prev_sslk}" == "X" ];then
+    	homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+        echo \$homes_prev_sslk: $homes_prev_sslk
+        read FAKE
+    else
+        echo \$homes_cur_sslk: $homes_cur_sslk
+        echo \$homes_prev_sslk: $homes_prev_sslk
+        if [ "X$homes_prev_sslk" != "X" ]; then
+            if [ "$homes_cur_sslk" -ne "$homes_prev_sslk" ]; then
+                if [ "$homes_cur_sslk" -gt "$homes_prev_sslk" ]; then
+                    homes_highest_sslk="$homes_cur_sslk"
+                else
+                    homes_highest_sslk="$homes_prev_sslk"
+                fi
+            else
+                homes_highest_sslk="$homes_cur_sslk"
+            fi
+            echo \$homes_highest_sslk: $homes_highest_sslk
+     	    homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+            echo \$homes_prev_sslk: $homes_prev_sslk
+            read FAKE
+        fi
+    fi
+    echo \$homes_highest_sslk: $homes_highest_sslk
+    echo \$homes_prev_sslk: $homes_prev_sslk
+    let num+=1
+done
+if [ "$homes_this_sslk" == "$homes_highest_sslk" ]; then
+    echo \$homes_this_sslk: $homes_this_sslk
+    echo "The highest size of sslk is of this \$USER. Read the STDOUT above."
+else
+    ls -l /home/$USER/.kl/.sslkey.log
+    echo "The highest size of sslk is NOT of this \$USER."
+    echo "Fix that manually, can't work like this."
+    exit 1
+fi
+read FAKE
+
 # Previously, I would move my real ~/.gnupg dir, the ones with all the
 # secret key(s), offline before connecting and substituted it with one with
 # only public keys. Recently I learned to offline secret keys.
@@ -365,13 +427,16 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     fi
 
     the_dump=dump_${tsh}.pcap
+    the_cast=Screen_${tsh}.mkv
     export the_dump
+    export the_cast
     if [ "$dumper" == "dumpcap" ]; then
         sudo -s touch $the_dump
     fi
     if [ "$dumper" == "tcpdump" ]; then
-        sudo -s touch $the_dump
-        sudo -s chown tcpdump:tcpdump $the_dump
+        echo sudo -s touch $the_dump
+        echo sudo -s chown tcpdump:tcpdump $the_dump
+		read FAKE
     fi
     #
     ## When I have issues with configuring network (such as setting up bridges)
@@ -405,23 +470,31 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
         fi
     else
         if [ "$dumper" == "dumpcap" ]; then
-            sudo -s $dumper -i any -w $the_dump &
+			echo "Warning dumpcap not tested for the "-C" option addition"
+			read FAKE
+            sudo -s $dumper -i any -C 100 -w $the_dump &
         fi
         if [ "$dumper" == "tcpdump" ]; then
             # For "-Z tcpdump" option, in Devuan/Debian based systems,
             # tcpdump system user/group needs to be created, maybe:
             # "adduser --system --group --no-create-home tcpdump"
-            sudo -s $dumper -i any -Z tcpdump -U -v -w $the_dump &
+            sudo -s $dumper -C 100 -i any -U -v -w $the_dump -Z tcpdump &
         fi
         #sudo -s $dumper -i any -w $the_dump &
         echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
     fi
+    if [ "$dumper" == "tcpdump" ]; then
+        sudo -s touch $the_cast
+        sudo -s chown $USER:$USER $the_cast
+    fi
 
-    ffmpeg -f x11grab -nostdin -loglevel quiet -s 1366x768 -r 5 -i :0.0 \
+    echo "will be: Monitor screen 1920x1080, take notice!"; sleep 0.5
+    read FAKE
+    ffmpeg -y -f x11grab -nostdin -loglevel quiet -s 1920x1080 -r 2 -i :0.0 \
         -c:v libx264 -preset ultrafast -threads 0 \
-        Screen_${tsh}.mkv &
+        $the_cast &
 
-    echo "Monitor screen 1366x768, take notice!"; sleep 0.5
+    echo "Monitor screen 1920x1080, take notice!"; sleep 0.5
     read FAKE
 # A sample modification (just: the six '#' column cut and paste above this line):
 #   ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 5 -i :1.0 \

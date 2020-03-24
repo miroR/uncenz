@@ -33,15 +33,14 @@ function ask()
 if [ $# -eq 0 ]; then
     echo "give (a list of) PCAP(s)"
     echo "(if globbing, you need to quote it, e.g.:"
-    echo "uncenz-2nd \"*.pcap\")"   # I'm really not an expert to
-                                    # nimbly rewrite this for more comfort
+    echo "uncenz-2nd \"*.pcap\")"
     exit 0
 fi
 
 # You need to be in the directory where you ran uncenz-1st (or where you copied
-# over all its produce, i.e. the dump_<the-time-stamp>_messages and the
-# screencasts and other. The dump_<the-time-stamp>_r represents another log
-# extracted. That can be by any script you wrote and ran as third arg to
+# over all its produce, i.e. the PCAP and the dump_<the-time-stamp>_messages
+# and the screencasts and other. The dump_<the-time-stamp>_r represents another
+# log extracted. That can be by any script you wrote and ran as third arg to
 # uncenz-1st.
 # Similarly dump_<the-time-stamp>-msg_r_PDU.txt is some produce by your own
 # scripts. 
@@ -125,17 +124,34 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             read FAKE
         fi
     fi
+
+    # Used to be (6 ln):
+    #	if [ "$(which wireshark)X" == "X" ]; then
+    #	    WIRESHARK_RUN_FROM_BUILD_DIRECTORY=1
+    #	    WIRESHARK=/Cmn/git/wireshark.d/wireshark-ninja/run/wireshark
+    #	else
+    #	    WIRESHARK=$(which wireshark)
+    #	fi
+    #	Replacing it with:
+    . shark2use
+	#echo $WIRESHARK run next
+	#read FAKE
+	#$WIRESHARK
+	#read FAKE
+
     if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
         echo "Open these PCAPs with Wireshark?"
         echo "(option after decline [the default]: open each PCAP with delay)"
+        echo "NOTE: in a separate terminal you may now edit $TMP/${i}_PCAPlist"
+		echo "      to pick which PCAPs from the list to open" 
+		echo "    (whichever your choice, 'y' or just Enter ('n'))" 
         ask
         if [ "$?" == 0 ]; then
             num_pid=0
-            for j in $(cat $TMP/${i}_PCAPlist); do
-                if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
-                    wireshark -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+            for j in $(cat $TMP/${i}_PCAPlist); do if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
+                    $WIRESHARK -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
                 else
-                    wireshark $j &
+                    $WIRESHARK $j &
                 fi
                 pid=$!
                 echo $pid
@@ -170,9 +186,17 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         #read FAKE
                 for j in $(cat $TMP/${i}_PCAPlist); do
                     if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
-                        wireshark -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
+                        $WIRESHARK -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
                     else
-                        wireshark $j &
+                        #pwd
+                        echo $WIRESHARK $j
+                        if [ -e "$j" ]; then
+                            $WIRESHARK $j &
+                        else
+                            echo "Inexistent $j listed for opening:"
+                            ls -l $j
+                            read FAKE_permanent
+                        fi
                     fi
                     pid=$!
                     echo $pid
@@ -198,7 +222,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     read FAKE
     cd  ${i}_tHostsConv
     ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r \
-        ../${i}_r_dt ../${i}_r_tb ../${i}-msg_r_PDU.txt \
+        ../${i}_r_dt ../${i}_r_tb ../${i}-msg_r_PDU.txt ../${i}.conv-ip_l \
         | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' \
         | grep -v '\.:'|grep '[[:print:]]'
     read FAKE
@@ -233,37 +257,100 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "now mandatory."
         for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
             ../${i}_tHostsConv/tsh*log ../${i}_r_dt ../${i}_r_tb ../${i}_r \
-            ../${i}-msg_r_PDU.txt \
+            ../${i}-msg_r_PDU.txt ../${i}.conv-ip_l \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
             | grep '[[:print:]]'); do
             if [ -e "$file" ]; then
                 echo "$file" >> $TMP/${i}_list
             fi
         done
+        ls -ld ../${i}_r.d/ $TMP/${i}_PCAPlist
+        read FAKE
+        if [ -e "../${i}_r.d/" ] && [ -e "$TMP/${i}_PCAPlist" ]; then
+            # The PCAPlist is a requirement for creation of this list, for
+            # convenience and ease (note that the PCAPs listed do not have to
+            # be opened).
+            # Namely we surely need it time-ordered.
+            ls -1 ../${i}_r.d/ > $TMP/${i}_list_r_d.unordered
+            echo \$i: $i
+            read FAKE
+            echo "cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
+|grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
+|grep -v 0.0.0.0|grep -v dump_"
+            cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
+                |grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
+                |grep -v 0.0.0.0|grep -v dump_
+            read FAKE
+            for ip_pcap in $(cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
+                |grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
+                |grep -v 0.0.0.0|grep -v dump); do
+                if [ "X${ip_pcap}" == "X" ]; then
+                    echo "it's empty, discarding"
+                    echo "($ip_pcap: $ip_pcap)"
+                    echo "will \"continue\" here"
+                    read FAKE
+                    continue
+                fi
+                ls -l $TMP/${i}_list_r_d.unordered
+                mv -v $TMP/${i}_list_r_d.unordered $TMP/${i}_list_r_d.unordered_temp
+                echo "grep \$ip_pcap \$TMP/${i}_list_r_d.unordered_temp"
+                echo "grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp"
+                grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp
+                read FAKE
+                grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp >> $TMP/${i}_list
+                grep -v $ip_pcap $TMP/${i}_list_r_d.unordered_temp
+                grep -v $ip_pcap $TMP/${i}_list_r_d.unordered_temp \
+                    > $TMP/${i}_list_r_d.unordered
+                ls -l $TMP/${i}_list_r_d.unordered $TMP/${i}_list_r_d.unordered_temp
+                read FAKE
+                sed "s/\(${i}_r_.*${ip_pcap}\.log\)/\.\.\/${i}_r\.d\/\1/" $TMP/${i}_list
+                read FAKE
+                sed  -i "s/\(${i}_r_.*${ip_pcap}\.log\)/\.\.\/${i}_r\.d\/\1/" $TMP/${i}_list
+                #file=
+                #echo "../${i}_r.d/$file" >> $TMP/${i}_list
+            done
+            # Learn about Bash misteries! I left this by mistake (just try and
+            # uncomment that one line, and the files listed in the content of
+            # this file were misteriously diappearing, the entire dir: 
+            #$TMP/${i}_list_r_d.unordered_temp
+        fi
+        echo
+        echo "-=-=-"
+        echo $TMP/${i}_list is:
+        ls -l $TMP/${i}_list
+        cat $TMP/${i}_list | wc -l
+        echo "  lines"
+        echo "-=-=-"
+        echo "NOTE: in a separate terminal you may now edit $TMP/${i}_list"
+        read FAKE_permanent
         # Fixing the ${i}_list for new ${i}.conv-ip_l listing, merged from part of
         # ../${i}_tHostsConv.log and ${i}.conv-ip
-        if [ -e "${i}.conv-ip_l" ]; then
+        if [ -e "../${i}.conv-ip_l" ]; then
             grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>" $TMP/${i}_list
             #echo "Shows correctly?"
-            echo "Not open in tab only ${i}.conv-ip_l,"
-            echo "but open also ${i}.conv-ip"
-            echo "and ${i}_tHostsConv.log ?"
+            echo "Not open in tab only ../${i}.conv-ip_l,"
+            echo "but open also ../${i}.conv-ip"
+            echo "and ../${i}_tHostsConv.log ?"
             ask
             if [ "$?" == 0 ]; then
                 echo "By user choice, all these three will be opened: "
-                ls -l ${i}.conv-ip_l
-                ${i}.conv-ip
-                ${i}_tHostsConv.log
+                ls -l ../${i}.conv-ip_l
+                ../${i}.conv-ip
+                ../${i}_tHostsConv.log
             else
                 grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>\|${i}_list" \
                     $TMP/${i}_list > ${i}_list
                 diff ${i}_list $TMP/${i}_list
+				read FAKE
                 #echo "Shows correctly this too?"
                 #ask
                 #if [ "$?" == 0 ]; then
                     mv -v ${i}_list $TMP/${i}_list
                 #fi
+				read FAKE
             fi
+			cat ../${i}.conv-ip_l
+			echo "(cat ../${i}.conv-ip_l)"
         fi
     fi
     if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
