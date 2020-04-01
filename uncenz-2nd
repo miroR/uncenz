@@ -222,7 +222,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     read FAKE
     cd  ${i}_tHostsConv
     ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r \
-        ../${i}_r_dt ../${i}_r_tb ../${i}-msg_r_PDU.txt ../${i}.conv-ip_l \
+        ../${i}_r_dt ../${i}_r_tb ../${i}-msg_r_PDU.txt ../${i}_conv-ip_l.txt \
         | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' \
         | grep -v '\.:'|grep '[[:print:]]'
     read FAKE
@@ -257,7 +257,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "now mandatory."
         for file in $(ls -1tr . ../${i}_messages ../${i}_tHostsConv.log \
             ../${i}_tHostsConv/tsh*log ../${i}_r_dt ../${i}_r_tb ../${i}_r \
-            ../${i}-msg_r_PDU.txt ../${i}.conv-ip_l \
+            ../${i}-msg_r_PDU.txt ../${i}_conv-ip_l.txt \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' | grep -v '\.:' \
             | grep '[[:print:]]'); do
             if [ -e "$file" ]; then
@@ -323,18 +323,18 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "-=-=-"
         echo "NOTE: in a separate terminal you may now edit $TMP/${i}_list"
         read FAKE_permanent
-        # Fixing the ${i}_list for new ${i}.conv-ip_l listing, merged from part of
+        # Fixing the ${i}_list for new ${i}_conv-ip_l.txt listing, merged from part of
         # ../${i}_tHostsConv.log and ${i}.conv-ip
-        if [ -e "../${i}.conv-ip_l" ]; then
+        if [ -e "../${i}_conv-ip_l.txt" ]; then
             grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>" $TMP/${i}_list
             #echo "Shows correctly?"
-            echo "Not open in tab only ../${i}.conv-ip_l,"
+            echo "Not open in tab only ../${i}_conv-ip_l.txt,"
             echo "but open also ../${i}.conv-ip"
             echo "and ../${i}_tHostsConv.log ?"
             ask
             if [ "$?" == 0 ]; then
                 echo "By user choice, all these three will be opened: "
-                ls -l ../${i}.conv-ip_l
+                ls -l ../${i}_conv-ip_l.txt
                 ../${i}.conv-ip
                 ../${i}_tHostsConv.log
             else
@@ -349,8 +349,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 #fi
 				read FAKE
             fi
-			cat ../${i}.conv-ip_l
-			echo "(cat ../${i}.conv-ip_l)"
+			cat ../${i}_conv-ip_l.txt
+			echo "(cat ../${i}_conv-ip_l.txt)"
         fi
     fi
     if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then

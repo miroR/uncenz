@@ -61,27 +61,33 @@ str0=$(cat .uncenz-log_str0)
 echo \$str0: $str0
 # In the same fashion we take the string for grep'ing on system log below, but
 # we call it str1 this time.
-sudo -s tail -1 /var/log/kern.log
-sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
+#sudo -s tail -1 /var/log/kern.log
+#sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
 # 'str1' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
-str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+# If it were kern.log:
+#str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+# If it is syslog:
+str1=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
 echo \$str1: $str1
 # (just no need to stick it into a file)
 # 300000 is just a very likely sufficiently high integer
 if [ -n "$str0" ] && [ -n "$str1" ]; then
     if [ "$str0" != "$str1" ]; then
-        sudo -s cat /var/log/kern.log | grep -aE -A300000 $str0 \
+        sudo -s cat /var/log/syslog | grep -aE -A300000 $str0 \
         	| grep -aE -B300000 $str1 \
         	> /home/$USER/dump_${ts}_${hst}_messages
     else
         # that is if "$str0" == "$str1"
-        sudo -s cat /var/log/kern.log | grep $str0 \
+        sudo -s cat /var/log/syslog | grep $str0 \
         	> /home/$USER/dump_${ts}_${hst}_messages
     fi
 fi
 chmod 600 /home/$USER/dump_${ts}_${hst}_messages
 ls -l /home/$USER/dump_${ts}_${hst}_messages
+if [ ! -s "/home/$USER/dump_${ts}_${hst}_messages" ]; then
+    rm -v /home/$USER/dump_${ts}_${hst}_messages
+fi
 read FAKE
 dumper=$(cat .uncenz-dumper)
 echo \$dumper: $dumper
@@ -151,16 +157,14 @@ echo \$dupid is: # du for dumpcap/tcpdump
 echo $dupid
 
 echo "To kill ffmpeg and dumpcap/tcpdump, hit Enter"
-echo "Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump"
-echo "with issuing: Ctrl-C"
-echo "(but the excerpt from system log for the session will not include"
-echo "what you do next from here)"
+# Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump
+# with issuing: Ctrl-C (but the excerpt from system log for the session will
+# not include what you do next from here).
 # it already does not include the uncenz-{1st,kill}'s script messages (well it
 # does but only a few), for that matter, and it shouldn't. This need be
 # streamlined for events concerning your work on the internet, not these tools
 # (although I might include a debugging option for logging the script's
 # messages in the future).
-
 read FAKE
 
 sudo -s kill $dupid $ffpid

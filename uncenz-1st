@@ -5,7 +5,7 @@
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
-# Copyright (C) 2015 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+# Copyright (C) 2015,2020 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -25,7 +25,7 @@ function ask()
 # usual newline at end, into:
 # .uncenz-dumper_permanent
 if [ -e ".uncenz-dumper_permanent" ]; then
-    dumper=$(cat .uncenz-dumper_permanent)
+    dumper=$(<.uncenz-dumper_permanent)
     if [ "$dumper" == "dumpcap" ] || [ "$dumper" == "tcpdump" ]; then
         echo "\$dumper: $dumper, from your permanent setting";
         echo $dumper > .uncenz-dumper
@@ -90,76 +90,12 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
     exit 0
 fi
 
-homes=( $(ls -1 /home) )
-homes_num=${#homes[@]}
-echo \$homes_num: $homes_num
-num=0
-while [ "$num" -lt "$homes_num" ]; do
-    echo \$homes[$num]: ${homes[$num]}
-    let num+=1
-done
-homes_this_sslk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
-echo \$homes_this_sslk: $homes_this_sslk
-read FAKE
-homes_prev_sslk=""
-num=0 ; while [ "$num" -lt "$homes_num" ]; do
-    echo \$homes[$num]: ${homes[$num]}
-    echo "        /home/${homes[$num]}"
-    echo "        /home/${homes[$num]}/.kl/.sslkey.log"
-    sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
-    echo "ls -l ... awk"
-    sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }'
-    read FAKE
-    homes_cur_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
-    echo \$homes_cur_sslk: $homes_cur_sslk
-    read FAKE
-	#/home/${homes[$num]}/.kl/.sslkey.log
-    if [ "X${homes_prev_sslk}" == "X" ];then
-    	homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
-        echo \$homes_prev_sslk: $homes_prev_sslk
-        read FAKE
-    else
-        echo \$homes_cur_sslk: $homes_cur_sslk
-        echo \$homes_prev_sslk: $homes_prev_sslk
-        if [ "X$homes_prev_sslk" != "X" ]; then
-            if [ "$homes_cur_sslk" -ne "$homes_prev_sslk" ]; then
-                if [ "$homes_cur_sslk" -gt "$homes_prev_sslk" ]; then
-                    homes_highest_sslk="$homes_cur_sslk"
-                else
-                    homes_highest_sslk="$homes_prev_sslk"
-                fi
-            else
-                homes_highest_sslk="$homes_cur_sslk"
-            fi
-            echo \$homes_highest_sslk: $homes_highest_sslk
-     	    homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
-            echo \$homes_prev_sslk: $homes_prev_sslk
-            read FAKE
-        fi
-    fi
-    echo \$homes_highest_sslk: $homes_highest_sslk
-    echo \$homes_prev_sslk: $homes_prev_sslk
-    let num+=1
-done
-if [ "$homes_this_sslk" == "$homes_highest_sslk" ]; then
-    echo \$homes_this_sslk: $homes_this_sslk
-    echo "The highest size of sslk is of this \$USER. Read the STDOUT above."
-else
-    ls -l /home/$USER/.kl/.sslkey.log
-    echo "The highest size of sslk is NOT of this \$USER."
-    echo "Fix that manually, can't work like this."
-    exit 1
-fi
-read FAKE
+#uncenz-chk-tlsfile
+#read FAKE
 
 # Previously, I would move my real ~/.gnupg dir, the ones with all the
 # secret key(s), offline before connecting and substituted it with one with
 # only public keys. Recently I learned to offline secret keys.
-#
-# I really could:
-# FILE=.gnupg-sec
-# gpg --list-secret-keys --with-colon > $FILE
-# but below is better.
 #
 # $f should be empty, for tranquil longer time browsing online.
 f=$(gpg --list-secret-keys --with-colon)
@@ -240,32 +176,6 @@ if [ "$f" != "" ]; then
         done
     fi
 fi
-#read FAKE
-#echo
-# I don't think I'll be checking for Gradm anymore. The FOSS grsec has only but
-# died as of late 2018, I'm afraid. Stick ".uncenz-gradm_none" and not asked.
-if [ ! -e ".uncenz-gradm_none" ]; then
-    rm .gradm-S
-    sudo -s gradm -S > .gradm-S
-    gradm_S=$(cat .gradm-S)
-    if [ "$gradm_S" == "The RBAC system is currently disabled." ]; then
-        echo "#####"
-        echo "$gradm_S"
-        echo
-        echo " Do you really want to go online with Gradm disabled? "
-        echo
-        aplay -q ~/tvtube.wav
-        echo
-        echo "Disconnect, then Ctrl-C, and run uncenz-kill"
-        echo "and then enable Gradm, or..."
-        echo
-        echo "... or hit Enter to continue."
-        echo
-        #read FAKE
-        echo
-        echo "#####"
-	fi
-fi
 
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
@@ -299,89 +209,89 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     # so the first thing to run is actually the uncenz-ts:
     #
     uncenz-ts
-    ts=$(cat .uncenz-ts)
+    ts=$(<.uncenz-ts)
     tsh=${ts}_${hst}
-    ts_old=$(cat .uncenz-ts.old)
+    ts_old=$(<.uncenz-ts.old)
     tsh_old=${ts_old}_${hst}
     #
     # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
     # as "150207_0636" for 2015-02-06 06:36.
     #
-	# I have seen $SSLKEYLOGFILE on poorly maintained system, non-updated
-	# browser, diminishing, i.e. losing keys. We need to check that the
-	# append-only $SSLKEYLOGFILE is not losing content.
-	kl_size=$(ls -l $SSLKEYLOGFILE | awk '{ print $5 }')
-	kl_wc_l=$(wc -l $SSLKEYLOGFILE | awk '{ print $1 }')
-	kl_hash=$(sha256sum $SSLKEYLOGFILE | awk '{ print $1 }')
-	# We don't want to create but one only key log check file for all three above:
-	echo $kl_size $kl_wc_l $kl_hash > ~/.kl_${tsh}_chk
-	chmod 600 ~/.kl_${tsh}_chk
-	# All the 50 or more lines of code below only check if the previous session
-	# has lost keys... Boohoohoo... Still needed, I'd say...
-	# Aarrgh, we'll need to do a check when uncenz-kill is run too...
-	# In previous session, the ~/.kl_${tsh_old}_chk was made
-	# When there were no previous sessions, we should copy the key log file to
-	# a fake old key log check file, else the code just next might break with
-	# errors.
-	ls -l ~/.kl_${tsh_old}_chk
-	if [ ! -e "$HOME/.kl_${tsh_old}_chk" ]; then
-		cp -ia ~/.kl_${tsh}_chk ~/.kl_${tsh_old}_chk
-		echo "NOTE: we created a bogus old key log check file"
-		echo "If you'll be running uncenz in this dir, it won't be happening again."
-		echo "It happens only in the first session."
-		read FAKE
-	fi
-	# Needed only for learning/debugging. Should be commented out (3 ln).
-	echo "cat ~/.kl_${tsh_old}_chk"
-	cat ~/.kl_${tsh_old}_chk
-	read FAKE
-	kl_size_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $1 }')
-	kl_wc_l_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $2 }')
-	kl_hash_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $3 }')
-	# ~/.kl_${tsh}_chk must have at least the same number of lines as old
-	if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
-		# in which case the size and hash must also be same
-		if [ "$kl_size" != "$kl_size_old" ]; then
-			echo "Same number of lines ($kl_wc_l), but different size then before."
-			echo "Check whether loss of data occurred with the key log!"
-			read FAKE
-		# The else needed only for learning/debugging. Should be commented it.
-		else
-			echo \$kl_size: $kl_size
-			echo \$kl_size_old: $kl_size_old
-			read FAKE
-		fi
-		if [ "$kl_hash" != "$kl_hash_old" ]; then
-			echo "Same number of lines ($kl_wc_l), but different hash then before."
-			echo "Check whether loss of data occurred with the key log!"
-			read FAKE
-		# The else needed only for learning/debugging. Should be commented out.
-		else
-			echo \$kl_hash: $kl_hash
-			echo \$kl_hash_old: $kl_hash_old
-			read FAKE
-		fi
-	else
-		# The first old number of lines, head'ed out, must have same size and
-		# hash as in ~/.kl_${tsh_old}_chk.
-		head -${kl_wc_l_old} $SSLKEYLOGFILE > ~/.kl_${tsh}_part
-		chmod 600 ~/.kl_${tsh}_part
-		kl_size_part=$(ls -l ~/.kl_${tsh}_part|awk '{ print $5 }')
-		kl_hash_part=$(sha256sum ~/.kl_${tsh}_part|awk '{ print $1 }')
-		if [ "$kl_size_part" != "$kl_size_old" ]; then
-			echo "For the portion of old number of lines ($kl_wc_l_old), sizes don't match."
-			echo "Check whether loss of data occurred with the key log!"
-			read FAKE
-		fi
-		if [ "$kl_hash_part" != "$kl_hash_old" ]; then
-			echo "For the portion of old number of lines ($kl_wc_l_old), hashes don't match."
-			echo "Check whether loss of data occurred with the key log!"
-			read FAKE
-		fi
-		# Uncomment (1 ln) if script works well:
-		#rm -v ~/.kl_${tsh}_part
-	fi
-			
+    # I have seen $SSLKEYLOGFILE on poorly maintained system, non-updated
+    # browser, diminishing, i.e. losing keys. We need to check that the
+    # append-only $SSLKEYLOGFILE is not losing content.
+    kl_size=$(ls -l $SSLKEYLOGFILE | awk '{ print $5 }')
+    kl_wc_l=$(wc -l $SSLKEYLOGFILE | awk '{ print $1 }')
+    kl_hash=$(sha256sum $SSLKEYLOGFILE | awk '{ print $1 }')
+    # We don't want to create but one only key log check file for all three above:
+    echo $kl_size $kl_wc_l $kl_hash > ~/.kl_${tsh}_chk
+    chmod 600 ~/.kl_${tsh}_chk
+    # All the 50 or more lines of code below only check if the previous session
+    # has lost keys... Boohoohoo... Still needed, I'd say...
+    # Aarrgh, we'll need to do a check when uncenz-kill is run too...
+    # In previous session, the ~/.kl_${tsh_old}_chk was made.
+    # When there were no previous sessions, we should copy the key log file to
+    # a fake old key log check file, else the code just next might break with
+    # errors.
+    ls -l ~/.kl_${tsh_old}_chk
+    if [ ! -e "$HOME/.kl_${tsh_old}_chk" ]; then
+        cp -ia ~/.kl_${tsh}_chk ~/.kl_${tsh_old}_chk
+        echo "NOTE: we created a bogus old key log check file"
+        echo "If you'll be running uncenz in this dir, it won't be happening again."
+        echo "It happens only in the first session."
+        read FAKE
+    fi
+    # Needed only for learning/debugging. Should be commented out (3 ln).
+    echo "cat ~/.kl_${tsh_old}_chk"
+    cat ~/.kl_${tsh_old}_chk
+    read FAKE
+    kl_size_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $1 }')
+    kl_wc_l_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $2 }')
+    kl_hash_old=$(cat ~/.kl_${tsh_old}_chk|awk '{ print $3 }')
+    # ~/.kl_${tsh}_chk must have at least the same number of lines as old
+    if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
+        # in which case the size and hash must also be same
+        if [ "$kl_size" != "$kl_size_old" ]; then
+            echo "Same number of lines ($kl_wc_l), but different size then before."
+            echo "Check whether loss of data occurred with the key log!"
+            read FAKE
+        # The else needed only for learning/debugging. Should be commented it.
+        else
+            echo \$kl_size: $kl_size
+            echo \$kl_size_old: $kl_size_old
+            read FAKE
+        fi
+        if [ "$kl_hash" != "$kl_hash_old" ]; then
+            echo "Same number of lines ($kl_wc_l), but different hash then before."
+            echo "Check whether loss of data occurred with the key log!"
+            read FAKE
+        # The else needed only for learning/debugging. Should be commented out.
+        else
+            echo \$kl_hash: $kl_hash
+            echo \$kl_hash_old: $kl_hash_old
+            read FAKE
+        fi
+    else
+        # The first old number of lines, head'ed out, must have same size and
+        # hash as in ~/.kl_${tsh_old}_chk.
+        head -${kl_wc_l_old} $SSLKEYLOGFILE > ~/.kl_${tsh}_part
+        chmod 600 ~/.kl_${tsh}_part
+        kl_size_part=$(ls -l ~/.kl_${tsh}_part|awk '{ print $5 }')
+        kl_hash_part=$(sha256sum ~/.kl_${tsh}_part|awk '{ print $1 }')
+        if [ "$kl_size_part" != "$kl_size_old" ]; then
+            echo "For the portion of old number of lines ($kl_wc_l_old), sizes don't match."
+            echo "Check whether loss of data occurred with the key log!"
+            read FAKE
+        fi
+        if [ "$kl_hash_part" != "$kl_hash_old" ]; then
+            echo "For the portion of old number of lines ($kl_wc_l_old), hashes don't match."
+            echo "Check whether loss of data occurred with the key log!"
+            read FAKE
+        fi
+        # Uncomment (1 ln) if script works well:
+        #rm -v ~/.kl_${tsh}_part
+    fi
+            
     #
     # Pretty dirty, but does it for me, this below is for the purpose that I
     # more easily find out if my browser, if active, is still
@@ -435,8 +345,10 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     fi
     if [ "$dumper" == "tcpdump" ]; then
         echo sudo -s touch $the_dump
+        sudo -s touch $the_dump
         echo sudo -s chown tcpdump:tcpdump $the_dump
-		read FAKE
+        sudo -s chown tcpdump:tcpdump $the_dump
+        read FAKE
     fi
     #
     ## When I have issues with configuring network (such as setting up bridges)
@@ -454,7 +366,7 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     #
     # Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
     #
-    if [ "$1" ] && [ -n "$1" ]; then
+    if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
         include_filter_run=$1
         echo \$include_filter_run: $include_filter_run
         if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
@@ -468,21 +380,21 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
                 show_help
                 exit 0
         fi
-    else
-        if [ "$dumper" == "dumpcap" ]; then
-			echo "Warning dumpcap not tested for the "-C" option addition"
-			read FAKE
-            sudo -s $dumper -i any -C 100 -w $the_dump &
-        fi
-        if [ "$dumper" == "tcpdump" ]; then
-            # For "-Z tcpdump" option, in Devuan/Debian based systems,
-            # tcpdump system user/group needs to be created, maybe:
-            # "adduser --system --group --no-create-home tcpdump"
-            sudo -s $dumper -C 100 -i any -U -v -w $the_dump -Z tcpdump &
-        fi
-        #sudo -s $dumper -i any -w $the_dump &
-        echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
     fi
+    if [ "$dumper" == "dumpcap" ]; then
+        echo "Warning dumpcap not tested for the "-C" option addition"
+        read FAKE
+        sudo -s $dumper -i any -C 100 -w $the_dump &
+    fi
+    if [ "$dumper" == "tcpdump" ]; then
+        # For "-Z tcpdump" option, in Devuan/Debian based systems,
+        # tcpdump system user/group needs to be created, maybe:
+        # "adduser --system --group --no-create-home tcpdump"
+        sudo -s $dumper -C 100 -i any -U -v -w $the_dump -Z tcpdump &
+    fi
+    #sudo -s $dumper -i any -w $the_dump &
+    echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
+    read FAKE
     if [ "$dumper" == "tcpdump" ]; then
         sudo -s touch $the_cast
         sudo -s chown $USER:$USER $the_cast
@@ -528,14 +440,18 @@ echo \$ffpid is: $ffpid
 # du for $dumper
 echo \$dupid is: $dupid
 
-# The log file with some possibly relevant messages is /var/log/kern.log.
+# The log file with some (in no-grsec linux) rarely relevant messages is
+# /var/log/syslog, or with kernel set to debugging  /var/log/kern.log.
 # During my years with Gentoo it used to be /var/log/messages. Edit according
 # to where you get the logging.
-sudo -s tail -1 /var/log/kern.log
-sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
+sudo -s tail -1 /var/log/syslog
+sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
 # 'str0' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
-str0=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+# If it were kern.log:
+#str0=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
+# If it is syslog:
+str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
 #echo \$str0: $str0
 # I've learned to use mktemp a little in the meantime, but not yet so well, and
 # it's too many changes needed. Only uncenz-2nd uses mktemp at this time...
@@ -551,7 +467,7 @@ read FAKE
 # See the comments about the include with $1 above.
 # Also note that this will silently just be ignored if any of the conditions do
 # not hold.
-if [ "$2" ] && [ -n "$2" ]; then
+if [ "$2" ] && [ -n "$2" ] && [ "X${2}" != "X" ]; then
     include_script_2=$2
     echo \$include_script_2: $include_script_2
     if [ -e "/usr/local/bin/$include_script_2" ] && [ -x "/usr/local/bin/$include_script_2" ]; then
