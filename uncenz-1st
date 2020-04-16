@@ -20,6 +20,41 @@ function ask()
         *) return 1 ;;
     esac
 }
+
+if ( sudo -s iptables -L -n | grep INPUT | grep -q ACCEPT ); then
+    echo iptables are disabled
+    echo "CAN NOT go online"
+    exit 1
+else
+    if ( sudo -s iptables -L -n | grep OUTPUT | grep -q DROP ); then
+        if ( sudo -s iptables -L -n | grep -A5 OUTPUT | grep ACCEPT | grep -q UID ) && \
+            ( sudo -s iptables -L -n | grep -A5 OUTPUT | grep ACCEPT | grep -q GID ); then
+            echo "can use Tor"
+			read FAKE_permanent
+        else
+            echo "iptables NOT enabled (correctly)"
+            echo "CAN NOT use Tor"
+            exit 1
+        fi
+    else
+        if ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) && \
+            ( sudo -s iptables -L -n | grep REJECT | grep -q '127.0.0.0/8' ); then
+            echo "iptables set for CLEAR net"
+			read FAKE_permanent
+            if [ -e "/run/tor/tor.pid" ] || \
+                ( ps aux | grep tor | grep defaults-torrc | grep TorBrowser \
+                | grep -q -v grep ); then
+                echo "but Tor is running"
+                echo "CAN NOT use Tor with this iptables setup"
+                exit 1
+            fi
+        else
+            echo "probably NOT SAFE to go online, work out iptables first"
+            exit 1
+        fi
+    fi
+fi
+
 # If you don't want to reply to this question below every time, you can set
 # either the string "dumpcap" or "tcpdump", no spaces, no extra chars, just the
 # usual newline at end, into:
