@@ -47,21 +47,15 @@ fi
 # First the PCAP-work.sh is run (see workPCAPs link above). Then
 # this script.
 PCAPs=$1
-echo \$PCAPs: $PCAPs
-read FAKE
 PCAPs_tr=$(ls -1 $1 | tr '\012' ' ')
-echo \$PCAPs_tr: $PCAPs_tr
-read FAKE
-echo "ls -1 \$PCAPs|sed 's/\.pcap//'"
 echo "ls -1 $PCAPs|sed 's/\.pcap//'"
 ls -1 $PCAPs|sed 's/\.pcap//'
-read FAKE
+echo
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -l $i.pcap
     read FAKE
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
-    ls -l $TMP
     read FAKE
     ls -ld ${i}_tHostsConv/
     ls -l ${i}_tHostsConv/
@@ -98,125 +92,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "ls -1tr *.pcap"
     ls -1tr *.pcap
     read FAKE
-    echo "Possible old (previous) PCAPlists: "
-    for old_PCAPlist in $(ls -1 ../${i}_PCAPlist_*); do
-        if [ -e "$old_PCAPlist" ]; then
-        echo "Possible candidate for resumption:"
-            ls -l $old_PCAPlist
-            cat $old_PCAPlist
-            ls -l $old_PCAPlist
-        echo "(possible candidate for resumption)"
-        read FAKE
-        fi
-    done
-    for old_PCAPlist in $(ls -1 ../${i}_PCAPlist_*); do
-        echo "Seen all lists, can currently resume only one of them."
-        echo "Resume the old PCAPlist: "
-        ls -l $old_PCAPlist
-        cat $old_PCAPlist
-        echo " ?"
-        ask
-        if [ "$?" == 0 ]; then
-            cat $old_PCAPlist > $TMP/${i}_PCAPlist
-        else
-            echo "I guess then, we should start by opening all \${i}*.pcap"
-            #But it can't be in this else clause. Where?
-            echo "(another loop for that)"
-        fi
-    done
-    if [ ! -e "$TMP/${i}_PCAPlist" ] || [ ! -s "$TMP/${i}_PCAPlist" ]; then
-        echo "default: NOT create the PCAPlist (open no PCAPs with wireshark, just hit Enter)"
-        echo "type Y/y to create list of PCAPs to open"
-        echo "${i}_PCAPlist ?"
-        ask
-        if [ "$?" == 0 ]; then
-            ls -1tr *.pcap > $TMP/${i}_PCAPlist
-            echo "cat $TMP/${i}_PCAPlist"
-            cat $TMP/${i}_PCAPlist
-            read FAKE
-        else
-            echo "Best to open PCAP(s) separately when you learn"
-            echo "which are of interest to your analysis."
-        fi
-    fi
-
-    . shark2use
-
-    if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
-        echo "Open these PCAPs with Wireshark?"
-        echo "(option after decline [the default]: open each PCAP with delay)"
-        echo "NOTE: in a separate terminal you may now edit $TMP/${i}_PCAPlist"
-        echo "      to pick which PCAPs from the list to open" 
-        echo "    (whichever your choice, 'y' or just Enter ('n'))" 
-        ask
-        if [ "$?" == 0 ]; then
-            num_pid=0
-            for j in $(cat $TMP/${i}_PCAPlist); do if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
-                    $WIRESHARK -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
-                else
-                    $WIRESHARK $j &
-                fi
-                pid=$!
-                echo $pid
-                echo $pid > $TMP/${i}_${num_pid}.pid
-                #read FAKE
-                ls -l $TMP/${i}_${num_pid}.pid
-                #read FAKE
-                cat $TMP/${i}_${num_pid}.pid
-                #read FAKE
-                let num_pid=$num_pid+1
-                echo $num_pid: $num_pid
-                #read FAKE
-            done
-        else
-            echo "NOT open these PCAPs with Wireshark with delay btwn opening each PCAP?"
-            echo "default is: do open (just hit Enter)"
-            ask
-            if [ "$?" == 0 ]; then
-                echo "User doesn't want to open PCAPs in this run"
-                echo "(but the PCAPlist has been created and is not empty)."
-            else
-                num_pid=0
-                echo "For default delay of 2sec just Enter, for your own delay, type it in: "
-                echo "(must be an int like 3, or a float like 0.4, and I'm not checking much)"
-                # reason: with delay, you can get them opened in the order you set
-                read delay
-                if [ ! -n "$delay" ]; then
-                    delay=2
-                #else it's what you typed
-                fi
-        echo \$delay: $delay
-        #read FAKE
-                for j in $(cat $TMP/${i}_PCAPlist); do
-                    if [ -e "../${i}_SSLKEYLOGFILE.txt" ]; then
-                        $WIRESHARK -otls.keylog_file:../${i}_SSLKEYLOGFILE.txt $j &
-                    else
-                        #pwd
-                        echo $WIRESHARK $j
-                        if [ -e "$j" ]; then
-                            $WIRESHARK $j &
-                        else
-                            echo "Inexistent $j listed for opening:"
-                            ls -l $j
-                            read FAKE_permanent
-                        fi
-                    fi
-                    pid=$!
-                    echo $pid
-                    echo $pid > $TMP/${i}_${num_pid}.pid
-                    #read FAKE
-                    ls -l $TMP/${i}_${num_pid}.pid
-                    #read FAKE
-                    cat $TMP/${i}_${num_pid}.pid
-                    #read FAKE
-                    let num_pid=$num_pid+1
-                    echo $num_pid: $num_pid
-                    sleep $delay
-                    #read FAKE
-                done
-            fi
-        fi
-    fi
+    ls -1tr *.pcap > $TMP/${i}_PCAPlist
+    echo "cat $TMP/${i}_PCAPlist"
+    cat $TMP/${i}_PCAPlist
+    read FAKE
     cd -
     read FAKE
     ls -dl ${i}_tHostsConv/
@@ -267,13 +146,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "$file" >> $TMP/${i}_list
             fi
         done
-        ls -ld ../${i}_r.d/ $TMP/${i}_PCAPlist
-        read FAKE
-        if [ -e "../${i}_r.d/" ] && [ -e "$TMP/${i}_PCAPlist" ]; then
-            # The PCAPlist is a requirement for creation of this list, for
-            # convenience and ease (note that the PCAPs listed do not have to
-            # be opened).
-            # Namely we surely need it time-ordered.
+        if [ -e "../${i}_r.d/" ]; then
             ls -1 ../${i}_r.d/ > $TMP/${i}_list_r_d.unordered
             echo \$i: $i
             read FAKE
@@ -320,6 +193,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo
         echo "-=-=-"
         echo $TMP/${i}_list is:
+        cat $TMP/${i}_list
         ls -l $TMP/${i}_list
         cat $TMP/${i}_list | wc -l
         echo "  entries"
@@ -343,10 +217,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             cat ../${i}_conv-ip_l.txt
             echo "(cat ../${i}_conv-ip_l.txt)"
         fi
-    fi
-    if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
-        # Adding the PCAPlist to be shown as the previous to last tab in Vim
-        echo $TMP/${i}_PCAPlist >> $TMP/${i}_list
     fi
     # Adding the list to be shown as the last tab in Vim
     echo $TMP/${i}_list >> $TMP/${i}_list
@@ -476,37 +346,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo $x_p_pid > /home/$USER/.uncenz-2nd/${i}_x_p.pid
         cd -
     fi
-    #echo $ts
-    # At this stage, two different lists to save, one to called simply list,
-    # the other PCAPlist.
-    # Both, if saved, will get this timestamp:
+    # If ${i}_list is saved, will get this timestamp:
     ts=$(date +%y%m%d_%H%M)
     echo $ts # ts is for timestamp
     read FAKE
-    if [ -e "$TMP/${i}_PCAPlist" ] && [ -s "$TMP/${i}_PCAPlist" ]; then
-        echo "The PCAPlist: "
-        ls -l $TMP/${i}_PCAPlist
-        cat $TMP/${i}_PCAPlist
-        echo "The editing, if any, was/should have been done in Vim."
-        echo "Do you want to save that PCAPlist as:"
-        echo "${i}_PCAPlist_${ts} ?"
-        ask
-        if [ "$?" == 0 ]; then
-            touch ../${i}_PCAPlist_${ts}
-            echo "cat $TMP/${i}_PCAPlist"
-            cat $TMP/${i}_PCAPlist
-            read FAKE
-            echo "ls -l ../${i}_PCAPlist_${ts}"
-            ls -l ../${i}_PCAPlist_${ts}
-            cat $TMP/${i}_PCAPlist > ../${i}_PCAPlist_${ts}
-            ls -l ../${i}_PCAPlist_${ts}
-            read FAKE
-            cat ../${i}_PCAPlist_${ts}
-            read FAKE
-        else
-            echo "PCAPlist not saved by user choice"
-        fi
-    fi
     echo "The list: "
     ls -l $TMP/${i}_list
     echo "cat $TMP/${i}_list"
@@ -525,15 +368,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo \$TMP: $TMP
         cat $TMP/${i}_list|wc -l
         list_nr_lines=$(cat $TMP/${i}_list|wc -l)
-        #if (grep PCAPlist $TMP/${i}_list); then
-        #    # two last entries are $TMP/PCAPlist and $TMP/list, remove them
-        #    list_nr_lines_minus=$(echo $list_nr_lines-2|bc)
-        #else
-        #    # last entry is $TMP/list, remove it
-        #    list_nr_lines_minus=$(echo $list_nr_lines-1|bc)
-        #fi
         echo \$list_nr_lines: $list_nr_lines
-        cat $TMP/${i}_list | grep -v '_PCAPlist\|_list' > ../${i}_list_${ts}
+        grep -v '_list' $TMP/${i}_list > ../${i}_list_${ts}
         list_nr_lines_minus=$(cat ../${i}_list_${ts}|wc -l)
         echo \$list_nr_lines_minus: $list_nr_lines_minus
         ls -l ../${i}_list_${ts}
