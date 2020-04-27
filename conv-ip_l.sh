@@ -1,27 +1,37 @@
 #!/bin/bash
 #
-# conv-ip_l.sh        optimizing the useful part of ${PCAP}_tHostsConv.log
-#                         produced by tshark-hosts-conv.sh
+# conv-ip_l.sh        optimizes what tshark-hosts-conv.sh
+#                        extracted to ${dump}.conv-ip_l
+#
 
 PCAP_FILE=$1
-num_dots=$(echo $PCAP_FILE|sed 's/\./\n/g'| wc -l)
-num_dots_min_1=$(echo $num_dots - 1 | bc)
-ext=$(echo $PCAP_FILE|cut -d. -f $num_dots)
-dump=$(echo $PCAP_FILE|sed "s/\(.*\)\.$ext/\1/")
+echo \$PCAP_FILE: $PCAP_FILE
+ext=${PCAP_FILE##*.}
+dump=${PCAP_FILE%*.pcap}
+echo \$ext: $ext
 
-# This script is in the set of {uncenz-2nd}-called scripts, and is now
+# This script is in the set of uncenz-2nd -required/-called scripts, and is
 # multiple-instances-in-same-dir viable:
-if [ -e ".${dump}_conv-ip_FIX_tHostsCon.log" ]; then
-    echo "${dump}.pcap can't be worked before you fix:"
-    ls -l .${dump}_conv-ip_FIX_tHostsCon.log
+if [ -e ".${dump}_conv-ip_FIX_source" ]; then
+    echo "${dump}.pcap can't be worked before you fix it, there is:"
+    ls -l .${dump}_conv-ip_FIX_source
     echo "exiting in 5 sec"
     sleep 5
     exit 0
 fi
-touch ${dump}_conv-ip_l.txt
-# There remain temps to be removed...
-
-grep -A3000 -m1 '=-=-=-=-=-=' ${dump}_tHostsConv.log | grep -B30000 -m2 '=-=-=-=-=-=' > ${dump}_conv-ip_l_raw
+ts=$(date +%s)
+if [ -e "${dump}_conv-ip_l.txt" ] && [ ! -s "${dump}_conv-ip_l.txt" ]; then
+    rm -v ${dump}_conv-ip_l.txt
+fi
+if [ -e "${dump}_conv-ip_l.txt" ]; then
+    mv ${dump}_conv-ip_l.txt ${dump}_conv-ip_l.txt_${ts}
+fi
+if [ -e "${dump}.conv-ip_l" ]; then
+    source=${dump}.conv-ip_l
+else
+    source=${dump}_tHostsConv.log
+fi
+grep -A3000 -m1 '=-=-=-=-=-=' $source | grep -B30000 -m2 '=-=-=-=-=-=' > ${dump}_conv-ip_l_raw
 echo cat ${dump}_conv-ip_l_raw
 cat ${dump}_conv-ip_l_raw
 echo "(cat ${dump}_conv-ip_l_raw)"
@@ -43,8 +53,8 @@ echo \$wc_l_ip: $wc_l_ip; echo \$wc_l_traffic: $wc_l_traffic
 if [ "$wc_l_ip" != "$wc_l_traffic" ]; then
     echo "This would produce no meaningful results, the ip's and host's"
     echo "would not align with the traffic."
-    touch .${dump}_conv-ip_FIX_tHostsCon.log
-    ls -l .${dump}_conv-ip_FIX_tHostsCon.log
+    touch .${dump}_conv-ip_FIX_source
+    ls -l .${dump}_conv-ip_FIX_source
     rm -v ${dump}_conv-ip_l.txt
     echo "sleep 3, then exiting..."
     sleep 3
@@ -59,22 +69,22 @@ cat ${dump}_conv-ip_l_no_tab | grep '^[0-9N][0-9\.O]' | grep -v '<->' > ${dump}_
 awk '{ print $1 }' ${dump}_hosts-i-h > ${dump}_hosts-i
 awk '{ print $2 }' ${dump}_hosts-i-h > ${dump}_hosts-h
 ls -l  ${dump}_hosts-i  ${dump}_hosts-h
-read FAKE
+#read FAKE
 # Find out which the longest string, for both ${dump}_hosts-i  ${dump}_hosts-h
 hosts_conv_i_l_max=""
 for ip in $(<${dump}_hosts-i); do
     echo \$ip: $ip
     hosts_conv_i_l=${#ip}
     echo \$hosts_conv_i_l: $hosts_conv_i_l
-    ##read FAKE
+    #read FAKE
     if [ "X${hosts_conv_i_l_max}" == "X" ]; then 
         hosts_conv_i_l_max=$hosts_conv_i_l
         echo \$hosts_conv_i_l_max: $hosts_conv_i_l_max
-        ##read FAKE
+        #read FAKE
     fi
     echo \$hosts_conv_i_l: $hosts_conv_i_l
     echo \$hosts_conv_i_l_max: $hosts_conv_i_l_max
-        ##read FAKE
+        #read FAKE
     if [ "$hosts_conv_i_l" -le "$hosts_conv_i_l_max" ]; then
         echo no change
         echo \$hosts_conv_i_l_max: $hosts_conv_i_l_max
@@ -90,15 +100,15 @@ for hst in $(<${dump}_hosts-h); do
     echo \$hst: $hst
     hosts_conv_h_l=${#hst}
     echo \$hosts_conv_h_l: $hosts_conv_h_l
-    ##read FAKE
+    #read FAKE
     if [ "X${hosts_conv_h_l_max}" == "X" ]; then 
         hosts_conv_h_l_max=$hosts_conv_h_l
         echo \$hosts_conv_h_l_max: $hosts_conv_h_l_max
-        ##read FAKE
+        #read FAKE
     fi
     echo \$hosts_conv_h_l: $hosts_conv_h_l
     echo \$hosts_conv_h_l_max: $hosts_conv_h_l_max
-        ##read FAKE
+        #read FAKE
     if [ "$hosts_conv_h_l" -le "$hosts_conv_h_l_max" ]; then
         echo no change
         echo \$hosts_conv_h_l_max: $hosts_conv_h_l_max
@@ -106,7 +116,7 @@ for hst in $(<${dump}_hosts-h); do
         hosts_conv_h_l_max=$hosts_conv_h_l
         echo \$hosts_conv_h_l_max: $hosts_conv_h_l_max
     fi
-    ##read FAKE
+    #read FAKE
 done
 
 echo \$hosts_conv_i_l_max: $hosts_conv_i_l_max
@@ -134,7 +144,7 @@ while [ "$hosts_conv_line" -le "$wc_l_ip" ]; do
     echo \$hosts_conv_tw: $hosts_conv_tw
     echo \$hosts_conv_line: $hosts_conv_line
     echo \$hosts_conv_i_l_max_p: $hosts_conv_i_l_max_p
-    ##read FAKE
+    #read FAKE
     if [ "$hosts_conv_tw" -lt "$hosts_conv_i_l_max_p" ]; then
         while [ "$hosts_conv_tw" -le "$hosts_conv_i_l_max_p" ]; do
             cat ${dump}_hosts-i-ln | sed 's/\(.*\)/\1\x20/' > ${dump}_hosts-i-ln_align
@@ -150,7 +160,7 @@ while [ "$hosts_conv_line" -le "$wc_l_ip" ]; do
         mv -v ${dump}_hosts-i-ln_align ${dump}_hosts-i-ln
         cat ${dump}_hosts-i-ln >> ${dump}_hosts-i-try
     fi
-    ##read FAKE
+    #read FAKE
     let hosts_conv_line+=1
 done
 
@@ -212,25 +222,25 @@ if [ "$r_case" == "NOTICE-could-not-be-resolved-NOTICE" ]; then
 fi
 
 # Now the header.
-hosts_conv_head_1_l=$(grep -A3 -m1 '=-=-=-=-=-=' ${dump}_tHostsConv.log | tail -2 | head -1 | wc -c) 
-hosts_conv_head_2_l=$(grep -A3 -m1 '=-=-=-=-=-=' ${dump}_tHostsConv.log | tail -1 | head -1 | wc -c) 
+hosts_conv_head_1_l=$(grep -A3 -m1 '=-=-=-=-=-=' $source | tail -2 | head -1 | wc -c) 
+hosts_conv_head_2_l=$(grep -A3 -m1 '=-=-=-=-=-=' $source | tail -1 | head -1 | wc -c) 
 # Must be same:
 if [ "$hosts_conv_head_1_l" != "$hosts_conv_head_2_l" ]; then
     echo "Probably _minor_ inconvenience. Not exiting with failure, but..."
     echo "...Just pls. mark my words:"
     echo "possibly NOT completely correct ouutput:"
     echo "The two lines in the header for conv-ip_l.txt have different length."
-    read FAKE_perm
+    #read FAKE_perm
 fi
 
-grep -A3 -m1 '=-=-=-=-=-=' ${dump}_tHostsConv.log | tail -2 > ${dump}_hosts-head
+grep -A3 -m1 '=-=-=-=-=-=' $source | tail -2 > ${dump}_hosts-head
 hosts_conv_all_l=$(head -1 ${dump}_hosts-conv-all | wc -c)
 echo \$hosts_conv_all_l: $hosts_conv_all_l
 echo $hosts_conv_all_l > .${dump}_conv-ip_l.tw
 # "p" plus, else it's one line missing in bottom with the xterm command, see below
 let wc_l_ip+=3
 echo $wc_l_ip > .${dump}_conv-ip_l.th
-read FAKE
+#read FAKE
 hosts_conv_head_ln=1
 > ${dump}_hosts-head-try
 while [ "$hosts_conv_head_ln" -le "2" ]; do
@@ -273,6 +283,9 @@ for temps in $(echo ${dump}_conv-ip_l_raw ${dump}_conv-ip_l_no_tab \
     ${dump}_hosts-head ${dump}_hosts-head-ln ${dump}_hosts-head-try); do
     rm -v $temps
 done
+if ( diff ${dump}_conv-ip_l.txt ${dump}_conv-ip_l.txt_${ts} ); then
+    mv -v ${dump}_conv-ip_l.txt_${ts} ${dump}_conv-ip_l.txt
+fi
 ls -l ${dump}_conv-ip_l.txt
 ls -l .${dump}_conv-ip_l.tw .${dump}_conv-ip_l.th
 cat .${dump}_conv-ip_l.tw

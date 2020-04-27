@@ -236,7 +236,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     if [ "$?" == 0 ]; then
         echo "User didn't choose to run Vim with the files in tabs."
     else
-        # conv-ip_l.sh took the measures, we want to open an appropriate xterm of its own
+        # conv-ip_l.sh took/will take the measures, we (then will) want to open
+        # an appropriate xterm of its own
         # "w_v" [w]idth for [v]im
         if [ ! -e "../.${i}_conv-ip_l.tw" ]; then
             cd ..
@@ -245,8 +246,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             if [ "$?" == 0 ]; then
                 echo "User chose to exit here."
             else
-                if [ -e ".${dump}_conv-ip_FIX_tHostsCon.log" ]; then
-                    echo "Manually fix ${i}_tHostsCon.log and hit Enter"
+                if [ -e ".${dump}_conv-ip_FIX_source" ]; then
+                    echo "Manually fix ${i} conv-ip_l.sh source and hit Enter"
                     read FAKE_permanent
                 fi
                 conv-ip_l.sh $i.pcap
