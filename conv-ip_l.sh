@@ -23,6 +23,13 @@ ts=$(date +%s)
 if [ -e "${dump}_conv-ip_l.txt" ] && [ ! -s "${dump}_conv-ip_l.txt" ]; then
     rm -v ${dump}_conv-ip_l.txt
 fi
+if [ -e "${dump}_conv-ip_l.lock" ]; then
+	echo "${dump}.pcap likely being worked by another ${0##/} instance"
+	ls -l ${dump}_conv-ip_l.lock
+	exit 0
+fi
+touch ${dump}_conv-ip_l.lock
+ls -l ${dump}_conv-ip_l.lock
 if [ -e "${dump}_conv-ip_l.txt" ]; then
     mv ${dump}_conv-ip_l.txt ${dump}_conv-ip_l.txt_${ts}
 fi
@@ -292,6 +299,7 @@ cat .${dump}_conv-ip_l.tw
 echo "(cat .${dump}_conv-ip_l.tw)"
 cat .${dump}_conv-ip_l.th
 echo "(cat .${dump}_conv-ip_l.th)"
+rm -v ${dump}_conv-ip_l.lock
 # Not very ingenious, but it can be:
 # w=$(<.${dump}_conv-ip_l.tw)
 # h=$(<.${dump}_conv-ip_l.th)
