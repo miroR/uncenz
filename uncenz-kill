@@ -77,10 +77,10 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
         sudo -s cat /var/log/syslog | grep -aE -A300000 $str0 \
         	| grep -aE -B300000 $str1 \
         	> /home/$USER/dump_${ts}_${hst}_messages
-    else
-        # that is if "$str0" == "$str1"
-        sudo -s cat /var/log/syslog | grep $str0 \
-        	> /home/$USER/dump_${ts}_${hst}_messages
+    #else
+    #    # that is if "$str0" == "$str1"
+    #    sudo -s cat /var/log/syslog | grep $str0 \
+    #    	> /home/$USER/dump_${ts}_${hst}_messages
     fi
 fi
 chmod 600 /home/$USER/dump_${ts}_${hst}_messages

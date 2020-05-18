@@ -62,6 +62,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -ld ${i}_tHostsConv/
     read FAKE
     scr=$(echo $i|sed 's/dump_\(.*\)/Screen_\1.mkv/')
+    scr_bare=$scr
     scrg2=$(echo $i|sed 's/dump_\(.*\)/Screen_\1-g2.mkv/')
     scrg2_0=$(echo $scrg2|sed 's/-g2.mkv/-g2-0.mkv/')
     scrg2_base=${scrg2%*.mkv}
@@ -124,21 +125,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             scr="$scrg2"
         fi
     else
-        if [ ! -e ".$scrg2_base.CMD" ]; then
-            # $scrg2_0 .$scrg2_base.CMD must both exist, in normal workflow,
-            # so if any of the two is missing, it must be created from the
-            # other. Give warning to user to create the missing .$scrg2_base.CMD.
-            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-            echo "$scrg2_0 was (previously) made; will be mplayed"
-            echo "However, pls. create .$scrg2_base.CMD"
-            echo "(needed for archiving, when only $scr is kept)"
-            echo "(another reminder shortly)"
-            touch .$scrg2_base.CMD_advise
-            ls -l .$scrg2_base.CMD_advise
-            echo "(sleep 5)"
-            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-            sleep 5
-        fi
         scr="$scrg2_0"
     fi
     ls -l $scr
@@ -148,6 +134,21 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "mplayer $scr"
         echo "not run by user choice"
     else
+        if [ ! -e ".$scrg2_base.CMD" ]; then
+            # $scrg2_0 .$scrg2_base.CMD must both exist, in normal workflow,
+            # so if any of the two is missing, it must be created from the
+            # other. Give warning to user to create the missing .$scrg2_base.CMD.
+            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+            echo "$scrg2_0 was (previously) made; will be mplayed"
+            echo "However, pls. create .$scrg2_base.CMD"
+            echo "(needed for archiving, when only $scr_bare is kept)"
+            echo "(another reminder shortly)"
+            touch .$scrg2_base.CMD_advise
+            ls -l .$scrg2_base.CMD_advise
+            echo "(sleep 5)"
+            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+            sleep 5
+        fi
         if [ -e ".$scrg2_base.CMD_advise" ]; then
             echo "Next is:"
             echo mplayer $scr
@@ -376,8 +377,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 vim_pid=$(</home/$USER/.uncenz-2nd/$vim_pid_file)
                 echo \$vim_pid: $vim_pid
                  read FAKE
-                if ( ps aux | grep $vim_pid | grep -q -v grep ); then
-                    ps aux | grep $vim_pid
+                if ( ps aux | grep "\<$vim_pid\>" | grep -q -v grep ); then
+                    ps aux | grep "\<$vim_pid\>"
                     #ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.l' | tail -1
                     prev_x_v_l_file=$(ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.l' | tail -1)
                     prev_x_v_l=$(</home/$USER/.uncenz-2nd/$prev_x_v_l_file)
@@ -509,19 +510,27 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "Pls. mend for the above missing requisites,"
             echo "(in case any is missing)"
             echo "We next will try and create .$scrg2_base.CMD"
-            echo "(needed for archiving, when only $scr is kept)"
+            echo "(needed for archiving, when only $scr_bare is kept)"
             echo "and hit Enter"
             read FAKE_permanent
             if [ -e ".$scrg2_base-0" ] && [ -e ".$scrg2_base.CMD_pre" ]; then 
                 parts_start=$(<.$scrg2_base-0)
                 echo \$parts_start: $parts_start
                 cat .$scrg2_base.CMD_pre >> .$scrg2_base.CMD
-                echo "mkvmerge -o ${scrg2_base}-0.mkv --split parts:$parts_start- $scrg2" \
-                    >> .$scrg2_base.CMD
+                if [ "$parts_start" != "0:00.000" ]; then
+                    echo "mkvmerge -o ${scrg2_base}-0.mkv --split parts:$parts_start- $scrg2" \
+                        >> .$scrg2_base.CMD
+                    mkvmerge -o ${scrg2_base}-0.mkv --split parts:$parts_start- $scrg2
+                else
+                    echo "#mkvmerge -o ${scrg2_base}-0.mkv --split parts:$parts_start- $scrg2" \
+                        >> .$scrg2_base.CMD
+                    echo "mv -iv $scrg2 ${scrg2_base}-0.mkv" >> .$scrg2_base.CMD
+                    mv -iv $scrg2 ${scrg2_base}-0.mkv
+                    ln -s ${scrg2_base}-0.mkv $scrg2
+                fi
                 cat .$scrg2_base.CMD
                 echo "(cat .$scrg2_base.CMD)"
                 ls -l .$scrg2_base.CMD
-                mkvmerge -o ${scrg2_base}-0.mkv --split parts:$parts_start- $scrg2
             else
                 echo "At least one of these two are inextant:"
                 ls -l .$scrg2_base-0 .$scrg2_base.CMD_pre
@@ -538,26 +547,26 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     if [ -e ".$scrg2_base.CMD_pre" ]; then
         rm -v .$scrg2_base.CMD_pre
     fi
-    read FAKE
+    if [ -e "$scrg2_0" ] && [ -e "$scrg2" ]; then
+        # Mostly, if $scrg2_0, $scrg2 not needed
+        rm -v $scrg2
+        read FAKE
+    fi
+    if [ -e "$scrg2_0" ]; then
+        # Keep $scrg2_0 or not? Probably remove. If short duration, easy to
+        # recreate, if long, too large. However, on repeated analysis, keep
+        # yet! So, ask with '-i'.
+        ls -l $scrg2_0
+        rm -iv $scrg2_0
+    fi
     echo "NOT terminate all windows opened with this run of ${0##/}?"
-        echo "default: do terminate (just hit Enter)"
+    echo "default: do terminate (just hit Enter)"
+    echo "This choice will leave all windows opened,"
+    echo "and the mplayer with the screencast running."
     ask
     if [ "$?" == 0 ]; then
-        echo "This choice will leave all Wireshark windows opened,"
-        echo "and the mplayer with the screencast running."
-        echo "May not be the right choice. Are you sure?"
-        if [ "$?" == 0 ]; then
-            echo "all processes opened with this run of"
-            echo "$0 not kill'ed by user choice"
-            echo "not saved by user choice"
-        else
-            for curjobs in $(ls -1 $TMP/${i}*.pid); do
-                pid=$(cat $curjobs)
-                echo \$pid: $pid
-                echo kill $pid
-                kill $pid
-            done
-        fi
+        echo "All windows left open/running"
+        echo "(excluding those not (yet) taken pid of)"
     else
         for curjobs in $(ls -1 $TMP/${i}*.pid); do
             pid=$(cat $curjobs)
