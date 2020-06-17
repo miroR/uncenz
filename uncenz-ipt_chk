@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# uncenz-ipt_chk
+#
+
+if ( sudo -s iptables -L -n | grep INPUT | grep -q ACCEPT ); then
+    echo iptables are disabled
+    echo "CAN NOT go online"
+    exit 1
+else
+    if ( sudo -s iptables -L -n | grep OUTPUT | grep -q DROP ); then
+        if ( sudo -s iptables -L -n | grep -A5 OUTPUT | grep ACCEPT | grep -q UID ) && \
+            ( sudo -s iptables -L -n | grep -A5 OUTPUT | grep ACCEPT | grep -q GID ); then
+            echo "can use Tor"
+        else
+            echo "iptables NOT enabled (correctly)"
+            echo "CAN NOT use Tor"
+            exit 1
+        fi
+    else
+        if ( sudo -s iptables -L -n | grep INPUT | grep DROP ) && \
+            ( sudo -s iptables -L -n | grep REJECT | grep '127.0.0.0/8' ); then
+            echo "iptables set for CLEAR net"
+        else
+            echo "probably CAN NOT go online"
+            exit 1
+        fi
+    fi
+fi

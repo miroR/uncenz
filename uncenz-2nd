@@ -8,13 +8,13 @@
 # does allow quick analysis of main events by using now-improved uncenz-1st
 # results)
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # This script runs on the produce of:
 # https://github.com/miroR/workPCAPs
 #
-# Copyright 2015, Miroslav Rovis, www.CroatiaFidelis.hr
+# Copyright 2015, 2020 Miroslav Rovis, www.CroatiaFidelis.hr
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -26,10 +26,7 @@ function ask()
         *) return 1 ;;
     esac
 }
-# When this rewrite was introduced, it could only work on all the PCAPs in a
-# dir. Introducing (ah, getopts would be best, but the strategy to go for is
-# far from clear to me yet) the list of PCAPs as first option (as in
-# workPCAPs main script).
+
 if [ $# -eq 0 ]; then
     echo "give (a list of) PCAP(s)"
     echo "(if globbing, you need to quote it, e.g.:"
@@ -51,30 +48,106 @@ PCAPs_tr=$(ls -1 $1 | tr '\012' ' ')
 echo "ls -1 $PCAPs|sed 's/\.pcap//'"
 ls -1 $PCAPs|sed 's/\.pcap//'
 echo
+
+> .pcaps-no-split
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
+    if ( echo $i | grep '\-[0-9][0-9]_' ); then
+        echo "Not echoing the split PCAP the list:"
+        ls -l $i.pcap
+    else
+        echo $i.pcap >> .pcaps-no-split
+    fi
+done
+cat .pcaps-no-split
+echo "(cat .pcaps-no-split)"
+ls -l .pcaps-no-split
+read FAKE
+PCAPs=$(<.pcaps-no-split)
+    
+for i in $(echo $PCAPs|sed 's/\.pcap//'); do
+    echo \$i: $i
+done
+read FAKE
+    
+for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
+    # Temporary. Remove below if:
+    if [ ! -L "$i.pcap" ]; then
+        ls -l $i.pcap
+        ask continue
+        if [ "$?" == 0 ]; then
+            continue
+        fi
+    fi
     ls -l $i.pcap
-    read FAKE
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
     read FAKE
-    ls -ld ${i}_tHostsConv/
-    ls -l ${i}_tHostsConv/
-    ls -ld ${i}_tHostsConv/
+    echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-z][a-z][a-z].*/\1/'
     read FAKE
-    scr=$(echo $i|sed 's/dump_\(.*\)/Screen_\1.mkv/')
-    scr_bare=$scr
-    scrg2=$(echo $i|sed 's/dump_\(.*\)/Screen_\1-g2.mkv/')
-    scrg2_0=$(echo $scrg2|sed 's/-g2.mkv/-g2-0.mkv/')
-    scrg2_base=${scrg2%*.mkv}
-    # debug, del 3 ln
-    echo \$scrg2_base: $scrg2_base
-    echo \$scrg2_0: $scrg2_0
-    echo \$scrg2: $scrg2
+    echo \$i: $i
+    i_tmp=$i
+    echo \$i_tmp: $i_tmp
     read FAKE
+    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z].*\)/\1/')
+    echo \$i: $i
+    echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z]*\)/\2/'
+    read FAKE
+    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z].*\)/\2/')
+    #ls -l ${i}-[0-9][0-9]_[a-z][a-z][a-z]*.pcap
+    echo \$hst_p: $hst_p
+    i_h_p=${i}_${hst_p}
+    echo \$i_h_p: $i_h_p
+    read FAKE
+    scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1.mkv/'| sed 's/-00_/_/')
+    echo \$scr: $scr
+    read FAKE
+    if [ ! -e "$scr" ]; then
+        # The case for no-screencasting captures (with uncenz-inter{,-kill}.sh)
+        touch .${i_h_p}_no_scr
+        ls -l .${i_h_p}_no_scr
+        echo "(because, likely, it is an interim PCAP, without screencasting)"
+    fi
+    if [ -L "${i_h_p}.pcap" ]; then
+        echo "if symlink main"
+        read FAKE
+        for thostsconv in $(ls -1d ${i}-[0-9][0-9]_${hst_p}_tHostsConv); do
+            ls -l ${thostsconv}
+            ls -ld ${thostsconv}
+            echo "(ls -l ${thostsconv})"
+        done
+        read FAKE
+        # Check on the split produce
+        echo \${i_h_p}: ${i_h_p}
+        read FAKE
+        touch .${i_h_p}_sym-pcap
+        ls -l .${i_h_p}_sym-pcap
+        read FAKE
+        ls -l ${i_h_p}.pcap
+    else
+        echo "if symlink else"
+        ls -ld ${i_h_p}_tHostsConv
+        ls -l ${i_h_p}_tHostsConv
+        echo "(ls -l ${i_h_p}_tHostsConv)"
+        read FAKE
+    fi
+    if [ -e "$scr" ]; then
+        scr_bare=$scr
+        scrg2=$(echo ${i_h_p}|sed 's/dump_\(.*\)/Screen_\1-g2.mkv/' | sed 's/-[0-9][0-9]_/_/')
+        scrg2_0=$(echo $scrg2|sed 's/-g2.mkv/-g2-0.mkv/')
+        scrg2_base=${scrg2%*.mkv}
+        # debug, del 5 ln
+        echo \$scr: $scr
+        echo \$scr_bare: $scr_bare
+        echo \$scrg2_base: $scrg2_base
+        echo \$scrg2_0: $scrg2_0
+        echo \$scrg2: $scrg2
+        read FAKE
+    fi
     # Set at start here separately, because this will be the usual case for
     # working on archived PCAPs. Namely $scrg2 and $scrg2_0 will not be kept,
     # as they are usually 5-8 times larger than original $scr.
-    if [ -e ".$scrg2_base.CMD" ] && [ -e ".$scrg2_base-0" ]; then
+    if [ -e ".$scrg2_base.CMD" ] && [ -e ".$scrg2_base-0" ] && \
+        [ ! -s ".$scrg2_base-0" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
         if [ ! -e "$scrg2" ]; then
             if [ ! -e "$scrg2_0" ]; then
                chmod 755 .$scrg2_base.CMD
@@ -83,7 +156,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
         fi
     fi
-    if [ ! -e ".$scrg2_base.CMD" ]; then
+    if [ ! -e ".$scrg2_base.CMD" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
         echo "ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2" \
             > .$scrg2_base.CMD_pre # the full .$scrg2_base.CMD may need
         cat .$scrg2_base.CMD_pre
@@ -92,124 +165,214 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "(is base for .$scrg2_base.CMD)"
         read FAKE
     fi
-    # may be the sole content of it, but only if $i.pcap and $src are synced
+    # may be the sole content of it, but only if ${i_h_p}.pcap and $scr are synced
     # when originally captured
-    if [ ! -e "$scrg2_0" ]; then # Before perusal of course only $scr there.
-                                 # if we have $scrg2_0 it should be final, no
-                                 # $scrg2 needed, in the perusal-state. For
-                                 # archive-state only $scr (orig) is kept
-                                 # ($scrg{,_0}'s are large), IOW either $srg2_0 is
-                                 # sufficient (perusal-state) or $scr orig and
-                                 # .$scrg2_base.CMD must exist, archive-state
-                                 # (after perusal). Only the .$scrg2_base.CMD
-                                 # could add to original archive, in which,
-                                 # basically, no files are changed since
-                                 # creation during online capture
+    if [ ! -e "$scrg2_0" ] && \
+        [ ! -e ".${i_h_p}_no_scr" ]; then # Before perusal of course only $scr there.
+                                      # if we have $scrg2_0 it should be final, no
+                                      # $scrg2 needed, in the perusal-state. For
+                                      # archive-state only $scr (orig) is kept
+                                      # ($scrg{,_0}'s are large), IOW either $srg2_0 is
+                                      # sufficient (perusal-state) or $scr orig and
+                                      # .$scrg2_base.CMD must exist, archive-state
+                                      # (after perusal). Only the .$scrg2_base.CMD
+                                      # could add to original archive, in which,
+                                      # basically, no files are changed since
+                                      # creation during online capture
         if [ ! -e "$scrg2" ]; then
             echo "To properly play the $scr and move in it to around 2 sec precision"
             echo "\"ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2\" is needed"
             ask "NOT do that? (default, just Enter, will do it)"
             if [ "$?" == 0 ]; then
-                echo "User refused to create $scrg2"
+                echo "User declined to create $scrg2"
             else
-                #echo "ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2" \
-                #    > .$scrg2_base.CMD_pre # the full .$scrg2_base.CMD may need
-                #                           # more
                 ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2
                 scr="$scrg2"
             fi
         else
             # first round perusal, we don't yet know at what NNsec.MMMmilisec
-            # offset to sync $scr and $i.pcap
+            # offset to sync $scr and ${i_h_p}.pcap
             touch .$scrg2_base.CMD_advise
             scr="$scrg2"
         fi
     else
         scr="$scrg2_0"
     fi
-    ls -l $scr
-    echo "NOT run: mplayer $scr ?"
-    ask
-    if [ "$?" == 0 ]; then
-        echo "mplayer $scr"
-        echo "not run by user choice"
-    else
-        if [ ! -e ".$scrg2_base.CMD" ]; then
-            # $scrg2_0 .$scrg2_base.CMD must both exist, in normal workflow,
-            # so if any of the two is missing, it must be created from the
-            # other. Give warning to user to create the missing .$scrg2_base.CMD.
-            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-            echo "$scrg2_0 was (previously) made; will be mplayed"
-            echo "However, pls. create .$scrg2_base.CMD"
-            echo "(needed for archiving, when only $scr_bare is kept)"
-            echo "(another reminder shortly)"
-            touch .$scrg2_base.CMD_advise
-            ls -l .$scrg2_base.CMD_advise
-            echo "(sleep 5)"
-            echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-            sleep 5
-        fi
-        if [ -e ".$scrg2_base.CMD_advise" ]; then
-            echo "Next is:"
-            echo mplayer $scr
-            echo "NOTE: You are advised to, during/upon perusal, create:"
-            echo ".$scrg2_base.CMD"
-            echo "manually, so take down the exact name(s) needed, above and below here"
-            if [ -e ".$scrg2_base.CMD_pre" ]; then
-                echo "So use also:"
-                cat .$scrg2_base.CMD_pre
-                echo "(cat .$scrg2_base.CMD_pre)"
-                ls -l .$scrg2_base.CMD_pre
-                echo "for first line of .$scrg2_base.CMD"
-            fi
-            echo "and you should create it/or you can instead fill a filename:"
-            echo " .$scrg2_base-0 "
-            echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
-            echo "and before the end of this session I'll create .$scrg2_base.CMD"
-            # such as "0:03.500" without quotes
-            echo "mplayer $scr now"
-            read FAKE
-            mplayer $scr & scr_pid=$!
+    if [ -e "$scr" ]; then ls -l $scr ; fi
+    if [ ! -e ".${i_h_p}_no_scr" ]; then
+        echo "NOT run: mplayer $scr ?"
+        ask
+        if [ "$?" == 0 ]; then
+            echo "mplayer $scr"
+            echo "not run by user choice"
         else
-            mplayer -really-quiet $scr & scr_pid=$!
+            if [ ! -e ".$scrg2_base.CMD" ]; then
+                # $scrg2_0 .$scrg2_base.CMD must both exist, in normal workflow,
+                # so if any of the two is missing, it must be created from the
+                # other. Give warning to user to create the missing .$scrg2_base.CMD.
+                echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+                echo "$scrg2_0 was (previously) made; will be mplayed"
+                echo "However, pls. create .$scrg2_base.CMD"
+                echo "(needed for archiving, when only $scr_bare is kept)"
+                echo "(another reminder shortly)"
+                touch .$scrg2_base.CMD_advise
+                ls -l .$scrg2_base.CMD_advise
+                echo "(sleep 1.5)"
+                echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
+                sleep 3.5
+            fi
+            if [ -e ".$scrg2_base.CMD_advise" ]; then
+                echo "Next is:"
+                echo mplayer $scr
+                echo "NOTE: With the offset in $scr that you will assess we will create later:"
+                echo ".$scrg2_base.CMD"
+                if [ -e ".$scrg2_base.CMD_pre" ]; then
+                    echo "We will use:"
+                    cat .$scrg2_base.CMD_pre
+                    echo "(cat .$scrg2_base.CMD_pre)"
+                    ls -l .$scrg2_base.CMD_pre
+                    echo "for first line of .$scrg2_base.CMD"
+                fi
+                echo
+                echo "You will be asked to input the offset to cut $scr from into the filename:"
+                touch .$scrg2_base-0
+                ls -l .$scrg2_base-0
+                echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
+                echo "such as "0:03.500" without quotes."
+                echo
+                echo "And before the end of this session we will create:"
+                echo ".$scrg2_base.CMD and run it."
+                echo
+                echo "NOTE: mplayer will run in bg. Do follow STDOUT here in this terminal!"
+                echo "(just, once mplayer starts, focus back to this terminal, and hit Enter)"
+                echo "mplayer $scr now"
+                read FAKE
+                mplayer $scr & scr_pid=$!
+            else
+                mplayer -really-quiet $scr & scr_pid=$!
+            fi
+            echo $scr_pid > $TMP/${i_h_p}_scr.pid
+            echo $(<$TMP/${i_h_p}_scr.pid)
+            read FAKE
         fi
-        echo $scr_pid > $TMP/${i}_scr.pid
-        echo $(<$TMP/${i}_scr.pid)
-        read FAKE
     fi
-    cd ${i}_tHostsConv/
-    echo "ls -1tr *.pcap"
-    ls -1tr *.pcap
+    pwd
+    echo \$i: $i
+    echo \$hst_p: $hst_p
+    echo \$i_h_p: $i_h_p
     read FAKE
-    ls -1tr *.pcap > $TMP/${i}_PCAPlist
-    echo "cat $TMP/${i}_PCAPlist"
-    cat $TMP/${i}_PCAPlist
+    if [ ! -e ".${i_h_p}_sym-pcap" ]; then
+        ls -l ${i_h_p}.pcap
+        ask "NOT open ${i_h_p}.pcap with Wireshark?"
+        if [ "$?" == 0 ]; then
+            echo "User declined to open ${i}_${hst_p}.pcap with Wireshark"
+        else
+            if [ -e "${i_h_p}_SSLKEYLOGFILE.txt" ]; then
+                echo "wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap"
+                wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap & pid=$!
+                read FAKE
+            else
+                echo "wireshark ${i_h_p}.pcap"
+                wireshark ${i_h_p}.pcap & pid=$!
+                read FAKE
+            fi
+            echo $pid > $TMP/${i_h_p}_wireshark.pid
+            cat $TMP/${i_h_p}_wireshark.pid
+            echo "(cat $TMP/${i_h_p}_wireshark.pid)"
+            ls -l $TMP/${i_h_p}_wireshark.pid
+        fi
+    else
+        echo \$i: $i
+        echo \$hst_p: $hst_p
+        read FAKE
+        echo "This:"
+        ls -l ${i_h_p}.pcap
+        echo "is the symlink of the first in a split PCAP series:"
+        # However, can't work here without the $hst part, hardwired in uncenz to three letters.
+        for split_pcap in $(ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap); do
+            ls -l ${split_pcap}
+        done
+        #ls -l ${i}-[0-9][0-9]_${hst_p}.pcap
+        echo "NOT open this series of split PCAPs with Wireshark?"
+        ask "(currently only all or none)"
+        if [ "$?" == 0 ]; then
+            echo "User doesn't want to open these PCAPs."
+        else
+            echo "For default delay of 2sec just Enter, for your own delay, type it in: "
+            echo "Must be an int like 3, or a float like 0.4"
+            echo "WARNING: I'm doing no error checking!"
+            read delay
+            if [ -n "delay" ]; then
+                delay=2
+            fi
+            num_pid=0
+            ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap
+            if [ -e "${i_h_p}.SSLKEYLOGFILE.txt" ]; then
+                for k in $(ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap|sed 's/\.pcap//'); do
+                    echo "wireshark -ossl.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap"
+                    wireshark -ossl.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap &
+                    pid=$!
+                    echo $pid
+                    echo $pid > $TMP/${k}_wireshark_${num_pid}.pid
+                    ls -l $TMP/${k}_wireshark_${num_pid}.pid
+                    cat $TMP/${k}_wireshark_${num_pid}.pid
+                    let num_pid=$num_pid+1
+                    echo $num_pid: $num_pid
+                    sleep $delay
+                done
+            else
+                for k in $(ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap|sed 's/\.pcap//'); do
+                    echo "wireshark $k.pcap"
+                    wireshark $k.pcap &
+                    pid=$!
+                    echo $pid
+                    echo $pid > $TMP/${k}_wireshark_${num_pid}.pid
+                    ls -l $TMP/${k}_wireshark_${num_pid}.pid
+                    cat $TMP/${k}_wireshark_${num_pid}.pid
+                    let num_pid=$num_pid+1
+                    echo $num_pid: $num_pid
+                    sleep $delay
+                done
+            fi
+        fi
+    fi
+    ask continue
+    if [ "$?" == 0 ]; then
+        continue
+    fi
+    #cd  ${i_h_p}.tHostsConv
+    #if [ ! -e ".${i_h_p}_sym-pcap" ]; then
+    #    ls -1 ${i_h_p}_conv-ip_l.txt \
+    #        ${i_h_p}_messages ${i_h_p}_r \
+    #        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v ${i_h_p}-msg_r_PDU.txt \
+    #        ${i_h_p}_rn.d/*.log \
+    #        | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
+    #        | grep -v '\.:'|grep '[[:print:]]'
+    #else
+        echo \$i: $i
+        echo \$hst_p: $hst_p
+        echo \$i_h_p: $i_h_p
+        read FAKE
+        ls -1 ${i_h_p}_conv-ip_l.txt \
+            ${i_h_p}_messages ${i_h_p}_r \
+            ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v ${i_h_p}-msg_r_PDU.txt \
+            ${i_h_p}_rn.d/*.log \
+            | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
+            | grep -v '\.:'|grep '[[:print:]]'
+    #fi
     read FAKE
-    cd -
-    read FAKE
-    ls -dl ${i}_tHostsConv/
-    ls -l ${i}_tHostsConv/
-    ls -dl ${i}_tHostsConv/
-    read FAKE
-    cd  ${i}_tHostsConv
-    ls -1tr . ../${i}_messages ../${i}_tHostsConv.log ../${i}_r \
-        ../${i}_r_dt ../${i}_r_tb ../${i}-msg_r_PDU.txt \
-        | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1' \
-        | grep -v '\.:'|grep '[[:print:]]'
-    read FAKE
-    touch $TMP/${i}_list
+    touch $TMP/${i_h_p}_list
     echo "Possible old (previous) lists: "
-    for old_list in $(ls -1 ../${i}_list_*); do
+    for old_list in $(ls -1 ${i_h_p}_list_*); do
         if [ -e "$old_list" ]; then
         echo "Possible candidate for resumption:"
-            ls -l $old_list
             cat $old_list
             ls -l $old_list
         echo "(possible candidate for resumption)"
         read FAKE
         fi
     done
-    for old_list in $(ls -1 ../${i}_list_*); do
+    for old_list in $(ls -1 ${i_h_p}_list_*); do
         echo "You've seen all lists, we can currently resume only one of them."
         echo "Resume the old list (after you Enter to cat it first): "
         read FAKE
@@ -219,108 +382,91 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo " ?"
         ask
         if [ "$?" == 0 ]; then
-            cat $old_list > $TMP/${i}_list    
+            cat $old_list > $TMP/${i_h_p}_list    
         fi
     done
-    # ../${i}_tHostsConv/tsh*log is old-style, will be abandoned
-    # for ../${i}_tHostsConv.log
-    if [ ! -e "$TMP/${i}_list" ] || [ ! -s "$TMP/${i}_list" ]; then
+    if [ ! -e "$TMP/${i_h_p}_list" ] || [ ! -s "$TMP/${i_h_p}_list" ]; then
         echo "No list resumed. Creating the list:"
-        echo "${i}_list"
+        echo "${i_h_p}_list"
         echo "now mandatory."
-        for file in $(ls -1tr . ../${i}_messages \
-            ../${i}_r_dt ../${i}_r_tb ../${i}_r_v \
-            ../${i}_r ../${i}-msg_r_PDU.txt \
-            | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|hosts-worked-ls-1\|_127.0.0.1_\|CMD' \
-            | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
-            if [ -e "$file" ]; then
-                echo "$file" >> $TMP/${i}_list
-            fi
-        done
-        if [ -e "../${i}_r.d/" ]; then
-            ls -1 ../${i}_r.d/ > $TMP/${i}_list_r_d.unordered
-            echo \$i: $i
-            read FAKE
-            echo "cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
-|grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
-|grep -v 0.0.0.0|grep -v dump_"
-            cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
-                |grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
-                |grep -v 0.0.0.0|grep -v dump_
-            read FAKE
-            for ip_pcap in $(cat $TMP/${i}_PCAPlist|sed "s/${i}_\(.*\)\.pcap/\1/"\
-                |grep -v 127.0.0.1|grep -v 224.0.0.1|grep -v 255.255.255.255\
-                |grep -v 0.0.0.0|grep -v dump); do
-                if [ "X${ip_pcap}" == "X" ]; then
-                    echo "it's empty, discarding"
-                    echo "($ip_pcap: $ip_pcap)"
-                    echo "will \"continue\" here"
-                    read FAKE
-                    continue
+        read FAKE
+        #if [ ! -e ".${i_h_p}_sym-pcap" ]; then
+            for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
+                ${i_h_p}_messages \
+                ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
+                ${i_h_p}_r ${i_h_p}-msg_r_PDU.txt \
+                ${i_h_p}_rn.d/*.log \
+                | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
+                | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
+                if [ -e "$file" ]; then
+                    echo "$file" >> $TMP/${i_h_p}_list
                 fi
-                ls -l $TMP/${i}_list_r_d.unordered
-                mv -v $TMP/${i}_list_r_d.unordered $TMP/${i}_list_r_d.unordered_temp
-                echo "grep \$ip_pcap \$TMP/${i}_list_r_d.unordered_temp"
-                echo "grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp"
-                grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp
-                read FAKE
-                grep $ip_pcap $TMP/${i}_list_r_d.unordered_temp >> $TMP/${i}_list
-                grep -v $ip_pcap $TMP/${i}_list_r_d.unordered_temp
-                grep -v $ip_pcap $TMP/${i}_list_r_d.unordered_temp \
-                    > $TMP/${i}_list_r_d.unordered
-                ls -l $TMP/${i}_list_r_d.unordered $TMP/${i}_list_r_d.unordered_temp
-                read FAKE
-                sed "s/\(${i}_r_.*${ip_pcap}\.log\)/\.\.\/${i}_r\.d\/\1/" $TMP/${i}_list
-                read FAKE
-                sed  -i "s/\(${i}_r_.*${ip_pcap}\.log\)/\.\.\/${i}_r\.d\/\1/" $TMP/${i}_list
-                #file=
-                #echo "../${i}_r.d/$file" >> $TMP/${i}_list
             done
-            # Learn about Bash misteries! I left this by mistake (just try and
-            # uncomment that one line, and the files listed in the content of
-            # this file were misteriously diappearing, the entire dir: 
-            #$TMP/${i}_list_r_d.unordered_temp
-        fi
-        echo
+        #else
+        #    ls -l .${i_h_p}_sym-pcap
+        #    read FAKE
+        #    for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
+        #        ${i_h_p}_messages \
+        #        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
+        #        ${i_h_p}_r ${i_h_p}-msg_r_PDU.txt \
+        #        ${i_h_p}_rn.d/*.log \
+        #        | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
+        #        | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
+        #        if [ -e "$file" ]; then
+        #            echo "$file" >> $TMP/${i_h_p}_list
+        #        fi
+        #    done
+        #fi
+        echo "Check: "
+        cat $TMP/${i_h_p}_list
+        echo "(cat $TMP/${i_h_p}_list)"
+        read FAKE
+        #if [ -e "${i_h_p}_rn.d/" ]; then
+        #    ls -1 ${i_h_p}_rn.d/*| grep '\.log' >> $TMP/${i_h_p}_list
+        #fi
+        #echo
         echo "-=-=-"
-        echo $TMP/${i}_list is:
-        cat $TMP/${i}_list
-        ls -l $TMP/${i}_list
-        cat $TMP/${i}_list | wc -l
-        echo "  entries"
+        echo "  The list:"
+        ls -l  $TMP/${i_h_p}_list
+        cat $TMP/${i_h_p}_list
+        echo "    is:"
+        echo -n "        "
+        cat $TMP/${i_h_p}_list | wc -l
+        echo "            entries"
         echo "-=-=-"
-        echo "NOTE: in a separate terminal you may now edit $TMP/${i}_list"
+        echo "NOTE: in a separate terminal you may now edit:"
+        echo "$TMP/${i_h_p}_list"
         read FAKE_permanent
-        # Fixing the ${i}_list for new ${i}_conv-ip_l.txt listing, merged from part of
-        # ../${i}_tHostsConv.log and ${i}.conv-ip
-        if [ -e "../${i}_conv-ip_l.txt" ] && [ -s "../${i}_conv-ip_l.txt" ]; then
-            grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>" $TMP/${i}_list
-            read FAKE
-            grep -v "${i}_tHostsConv.log\|${i}.conv-ip\>\|${i}_list" \
-                $TMP/${i}_list > ${i}_list_tmp
-            diff ${i}_list_tmp $TMP/${i}_list
-            read FAKE
-            echo  ../${i}_conv-ip_l.txt > ${i}_list
-            cat ${i}_list_tmp >> ${i}_list
-            mv -v ${i}_list $TMP/${i}_list
-            read FAKE
-            rm -v ${i}_list_tmp
-            cat ../${i}_conv-ip_l.txt
-            echo "(cat ../${i}_conv-ip_l.txt)"
-        else
-            echo "${i}_conv-ip_l.txt not extant or empty."
-            echo "Pls. mend for that, and hit Enter."
-            echo "(and if it still will not be right, we'll exit)"
-            read FAKE_permanent
-            if [ ! -e "../${i}_conv-ip_l.txt" ] || [ ! -s "../${i}_conv-ip_l.txt" ]; then
-            echo "${i}_conv-ip_l.txt is essential for this script."
-            echo "And is either not extant or empty. Can't work."
-                exit 1
-            fi
-        fi
+        # Fixing the ${i_h_p}_list for ${i_h_p}_conv-ip_l.txt listing, merged from part of
+        # and ${i_h_p}.conv-ip
+        #if [ -e "${i_h_p}_conv-ip_l.txt" ] && [ -s "${i_h_p}_conv-ip_l.txt" ]; then
+        #    grep -v "\|${i_h_p}.conv-ip\>" $TMP/${i_h_p}_list
+        #    read FAKE
+        #    grep -v "\|${i_h_p}.conv-ip\>\|${i_h_p}_list" \
+        #        $TMP/${i_h_p}_list > ${i_h_p}_list_tmp
+        #    diff ${i_h_p}_list_tmp $TMP/${i_h_p}_list
+        #    read FAKE
+        #    echo  ${i_h_p}_conv-ip_l.txt > ${i_h_p}_list
+        #    cat ${i_h_p}_list_tmp >> ${i_h_p}_list
+        #    mv -v ${i_h_p}_list $TMP/${i_h_p}_list
+        #    read FAKE
+        #    rm -v ${i_h_p}_list_tmp
+        #    cat ${i_h_p}_conv-ip_l.txt
+        #    echo "(cat ${i_h_p}_conv-ip_l.txt)"
+        #else
+        #    echo "${i_h_p}_conv-ip_l.txt not extant or empty."
+        #    echo "Pls. mend for that, and hit Enter."
+        #    echo "(and if it still will not be right, we'll exit)"
+        #    read FAKE_permanent
+        #    if [ ! -e "${i_h_p}_conv-ip_l.txt" ] || [ ! -s "${i_h_p}_conv-ip_l.txt" ]; then
+        #    echo "${i_h_p}_conv-ip_l.txt is essential for this script."
+        #    echo "And is either not extant or empty. Can't work."
+        #        exit 1
+        #    fi
+        #fi
     fi
     # Adding the list to be shown as the last tab in Vim
-    echo $TMP/${i}_list >> $TMP/${i}_list
+    echo $TMP/${i_h_p}_list >> $TMP/${i_h_p}_list
     echo "The list of files to view in Vim is prepared."
     echo "And if you want to add other files for viewing next,"
     echo "edit the list."
@@ -328,47 +474,49 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "(it will also open in a tab in Vim for editing later)"
     ask
     if [ "$?" == 0 ]; then
-        vim $TMP/${i}_list
+        vim $TMP/${i_h_p}_list
     fi
     mkdir -pv /home/$USER/.uncenz-2nd/
     echo "NOT view these files in Vim (not launch Vim with them in tabs?"
     echo "(Enter for launching Vim to open those files):"
     ask
     if [ "$?" == 0 ]; then
-        echo "User didn't choose to run Vim with the files in tabs."
+        echo "User declined to run Vim with the files in tabs."
     else
         # conv-ip_l.sh took/will take the measures, we (then will) want to open
         # an appropriate xterm of its own
         # "w_v" [w]idth for [v]im
-        if [ ! -e "../.${i}_conv-ip_l.tw" ]; then
-            cd ..
-            ls -l .${i}_conv-ip_l.tw
-            ask "is required, probably need to run conv-ip_l.sh $i.pcap hit Enter or y/Y to exit"
+        if [ ! -e ".${i_h_p}_conv-ip_l.tw" ] && [ ! -s ".${i_h_p}_conv-ip_l.tw" ]; then
+            ls -l .${i_h_p}_conv-ip_l.tw
+            echo "is required, probably need to run:"
+            echo "conv-ip_l.sh ${i_h_p}.pcap"
+            ask "Hit Enter or y/Y to exit"
             if [ "$?" == 0 ]; then
                 echo "User chose to exit here."
             else
-                if [ -e ".${dump}_conv-ip_FIX_source" ]; then
-                    echo "Manually fix ${i} conv-ip_l.sh source and hit Enter"
+                if [ -e ".${i_h_p}_conv-ip_FIX_source" ]; then
+                    echo "Possibly you can manually fix ${i_h_p}.conv-ip_l source"
+                    echo "an fix it by running the conv-ip_l.sh"
+                    echo "If done, hit Enter!"
                     read FAKE_permanent
                 fi
-                conv-ip_l.sh $i.pcap
+                conv-ip_l.sh ${i_h_p}.pcap
             fi
-            cd -
         fi
-        w_v=$(<../.${i}_conv-ip_l.tw)
-        cat ../.${i}_conv-ip_l.tw
-        ls -l ../.${i}_conv-ip_l.tw
+        w_v=$(<.${i_h_p}_conv-ip_l.tw)
+        #cat .${i_h_p}_conv-ip_l.tw
+        #ls -l .${i_h_p}_conv-ip_l.tw
         echo \$w_v: $w_v
-        read FAKE
+        #read FAKE
         # "h_v" [h]ight for [v]im
         h_v=50
         echo \$h_v: $h_v
-        echo "view -p $(<$TMP/${i}_list)" > CMD_raw
+        echo "view -p $(<$TMP/${i_h_p}_list)" > CMD_raw
         cat CMD_raw | tr '\012' '@' | sed 's/@/ /g' > CMD
         echo >> CMD
         chmod 755 CMD
         rm CMD_raw
-        read FAKE
+        #read FAKE
         prev_x_v_l_file_extant=""
         prev_x_v_t_file_extant=""
         if [ -e "/home/$USER/.uncenz-2nd/" ]; then
@@ -376,7 +524,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             for vim_pid_file in $(ls -1tr "/home/$USER/.uncenz-2nd/" | grep 'x_v\.pid'); do
                 vim_pid=$(</home/$USER/.uncenz-2nd/$vim_pid_file)
                 echo \$vim_pid: $vim_pid
-                 read FAKE
+                #read FAKE
                 if ( ps aux | grep "\<$vim_pid\>" | grep -q -v grep ); then
                     ps aux | grep "\<$vim_pid\>"
                     #ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.l' | tail -1
@@ -384,11 +532,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     prev_x_v_l=$(</home/$USER/.uncenz-2nd/$prev_x_v_l_file)
                     #ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.t' | tail -1
                     echo \$prev_x_v_l: $prev_x_v_l
-                     read FAKE
+                    #read FAKE
                     prev_x_v_t_file=$(ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.t' | tail -1)
                     prev_x_v_t=$(</home/$USER/.uncenz-2nd/$prev_x_v_t_file)
                     echo \$prev_x_v_t: $prev_x_v_t
-                     read FAKE
+                    #read FAKE
                     prev_x_v_l_file_extant="$prev_x_v_l_file"
                     prev_x_v_t_file_extant="$prev_x_v_t_file"
                 else
@@ -408,13 +556,13 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             done
             # debug 6 ln
             #echo \$prev_vim_pid_file_extant: $prev_vim_pid_file_extant
-            echo \$prev_x_v_l_file_extant: $prev_x_v_l_file_extant
-            echo \$prev_x_v_t_file_extant: $prev_x_v_t_file_extant
-            ls -l /home/$USER/.uncenz-2nd/$prev_x_v_l_file_extant
-            ls -l /home/$USER/.uncenz-2nd/$prev_x_v_t_file_extant
-            echo \$prev_x_v_l: $prev_x_v_l
-            echo \$prev_x_v_t: $prev_x_v_t
-             read FAKE
+            #echo \$prev_x_v_l_file_extant: $prev_x_v_l_file_extant
+            #echo \$prev_x_v_t_file_extant: $prev_x_v_t_file_extant
+            #ls -l /home/$USER/.uncenz-2nd/$prev_x_v_l_file_extant
+            #ls -l /home/$USER/.uncenz-2nd/$prev_x_v_t_file_extant
+            #echo \$prev_x_v_l: $prev_x_v_l
+            #echo \$prev_x_v_t: $prev_x_v_t
+            #read FAKE
             if [ "X$(ls -1 /home/$USER/.uncenz-2nd/$prev_x_v_l_file_extant)" == "X" ] && \
                 [ "X$(ls -1 /home/$USER/.uncenz-2nd/$prev_x_t_l_file_extant)" == "X" ]; then
                 echo in main
@@ -424,69 +572,75 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 let l=$prev_x_v_l+30
                 let t=$prev_x_v_t+13
             fi
-             read FAKE
+            #read FAKE
         fi
-        echo ${l} > /home/$USER/.uncenz-2nd/${i}_x_v.l
-        echo ${t} > /home/$USER/.uncenz-2nd/${i}_x_v.t
+        echo ${l} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.l
+        echo ${t} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.t
         echo "Will run next:"
         echo "xterm -g ${w_v}x${h_v}+${l}+${t} -fn \"-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1\" \
 -e \"`pwd`/CMD\" &"
         read FAKE
-        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i}_VIM -fn "-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1" \
+        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn "-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1" \
             -e "`pwd`/CMD" & x_v_pid=$!     # [x]term [v]im pid
-        echo $x_v_pid > /home/$USER/.uncenz-2nd/${i}_x_v.pid
+        echo $x_v_pid > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.pid
         sleep 10 && rm CMD &
         let h_p=$h_v-15
         let t_p=$t+88
-        cd ..
-        echo "Will run next:"
-        echo "xterm -g ${w_v}x${h_p}+${l}+${t_p} -title ${i}_PCAP -fn \"-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1\" "
-        read FAKE
-        xterm -g ${w_v}x${h_p}+${l}+${t_p} -title ${i}_PCAP -fn "-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1" & \
-            #-e "`pwd`/CMD" & # no CMD for now, however ${i}_PCAP xterm is placed to be companion to ${i}_VIM xterm
-         x_p_pid=$!     # [x]term [p]cap pid
-        echo $x_p_pid > /home/$USER/.uncenz-2nd/${i}_x_p.pid
-        cd -
     fi
-    # If ${i}_list is saved, will get this timestamp:
+    # If ${i_h_p}_list is saved, will get this timestamp:
     ts=$(date +%y%m%d_%H%M)
     echo $ts # ts is for timestamp
     read FAKE
     echo "The list: "
-    ls -l $TMP/${i}_list
-    echo "cat $TMP/${i}_list"
-    cat $TMP/${i}_list
+    ls -l $TMP/${i_h_p}_list
+    echo "cat $TMP/${i_h_p}_list"
+    cat $TMP/${i_h_p}_list
     echo "Do you want to save that list as:"
-    echo "${i}_list_${ts} ?"
+    echo "${i_h_p}_list_${ts} ?"
     ask
     if [ "$?" == 0 ]; then
-        touch ../${i}_list_${ts}
-        echo "cat $TMP/${i}_list"
-        cat $TMP/${i}_list
+        touch ${i_h_p}_list_${ts}
+        echo "cat $TMP/${i_h_p}_list"
+        cat $TMP/${i_h_p}_list
         read FAKE
-        echo "ls -l ../${i}_list_${ts}"
-        ls -l ../${i}_list_${ts}
+        echo "ls -l ${i_h_p}_list_${ts}"
+        ls -l ${i_h_p}_list_${ts}
         read FAKE
         echo \$TMP: $TMP
-        cat $TMP/${i}_list|wc -l
-        list_nr_lines=$(cat $TMP/${i}_list|wc -l)
+        cat $TMP/${i_h_p}_list|wc -l
+        list_nr_lines=$(cat $TMP/${i_h_p}_list|wc -l)
         echo \$list_nr_lines: $list_nr_lines
-        grep -v '_list' $TMP/${i}_list > ../${i}_list_${ts}
-        list_nr_lines_minus=$(cat ../${i}_list_${ts}|wc -l)
+        grep -v '_list' $TMP/${i_h_p}_list > ${i_h_p}_list_${ts}
+        list_nr_lines_minus=$(cat ${i_h_p}_list_${ts}|wc -l)
         echo \$list_nr_lines_minus: $list_nr_lines_minus
-        ls -l ../${i}_list_${ts}
-        cat ../${i}_list_${ts}
+        ls -l ${i_h_p}_list_${ts}
+        cat ${i_h_p}_list_${ts}
     else
         echo "list not saved by user choice"
     fi
-    cd -
-    # Before termination of all created jobs, sync $i.pcap and $scr
+    # Before termination of all created jobs, sync ${i_h_p}.pcap and $scr
     # (likely its derivative). Note that there's no talk if no .$scrg2_base.CMD_advise
     if [ -e ".$scrg2_base-0" ]; then
-        ls -l .$scrg2_base-0
-        cat .$scrg2_base-0
-        echo "(cat .$scrg2_base-0)"
-        ls -l .$scrg2_base-0
+        if [ -s ".$scrg2_base-0" ]; then
+            ls -l .$scrg2_base-0
+            cat .$scrg2_base-0
+            echo "(cat .$scrg2_base-0)"
+            ls -l .$scrg2_base-0
+        else
+            echo "Pls. input the offset to cut $scr from into the filename:"
+            ls -l .$scrg2_base-0
+            echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
+            echo "such as "0:03.500" without quotes."
+            echo "WARNING: I'm doing no error checking!"
+            read $offset
+            if [ -z "$offset" ]; then
+                echo "$offset" > .$scrg2_base-0
+                echo "You gave:"
+                cat .$scrg2_base-0
+                echo "(cat .$scrg2_base-0)"
+                echo "and you be  the judge if that's fine."
+            fi
+        fi
     else
         if [ -e ".$scrg2_base.CMD_advise" ]; then
             echo ".$scrg2_base-0 does not exist"
@@ -513,7 +667,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "(needed for archiving, when only $scr_bare is kept)"
             echo "and hit Enter"
             read FAKE_permanent
-            if [ -e ".$scrg2_base-0" ] && [ -e ".$scrg2_base.CMD_pre" ]; then 
+            if [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ] && [ -e ".$scrg2_base.CMD_pre" ]; then 
                 parts_start=$(<.$scrg2_base-0)
                 echo \$parts_start: $parts_start
                 cat .$scrg2_base.CMD_pre >> .$scrg2_base.CMD
@@ -532,10 +686,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "(cat .$scrg2_base.CMD)"
                 ls -l .$scrg2_base.CMD
             else
-                echo "At least one of these two are inextant:"
+                echo "At least one of these two are inextant or empty:"
                 ls -l .$scrg2_base-0 .$scrg2_base.CMD_pre
                 echo "Not creating .$scrg2_base.CMD ."
-                echo "Run uncenz-2nd again on $i.pcap"
+                echo "Run uncenz-2nd again on ${i_h_p}.pcap"
                 echo "or create .$scrg2_base.CMD manually."
             fi
         fi
@@ -559,6 +713,9 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         ls -l $scrg2_0
         rm -iv $scrg2_0
     fi
+    if [ -e ".pcaps-no-split" ]; then
+        rm -v .pcaps-no-split
+    fi
     echo "NOT terminate all windows opened with this run of ${0##/}?"
     echo "default: do terminate (just hit Enter)"
     echo "This choice will leave all windows opened,"
@@ -566,9 +723,9 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ask
     if [ "$?" == 0 ]; then
         echo "All windows left open/running"
-        echo "(excluding those not (yet) taken pid of)"
+        echo "(excluding those not taken pid of in $TMP)"
     else
-        for curjobs in $(ls -1 $TMP/${i}*.pid); do
+        for curjobs in $(ls -1 $TMP/${i}*_${hst_p}*.pid); do
             pid=$(cat $curjobs)
             echo \$pid: $pid
             echo kill $pid

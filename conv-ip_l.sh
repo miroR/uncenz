@@ -4,6 +4,13 @@
 #                        extracted to ${dump}.conv-ip_l
 #
 
+if [ $# -eq 0 ]; then
+    echo "give a PCAP"
+    echo "(this script takes single PCAP as arg only"
+    echo "at this time)"
+    exit 0
+fi
+
 PCAP_FILE=$1
 echo \$PCAP_FILE: $PCAP_FILE
 ext=${PCAP_FILE##*.}
