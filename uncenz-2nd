@@ -302,7 +302,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "Must be an int like 3, or a float like 0.4"
             echo "WARNING: I'm doing no error checking!"
             read delay
-            if [ -n "$delay" ]; then
+            if [ ! -n "$delay" ]; then
                 delay=2
             fi
             num_pid=0

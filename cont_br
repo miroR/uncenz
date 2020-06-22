@@ -1,0 +1,24 @@
+    # continue, break or normal work
+    echo "You can chose, by typing:"
+    echo "'c' to continue from the next iteration in this loop"
+    echo "'b' to break out of this loop"
+    echo "'w' for normal processing"
+    echo "WARNING: I am doing no error checking! Type correct input."
+    read choice
+    case $choice in
+        'c')
+            continue
+        ;;
+        'b')
+            break
+        ;;
+        'w')
+            echo "We do the normal processing of this item."
+        ;;
+        '*')
+            echo "Not recognized input."
+            echo "Available choice is only either of the chars:"
+            echo " c b w"
+        ;;
+    esac
+
