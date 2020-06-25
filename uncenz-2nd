@@ -73,10 +73,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # Temporary. Remove below if:
     if [ ! -L "$i.pcap" ]; then
         ls -l $i.pcap
-        ask continue
-        if [ "$?" == 0 ]; then
-            continue
-        fi
+        .cont_br_short
     fi
     ls -l $i.pcap
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
@@ -146,16 +143,24 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # Set at start here separately, because this will be the usual case for
     # working on archived PCAPs. Namely $scrg2 and $scrg2_0 will not be kept,
     # as they are usually 5-8 times larger than original $scr.
-    if [ -e ".$scrg2_base.CMD" ] && [ -e ".$scrg2_base-0" ] && \
-        [ ! -s ".$scrg2_base-0" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
+    if [ -e ".$scrg2_base.CMD" ] && [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ] && \
+        [ ! -e ".${i_h_p}_no_scr" ]; then
+        chmod 755 .$scrg2_base.CMD
         if [ ! -e "$scrg2" ]; then
             if [ ! -e "$scrg2_0" ]; then
-               chmod 755 .$scrg2_base.CMD
                ./.$scrg2_base.CMD
                chmod 644 .$scrg2_base.CMD
             fi
+        else
+            tail -1 .$scrg2_base.CMD > .$scrg2_base.CMD_TMP
+            chmod 755 .$scrg2_base.CMD_TMP
+            ./.$scrg2_base.CMD_TMP
+            rm -v .$scrg2_base.CMD_TMP
+            chmod 644 .$scrg2_base.CMD
         fi
     fi
+    echo "Made ${scrg2_base}-0.mkv ?"
+    read NOP
     if [ ! -e ".$scrg2_base.CMD" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
         echo "ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2" \
             > .$scrg2_base.CMD_pre # the full .$scrg2_base.CMD may need
@@ -336,10 +341,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
         fi
     fi
-    ask continue
-    if [ "$?" == 0 ]; then
-        continue
-    fi
+    .cont_br_short
     #cd  ${i_h_p}.tHostsConv
     #if [ ! -e ".${i_h_p}_sym-pcap" ]; then
     #    ls -1 ${i_h_p}_conv-ip_l.txt \
