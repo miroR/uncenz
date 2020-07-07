@@ -4,6 +4,15 @@
 #                        extracted to ${dump}.conv-ip_l
 #
 
+function ask()
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 if [ $# -eq 0 ]; then
     echo "give a PCAP"
     echo "(this script takes single PCAP as arg only"
@@ -22,21 +31,24 @@ echo \$ext: $ext
 if [ -e ".${dump}_conv-ip_FIX_source" ]; then
     echo "${dump}.pcap can't be worked before you fix it, there is:"
     ls -l .${dump}_conv-ip_FIX_source
-    echo "exiting in 5 sec"
-    sleep 5
-    exit 0
+    echo "('y' will also rm .${dump}_conv-ip_l.lock)"
+    ask "rm .${dump}_conv-ip_FIX_source"
+    if [ "$?" == 0 ]; then
+        rm -v .${dump}_conv-ip_FIX_source
+        rm -v .${dump}_conv-ip_l.lock
+    fi
 fi
 ts=$(date +%s)
 if [ -e "${dump}_conv-ip_l.txt" ] && [ ! -s "${dump}_conv-ip_l.txt" ]; then
     rm -v ${dump}_conv-ip_l.txt
 fi
-if [ -e "${dump}_conv-ip_l.lock" ]; then
-	echo "${dump}.pcap likely being worked by another ${0##/} instance"
-	ls -l ${dump}_conv-ip_l.lock
-	exit 0
+if [ -e ".${dump}_conv-ip_l.lock" ]; then
+    echo "${dump}.pcap likely being worked by another ${0##/} instance"
+    ls -l .${dump}_conv-ip_l.lock
+    exit 0
 fi
-touch ${dump}_conv-ip_l.lock
-ls -l ${dump}_conv-ip_l.lock
+touch .${dump}_conv-ip_l.lock
+ls -l .${dump}_conv-ip_l.lock
 if [ -e "${dump}_conv-ip_l.txt" ]; then
     mv ${dump}_conv-ip_l.txt ${dump}_conv-ip_l.txt_${ts}
 fi
@@ -306,7 +318,7 @@ cat .${dump}_conv-ip_l.tw
 echo "(cat .${dump}_conv-ip_l.tw)"
 cat .${dump}_conv-ip_l.th
 echo "(cat .${dump}_conv-ip_l.th)"
-rm -v ${dump}_conv-ip_l.lock
+rm -v .${dump}_conv-ip_l.lock
 # Not very ingenious, but it can be:
 # w=$(<.${dump}_conv-ip_l.tw)
 # h=$(<.${dump}_conv-ip_l.th)

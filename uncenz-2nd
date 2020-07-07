@@ -73,24 +73,24 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # Temporary. Remove below if:
     if [ ! -L "$i.pcap" ]; then
         ls -l $i.pcap
-        .cont_br_short
+        . cont_br_short
     fi
     ls -l $i.pcap
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
     read FAKE
-    echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-z][a-z][a-z].*/\1/'
+    echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-zA-Z][a-zA-Z][a-zA-Z].*/\1/'
     read FAKE
     echo \$i: $i
     i_tmp=$i
     echo \$i_tmp: $i_tmp
     read FAKE
-    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z].*\)/\1/')
+    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z].*\)/\1/')
     echo \$i: $i
-    echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z]*\)/\2/'
+    echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z]*\)/\2/'
     read FAKE
-    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z][a-z][a-z].*\)/\2/')
-    #ls -l ${i}-[0-9][0-9]_[a-z][a-z][a-z]*.pcap
+    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z].*\)/\2/')
+    #ls -l ${i}-[0-9][0-9]_[a-zA-Z][a-zA-Z][a-zA-Z]*.pcap
     echo \$hst_p: $hst_p
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
@@ -159,8 +159,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             chmod 644 .$scrg2_base.CMD
         fi
     fi
-    echo "Made ${scrg2_base}-0.mkv ?"
-    read NOP
+    if [ ! -e ".${i_h_p}_no_scr" ]; then
+        echo "Made ${scrg2_base}-0.mkv ?"
+        read NOP
+    fi
     if [ ! -e ".$scrg2_base.CMD" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
         echo "ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2" \
             > .$scrg2_base.CMD_pre # the full .$scrg2_base.CMD may need
@@ -341,27 +343,22 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
         fi
     fi
-    .cont_br_short
-    #cd  ${i_h_p}.tHostsConv
-    #if [ ! -e ".${i_h_p}_sym-pcap" ]; then
-    #    ls -1 ${i_h_p}_conv-ip_l.txt \
-    #        ${i_h_p}_messages ${i_h_p}_r \
-    #        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v ${i_h_p}-msg_r_PDU.txt \
-    #        ${i_h_p}_rn.d/*.log \
-    #        | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
-    #        | grep -v '\.:'|grep '[[:print:]]'
-    #else
-        echo \$i: $i
-        echo \$hst_p: $hst_p
-        echo \$i_h_p: $i_h_p
-        read FAKE
-        ls -1 ${i_h_p}_conv-ip_l.txt \
-            ${i_h_p}_messages ${i_h_p}_r \
-            ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v ${i_h_p}-msg_r_PDU.txt \
-            ${i_h_p}_rn.d/*.log \
-            | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
-            | grep -v '\.:'|grep '[[:print:]]'
-    #fi
+    . cont_br_short
+    echo \$i: $i
+    echo \$hst_p: $hst_p
+    echo \$i_h_p: $i_h_p
+    read FAKE
+    ls -1 ${i_h_p}_conv-ip_l.txt \
+        ${i_h_p}_NOTES.txt \
+        ${i_h_p}_messages ${i_h_p}_r \
+        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
+        ${i_h_p}-msg_r_PDU.txt \
+        ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
+        ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
+        ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
+        ${i_h_p}_rn.d/*.log \
+        | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
+        | grep -v '\.:'|grep '[[:print:]]'
     read FAKE
     touch $TMP/${i_h_p}_list
     echo "Possible old (previous) lists: "
@@ -392,33 +389,21 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "${i_h_p}_list"
         echo "now mandatory."
         read FAKE
-        #if [ ! -e ".${i_h_p}_sym-pcap" ]; then
-            for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
-                ${i_h_p}_messages \
-                ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
-                ${i_h_p}_r ${i_h_p}-msg_r_PDU.txt \
-                ${i_h_p}_rn.d/*.log \
-                | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
-                | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
-                if [ -e "$file" ]; then
-                    echo "$file" >> $TMP/${i_h_p}_list
-                fi
-            done
-        #else
-        #    ls -l .${i_h_p}_sym-pcap
-        #    read FAKE
-        #    for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
-        #        ${i_h_p}_messages \
-        #        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
-        #        ${i_h_p}_r ${i_h_p}-msg_r_PDU.txt \
-        #        ${i_h_p}_rn.d/*.log \
-        #        | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
-        #        | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
-        #        if [ -e "$file" ]; then
-        #            echo "$file" >> $TMP/${i_h_p}_list
-        #        fi
-        #    done
-        #fi
+        for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
+            ${i_h_p}_NOTES.txt \
+            ${i_h_p}_messages ${i_h_p}_r \
+            ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
+            ${i_h_p}-msg_r_PDU.txt \
+            ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
+            ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
+            ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
+            ${i_h_p}_rn.d/*.log \
+            | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
+            | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
+            if [ -e "$file" ]; then
+                echo "$file" >> $TMP/${i_h_p}_list
+            fi
+        done
         echo "Check: "
         cat $TMP/${i_h_p}_list
         echo "(cat $TMP/${i_h_p}_list)"
