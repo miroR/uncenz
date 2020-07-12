@@ -441,13 +441,13 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     if [ "$dumper" == "dumpcap" ]; then
         echo "Warning dumpcap not tested for the "-C" option addition"
         read FAKE
-        sudo -s $dumper -i any -C 100 -w $the_dump &
+        sudo -s $dumper -i any -C 75 -w $the_dump &
     fi
     if [ "$dumper" == "tcpdump" ]; then
         # For "-Z tcpdump" option, in Devuan/Debian based systems,
         # tcpdump system user/group needs to be created, maybe:
         # "adduser --system --group --no-create-home tcpdump"
-        sudo -s $dumper -C 100 -i any -U -v -f \
+        sudo -s $dumper -C 75 -i any -U -v -f \
 			"net not 192.168.88.0 mask 255.255.255.0 \
 			and net not 192.168.2.0 mask 255.255.255.0" \
 			-w $the_dump -Z tcpdump &

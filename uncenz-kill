@@ -18,10 +18,10 @@ function show_help {
     echo
     echo "==============================================================="
     echo
-    echo "$0 -- the exit/terminate script of uncenz,"
+    echo "${0##*/} -- the exit/terminate script of uncenz,"
     echo "quits/terminates the screencasting and packet capturing"
     echo
-    echo "Usage: $0 <the-other-include>"
+    echo "Usage: ${0##*/} <the-other-include>"
     echo "        (if run in the uncenz-1st)"
     echo ""
     echo "Pls. see also uncenz-1st."
@@ -46,7 +46,7 @@ if [ "$1" ] && [ -n "$1" ]; then
             echo "or is not executable"
             show_help
             sleep 3
-            echo "But you probably need to run the rest of $0"
+            echo "But you probably need to run the rest of ${0##*/}"
             sleep 2
     fi
 else
@@ -129,7 +129,7 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
     echo " The last key taken during this session "
     echo " is the same as at the start of last session "
     echo
-    echo " If \$SSLKEYLOGFILE enable browser was active during this session"
+    echo " If \$SSLKEYLOGFILE enabled browser was active during this session"
     echo " and opened https pages, it may have malfunctioned. "
     echo
     echo "                            ^^^      ^^^^^^^^^^^^^ "
@@ -143,9 +143,6 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
     echo
     echo "#####"
 fi
-#echo "Here removing: rm /home/$USER/.uncenz-1st/$ssllast_active"
-#sleep 2;
-#read FAKE
 rm /home/$USER/.uncenz-1st/$ssllast_active
 
 ffpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
