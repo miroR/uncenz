@@ -1,0 +1,19 @@
+echo "'c' continue, 'b' break, 'w'/<Enter> normal work"
+read choice
+case $choice in
+    'c')
+        next_iter
+        continue
+    ;;
+    'b')
+        break
+    ;;
+    'w')
+        echo "We do the normal processing of this item."
+    ;;
+    '*')
+        echo "Not recognized input."
+        echo "Available choice is only either of the chars:"
+        echo " c b w , or just no input, i.e. Enter"
+    ;;
+esac

@@ -39,7 +39,7 @@ fi
 # and the screencasts and other. The dump_<the-time-stamp>_r represents another
 # log extracted. That can be by any script you wrote and ran as third arg to
 # uncenz-1st.
-# Similarly dump_<the-time-stamp>-msg_r_PDU.txt is some produce by your own
+# Similarly dump_<the-time-stamp>-msg_r_PDU*.txt is some produce by your own
 # scripts. 
 # First the PCAP-work.sh is run (see workPCAPs link above). Then
 # this script.
@@ -351,8 +351,9 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -1 ${i_h_p}_conv-ip_l.txt \
         ${i_h_p}_NOTES.txt \
         ${i_h_p}_messages ${i_h_p}_r \
-        ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
-        ${i_h_p}-msg_r_PDU.txt \
+        ${i_h_p}_r_dt ${i_h_p}_r_tb \
+        ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
+        ${i_h_p}-msg_r_PDU*.txt \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
@@ -392,8 +393,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
             ${i_h_p}_NOTES.txt \
             ${i_h_p}_messages ${i_h_p}_r \
-            ${i_h_p}_r_dt ${i_h_p}_r_tb ${i_h_p}_r_v \
-            ${i_h_p}-msg_r_PDU.txt \
+            ${i_h_p}_r_dt ${i_h_p}_r_tb \
+            ${i_h_p}_r_dt ${i_h_p}_r_tb \
+            ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
+            ${i_h_p}-msg_r_PDU*.txt \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
@@ -582,26 +585,28 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -l $TMP/${i_h_p}_list
     echo "cat $TMP/${i_h_p}_list"
     cat $TMP/${i_h_p}_list
+    echo "Add an infix reminder shortcut, e.g. "_dt" if it is _dt only, to the list:"
+    read name
     echo "Do you want to save that list as:"
-    echo "${i_h_p}_list_${ts} ?"
+    echo "${i_h_p}_list${name}_${ts} ?"
     ask
     if [ "$?" == 0 ]; then
-        touch ${i_h_p}_list_${ts}
+        touch ${i_h_p}_list${name}_${ts}
         echo "cat $TMP/${i_h_p}_list"
         cat $TMP/${i_h_p}_list
         read FAKE
-        echo "ls -l ${i_h_p}_list_${ts}"
-        ls -l ${i_h_p}_list_${ts}
+        echo "ls -l ${i_h_p}_list${name}_${ts}"
+        ls -l ${i_h_p}_list${name}_${ts}
         read FAKE
         echo \$TMP: $TMP
         cat $TMP/${i_h_p}_list|wc -l
         list_nr_lines=$(cat $TMP/${i_h_p}_list|wc -l)
         echo \$list_nr_lines: $list_nr_lines
-        grep -v '_list' $TMP/${i_h_p}_list > ${i_h_p}_list_${ts}
-        list_nr_lines_minus=$(cat ${i_h_p}_list_${ts}|wc -l)
+        grep -v '_list' $TMP/${i_h_p}_list > ${i_h_p}_list${name}_${ts}
+        list_nr_lines_minus=$(cat ${i_h_p}_list${name}_${ts}|wc -l)
         echo \$list_nr_lines_minus: $list_nr_lines_minus
-        ls -l ${i_h_p}_list_${ts}
-        cat ${i_h_p}_list_${ts}
+        ls -l ${i_h_p}_list${name}_${ts}
+        cat ${i_h_p}_list${name}_${ts}
     else
         echo "list not saved by user choice"
     fi
