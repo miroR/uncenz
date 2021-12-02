@@ -14,6 +14,15 @@
 
 . /home/$USER/.uncenz.conf
 
+if [ "$OHST_READY" == "n" ]; then
+    echo hostname
+    hostname
+    echo "Must be OHST_READY=y in /home/$USER/.uncenz.conf"
+    echo "sleep 3 and exit"
+    sleep 3
+    exit 0
+fi
+
 function show_help {
     echo
     echo "==============================================================="

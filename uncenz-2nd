@@ -79,18 +79,18 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
     read FAKE
-    echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-zA-Z][a-zA-Z][a-zA-Z].*/\1/'
+    echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*/\1/'
     read FAKE
     echo \$i: $i
     i_tmp=$i
     echo \$i_tmp: $i_tmp
     read FAKE
-    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z].*\)/\1/')
+    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
     echo \$i: $i
-    echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z]*\)/\2/'
+    echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*\)/\2/'
     read FAKE
-    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-zA-Z][a-zA-Z][a-zA-Z].*\)/\2/')
-    #ls -l ${i}-[0-9][0-9]_[a-zA-Z][a-zA-Z][a-zA-Z]*.pcap
+    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
+    #ls -l ${i}-[0-9][0-9]_[a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*.pcap
     echo \$hst_p: $hst_p
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
@@ -160,7 +160,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         fi
     fi
     if [ ! -e ".${i_h_p}_no_scr" ]; then
-        echo "Made ${scrg2_base}-0.mkv ?"
+		ls -l ${scrg2_base}-0.mkv
+        echo "${scrg2_base}-0.mkv exists?"
         read NOP
     fi
     if [ ! -e ".$scrg2_base.CMD" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
@@ -352,8 +353,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         ${i_h_p}_NOTES.txt \
         ${i_h_p}_messages ${i_h_p}_r \
         ${i_h_p}_r_dt ${i_h_p}_r_tb \
+        ${i_h_p}_r_dt_d ${i_h_p}_r_dt_d.xz ${i_h_p}_r_tb_d ${i_h_p}_r_tb_d.xz \
         ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
         ${i_h_p}-msg_r_PDU*.txt \
+        ${i_h_p}_t_fetch* \
+        ${i_h_p}_t_mutt* \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
@@ -394,9 +398,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             ${i_h_p}_NOTES.txt \
             ${i_h_p}_messages ${i_h_p}_r \
             ${i_h_p}_r_dt ${i_h_p}_r_tb \
-            ${i_h_p}_r_dt ${i_h_p}_r_tb \
+            ${i_h_p}_r_dt_d ${i_h_p}_r_dt_d.xz ${i_h_p}_r_tb_d ${i_h_p}_r_tb_d.xz \
             ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
             ${i_h_p}-msg_r_PDU*.txt \
+            ${i_h_p}_t_fetch* \
+            ${i_h_p}_t_mutt* \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
@@ -586,11 +592,25 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "cat $TMP/${i_h_p}_list"
     cat $TMP/${i_h_p}_list
     echo "Add an infix reminder shortcut, e.g. "_dt" if it is _dt only, to the list:"
+    echo "The list will be saved as:"
+    echo "${i_h_p}_list_<the-infix-go-give>_${ts} ?"
     read name
-    echo "Do you want to save that list as:"
-    echo "${i_h_p}_list${name}_${ts} ?"
-    ask
-    if [ "$?" == 0 ]; then
+	if [ ! -n "$name" ]; then
+		echo "Do you want to save that list anyway, the name will be:"
+        echo "${i_h_p}_list_${ts} ?"
+        ask
+        if [ "$?" == 0 ]; then
+	        # touch to save the list
+            touch .${i_h_p}_list_do_save
+        else
+            echo "list not saved by user choice"
+        fi
+    else
+        # prefix _ to $name
+        name="_${name}"
+        echo \$name: $name
+    fi
+	if [ -n "$name" ] || [ -e ".${i_h_p}_list_do_save" ]; then
         touch ${i_h_p}_list${name}_${ts}
         echo "cat $TMP/${i_h_p}_list"
         cat $TMP/${i_h_p}_list
@@ -607,9 +627,9 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo \$list_nr_lines_minus: $list_nr_lines_minus
         ls -l ${i_h_p}_list${name}_${ts}
         cat ${i_h_p}_list${name}_${ts}
-    else
-        echo "list not saved by user choice"
     fi
+    rm -v .${i_h_p}_list_do_save
+    read NOP
     # Before termination of all created jobs, sync ${i_h_p}.pcap and $scr
     # (likely its derivative). Note that there's no talk if no .$scrg2_base.CMD_advise
     if [ -e ".$scrg2_base-0" ]; then

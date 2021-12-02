@@ -48,16 +48,15 @@ function show_help {
 }
 # Reset in case getopts has been used previously in the shell.
 OPTIND=1
-while getopts "hk" opt;      # testing the use of getopts with the shift OPTIND reset right after loop
-do
+while getopts "hk" opt; do      # testing the use of getopts with the shift OPTIND reset right after loop
     case "$opt" in
-    h)
-        show_help
-        exit 0
-        ;;
-    k)
-        chk-tls
-        ;;
+        h)
+            show_help
+            exit 0
+            ;;
+        k)
+            chk-tls
+            ;;
     esac
 done
 shift $(($OPTIND - 1))
@@ -78,9 +77,11 @@ else
             echo "can use Tor"
             read FAKE_permanent
         else
+            #if ( sudo -s grep 'dport 53' /etc/iptables.up.rules | grep ACCEPT ) && \
+            #    ( sudo -s grep 'dport 80' /etc/iptables.up.rules | grep ESTABLISHED | grep ACCEPT ) && \
+            #    ( sudo -s grep 'dport 443' /etc/iptables.up.rules | grep ESTABLISHED| grep ACCEPT ); then
             if ( sudo -s grep 'dport 53' /etc/iptables.up.rules | grep ACCEPT ) && \
-                ( sudo -s grep 'dport 80' /etc/iptables.up.rules | grep ESTABLISHED | grep ACCEPT ) && \
-                ( sudo -s grep 'dport 443' /etc/iptables.up.rules | grep ESTABLISHED| grep ACCEPT ); then
+                ( sudo -s grep 'dports 80,443' /etc/iptables.up.rules  | grep ACCEPT ); then
                 echo "iptables set for CLEAR net"
                 read FAKE_permanent
                 if [ -e "/run/tor/tor.pid" ] || \
@@ -92,7 +93,13 @@ else
                 fi
             else
                 echo "probably NOT SAFE to go online, work out iptables first"
-                exit 1
+                # Case arise with this server as router to allow this
+                ask "You sure the case is to allow it, type "y/Y, else we exit""
+                if [ "$?" == 0 ]; then
+                    echo "User decided: run it."
+                else
+                    exit 1
+                fi
             fi
         fi
     fi
@@ -249,6 +256,15 @@ if [ "$INTERIM" == "y" ]; then
     echo uncenz-inter-kill.sh
     read FAKE
     uncenz-inter-kill.sh
+fi
+
+if [ "$SSLKEYLOGFILE_READY" != "y" ]; then
+    echo \$SSLKEYLOGFILE_READY: $SSLKEYLOGFILE_READY
+    echo "Pls. manage $SSLKEYLOGFILE, and set"
+    echo "SSLKEYLOGFILE_READY=y in /home/$USER/.uncenz.conf"
+    echo "sleep 3 and exit"
+    sleep 3
+    exit 0
 fi
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
@@ -441,16 +457,16 @@ if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
     if [ "$dumper" == "dumpcap" ]; then
         echo "Warning dumpcap not tested for the "-C" option addition"
         read FAKE
-        sudo -s $dumper -i any -C 75 -w $the_dump &
+        sudo -s $dumper -i any -C 10000 -w $the_dump &
     fi
     if [ "$dumper" == "tcpdump" ]; then
         # For "-Z tcpdump" option, in Devuan/Debian based systems,
         # tcpdump system user/group needs to be created, maybe:
         # "adduser --system --group --no-create-home tcpdump"
-        sudo -s $dumper -C 75 -i any -U -v -f \
-			"net not 192.168.88.0 mask 255.255.255.0 \
-			and net not 192.168.2.0 mask 255.255.255.0" \
-			-w $the_dump -Z tcpdump &
+        sudo -s $dumper -C 10000 -i any -U -v -f \
+            "net not 192.168.88.0 mask 255.255.255.0 \
+            and net not 192.168.2.0 mask 255.255.255.0" \
+            -w $the_dump -Z tcpdump &
     fi
     #sudo -s $dumper -i any -w $the_dump &
     echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
