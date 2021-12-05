@@ -1,0 +1,86 @@
+#
+# uncenz-gpg -- verify gpg keys are offlined
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+. /home/$USER/.uncenz.conf
+
+f=$(gpg --list-secret-keys --with-colon)
+if [ "$f" != "" ]; then
+    gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+    col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
+    if [ "$col15" == "#" ]; then
+        echo "Secret key offlined. Pass."
+    else
+        gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+        # Check how many keys are not offlined
+        num_keys=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
+            | awk -F: '{print $15}'|wc -l)
+        ord_key=0
+        while [ "$ord_key" -lt "$num_keys" ] ; do
+            echo
+            ord_key_plus=$(echo $ord_key + 1 | bc)
+            col15_each=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
+                | awk -F: '{print $15}'| head -${ord_key_plus} | tail -1)
+            if [ "$col15_each" == "#" ]; then
+                echo "Secret key of the iterated key offlined. Pass."
+            else
+                if [ "$col15_each" == "+" ]; then
+                    if [ -e ".uncenz-keys_allow" ]; then
+                        key_sha=$(gpg --list-secret-keys --with-colons \
+                            | grep '^sec\>' | awk -F: '{print $5}'| head -${ord_key_plus} \
+                            | tail -1| sha256sum - | cut -d' ' -f1)
+                        grep $key_sha .uncenz-keys_allow
+                        if ( grep $key_sha .uncenz-keys_allow ); then
+                            echo "This key is allowed unofflined by user's configuration"
+                        else
+                            aplay -q ~/tvtube.wav
+                            echo "Put the SHA256 (the 64 hex string above) of the 5th column"
+                            echo "of the gpg command used (see script) of this  key in"
+                            echo ".uncenz-keys_allow in this dir if you want to"
+                            echo "allow it unofflined and avoid this nagging"
+
+                            echo "This key has not been allowed by your configuration for going online."
+                            echo "It may be at risk from possible intrusion techniques."
+                            echo "Continue regardless (y), or exit and fix this"
+                            echo "key's primary secret key availability in .gnupg/?"
+                            echo
+                            ask;
+                            # the default (just hitting Enter) is exiting
+                            if [ "$?" == 1 ]; then
+                                echo "Primary secret key is not offlined, exiting by user's choice."
+                                exit 0
+                            fi
+                        fi
+                    else
+                        aplay -q ~/tvtube.wav
+                        echo "Put the SHA256 (the 64 hex string above) of the 5th column"
+                        echo "of the gpg command used (see script) of this  key in"
+                        echo ".uncenz-keys_allow in this dir if you want to"
+                        echo "allow it unofflined and avoid this nagging."
+
+                        echo "This key is has not been allowed by your configuration for going online."
+                        echo "It may be at risk from possible intrusion techniques."
+                        echo "Continue regardless (y), or exit and"
+                        echo "fix this key's primary secret key availability in .gnupg/?"
+                        echo
+                        ask;
+                        # the default (just hitting Enter) is exiting
+                        if [ "$?" == 1 ]; then
+                            echo "Primary secret key is not offlined, exiting by user's choice."
+                            exit 0
+                        fi
+                    fi
+                fi
+            fi
+            ord_key=$(echo $ord_key + 1 | bc)
+            #echo \$ord_key: $ord_key
+        done
+    fi
+fi

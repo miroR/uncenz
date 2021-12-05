@@ -1,6 +1,13 @@
 #!/bin/bash
 #
-# include dumpcap/tcpdump run with capture filters
+# uncenz-includ-hosts -- include dumpcap/tcpdump run with capture filters
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
 # And only this one uncenz-include is present in uncenz git as example. If you
 # want a clean trace, empty the cache of your Palemoon/Firefox. Close it.
@@ -26,7 +33,8 @@
 # The better but more complicated way is to limit the size of the packets. Some
 # other time I'll make that kind of include.
 #
-dumper=$(cat .uncenz-dumper)
+. /home/$USER/.uncenz.conf
+dumper=$DUMPER
 echo \$dumper: $dumper
 #echo "enter one or more IPv4 hosts in quad decimal, separated by space character"
 echo "enter one IPv4 host in quad decimal notation"

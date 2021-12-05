@@ -61,13 +61,13 @@ done
 cat .pcaps-no-split
 echo "(cat .pcaps-no-split)"
 ls -l .pcaps-no-split
-read FAKE
+read NOP
 PCAPs=$(<.pcaps-no-split)
     
 for i in $(echo $PCAPs|sed 's/\.pcap//'); do
     echo \$i: $i
 done
-read FAKE
+read NOP
     
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # Temporary. Remove below if:
@@ -78,26 +78,26 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -l $i.pcap
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
-    read FAKE
+    read NOP
     echo $i | sed 's/\(.*\)-[0-9][0-9]_[a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*/\1/'
-    read FAKE
+    read NOP
     echo \$i: $i
     i_tmp=$i
     echo \$i_tmp: $i_tmp
-    read FAKE
+    read NOP
     i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
     echo \$i: $i
     echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*\)/\2/'
-    read FAKE
+    read NOP
     hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
     #ls -l ${i}-[0-9][0-9]_[a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*.pcap
     echo \$hst_p: $hst_p
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
-    read FAKE
+    read NOP
     scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1.mkv/'| sed 's/-00_/_/')
     echo \$scr: $scr
-    read FAKE
+    read NOP
     if [ ! -e "$scr" ]; then
         # The case for no-screencasting captures (with uncenz-inter{,-kill}.sh)
         touch .${i_h_p}_no_scr
@@ -106,26 +106,26 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     fi
     if [ -L "${i_h_p}.pcap" ]; then
         echo "if symlink main"
-        read FAKE
+        read NOP
         for thostsconv in $(ls -1d ${i}-[0-9][0-9]_${hst_p}_tHostsConv); do
             ls -l ${thostsconv}
             ls -ld ${thostsconv}
             echo "(ls -l ${thostsconv})"
         done
-        read FAKE
+        read NOP
         # Check on the split produce
         echo \${i_h_p}: ${i_h_p}
-        read FAKE
+        read NOP
         touch .${i_h_p}_sym-pcap
         ls -l .${i_h_p}_sym-pcap
-        read FAKE
+        read NOP
         ls -l ${i_h_p}.pcap
     else
         echo "if symlink else"
         ls -ld ${i_h_p}_tHostsConv
         ls -l ${i_h_p}_tHostsConv
         echo "(ls -l ${i_h_p}_tHostsConv)"
-        read FAKE
+        read NOP
     fi
     if [ -e "$scr" ]; then
         scr_bare=$scr
@@ -138,7 +138,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo \$scrg2_base: $scrg2_base
         echo \$scrg2_0: $scrg2_0
         echo \$scrg2: $scrg2
-        read FAKE
+        read NOP
     fi
     # Set at start here separately, because this will be the usual case for
     # working on archived PCAPs. Namely $scrg2 and $scrg2_0 will not be kept,
@@ -171,7 +171,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "(cat .$scrg2_base.CMD_pre)"
         ls -l .$scrg2_base.CMD_pre
         echo "(is base for .$scrg2_base.CMD)"
-        read FAKE
+        read NOP
     fi
     # may be the sole content of it, but only if ${i_h_p}.pcap and $scr are synced
     # when originally captured
@@ -254,21 +254,21 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "NOTE: mplayer will run in bg. Do follow STDOUT here in this terminal!"
                 echo "(just, once mplayer starts, focus back to this terminal, and hit Enter)"
                 echo "mplayer $scr now"
-                read FAKE
+                read NOP
                 mplayer $scr & scr_pid=$!
             else
                 mplayer -really-quiet $scr & scr_pid=$!
             fi
             echo $scr_pid > $TMP/${i_h_p}_scr.pid
             echo $(<$TMP/${i_h_p}_scr.pid)
-            read FAKE
+            read NOP
         fi
     fi
     pwd
     echo \$i: $i
     echo \$hst_p: $hst_p
     echo \$i_h_p: $i_h_p
-    read FAKE
+    read NOP
     if [ ! -e ".${i_h_p}_sym-pcap" ]; then
         ls -l ${i_h_p}.pcap
         ask "NOT open ${i_h_p}.pcap with Wireshark?"
@@ -278,11 +278,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             if [ -e "${i_h_p}_SSLKEYLOGFILE.txt" ]; then
                 echo "wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap"
                 wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap & pid=$!
-                read FAKE
+                read NOP
             else
                 echo "wireshark ${i_h_p}.pcap"
                 wireshark ${i_h_p}.pcap & pid=$!
-                read FAKE
+                read NOP
             fi
             echo $pid > $TMP/${i_h_p}_wireshark.pid
             cat $TMP/${i_h_p}_wireshark.pid
@@ -292,7 +292,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     else
         echo \$i: $i
         echo \$hst_p: $hst_p
-        read FAKE
+        read NOP
         echo "This:"
         ls -l ${i_h_p}.pcap
         echo "is the symlink of the first in a split PCAP series:"
@@ -348,7 +348,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo \$i: $i
     echo \$hst_p: $hst_p
     echo \$i_h_p: $i_h_p
-    read FAKE
+    read NOP
     ls -1 ${i_h_p}_conv-ip_l.txt \
         ${i_h_p}_NOTES.txt \
         ${i_h_p}_messages ${i_h_p}_r \
@@ -364,7 +364,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         ${i_h_p}_rn.d/*.log \
         | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
         | grep -v '\.:'|grep '[[:print:]]'
-    read FAKE
+    read NOP
     touch $TMP/${i_h_p}_list
     echo "Possible old (previous) lists: "
     for old_list in $(ls -1 ${i_h_p}_list_*); do
@@ -373,13 +373,13 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             cat $old_list
             ls -l $old_list
         echo "(possible candidate for resumption)"
-        read FAKE
+        read NOP
         fi
     done
     for old_list in $(ls -1 ${i_h_p}_list_*); do
         echo "You've seen all lists, we can currently resume only one of them."
         echo "Resume the old list (after you Enter to cat it first): "
-        read FAKE
+        read NOP
         cat $old_list
         echo "(cat $old_list)"
         ls -l $old_list
@@ -393,7 +393,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "No list resumed. Creating the list:"
         echo "${i_h_p}_list"
         echo "now mandatory."
-        read FAKE
+        read NOP
         for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
             ${i_h_p}_NOTES.txt \
             ${i_h_p}_messages ${i_h_p}_r \
@@ -416,7 +416,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "Check: "
         cat $TMP/${i_h_p}_list
         echo "(cat $TMP/${i_h_p}_list)"
-        read FAKE
+        read NOP
         #if [ -e "${i_h_p}_rn.d/" ]; then
         #    ls -1 ${i_h_p}_rn.d/*| grep '\.log' >> $TMP/${i_h_p}_list
         #fi
@@ -432,20 +432,20 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "-=-=-"
         echo "NOTE: in a separate terminal you may now edit:"
         echo "$TMP/${i_h_p}_list"
-        read FAKE_permanent
+        read NOP_permanent
         # Fixing the ${i_h_p}_list for ${i_h_p}_conv-ip_l.txt listing, merged from part of
         # and ${i_h_p}.conv-ip
         #if [ -e "${i_h_p}_conv-ip_l.txt" ] && [ -s "${i_h_p}_conv-ip_l.txt" ]; then
         #    grep -v "\|${i_h_p}.conv-ip\>" $TMP/${i_h_p}_list
-        #    read FAKE
+        #    read NOP
         #    grep -v "\|${i_h_p}.conv-ip\>\|${i_h_p}_list" \
         #        $TMP/${i_h_p}_list > ${i_h_p}_list_tmp
         #    diff ${i_h_p}_list_tmp $TMP/${i_h_p}_list
-        #    read FAKE
+        #    read NOP
         #    echo  ${i_h_p}_conv-ip_l.txt > ${i_h_p}_list
         #    cat ${i_h_p}_list_tmp >> ${i_h_p}_list
         #    mv -v ${i_h_p}_list $TMP/${i_h_p}_list
-        #    read FAKE
+        #    read NOP
         #    rm -v ${i_h_p}_list_tmp
         #    cat ${i_h_p}_conv-ip_l.txt
         #    echo "(cat ${i_h_p}_conv-ip_l.txt)"
@@ -453,7 +453,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         #    echo "${i_h_p}_conv-ip_l.txt not extant or empty."
         #    echo "Pls. mend for that, and hit Enter."
         #    echo "(and if it still will not be right, we'll exit)"
-        #    read FAKE_permanent
+        #    read NOP_permanent
         #    if [ ! -e "${i_h_p}_conv-ip_l.txt" ] || [ ! -s "${i_h_p}_conv-ip_l.txt" ]; then
         #    echo "${i_h_p}_conv-ip_l.txt is essential for this script."
         #    echo "And is either not extant or empty. Can't work."
@@ -494,7 +494,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     echo "Possibly you can manually fix ${i_h_p}.conv-ip_l source"
                     echo "an fix it by running the conv-ip_l.sh"
                     echo "If done, hit Enter!"
-                    read FAKE_permanent
+                    read NOP_permanent
                 fi
                 conv-ip_l.sh ${i_h_p}.pcap
             fi
@@ -503,7 +503,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         #cat .${i_h_p}_conv-ip_l.tw
         #ls -l .${i_h_p}_conv-ip_l.tw
         echo \$w_v: $w_v
-        #read FAKE
+        #read NOP
         # "h_v" [h]ight for [v]im
         h_v=50
         echo \$h_v: $h_v
@@ -512,7 +512,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo >> CMD
         chmod 755 CMD
         rm CMD_raw
-        #read FAKE
+        #read NOP
         prev_x_v_l_file_extant=""
         prev_x_v_t_file_extant=""
         if [ -e "/home/$USER/.uncenz-2nd/" ]; then
@@ -520,7 +520,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             for vim_pid_file in $(ls -1tr "/home/$USER/.uncenz-2nd/" | grep 'x_v\.pid'); do
                 vim_pid=$(</home/$USER/.uncenz-2nd/$vim_pid_file)
                 echo \$vim_pid: $vim_pid
-                #read FAKE
+                #read NOP
                 if ( ps aux | grep "\<$vim_pid\>" | grep -q -v grep ); then
                     ps aux | grep "\<$vim_pid\>"
                     #ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.l' | tail -1
@@ -528,11 +528,11 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     prev_x_v_l=$(</home/$USER/.uncenz-2nd/$prev_x_v_l_file)
                     #ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.t' | tail -1
                     echo \$prev_x_v_l: $prev_x_v_l
-                    #read FAKE
+                    #read NOP
                     prev_x_v_t_file=$(ls -1tr /home/$USER/.uncenz-2nd/ | grep 'x_v.t' | tail -1)
                     prev_x_v_t=$(</home/$USER/.uncenz-2nd/$prev_x_v_t_file)
                     echo \$prev_x_v_t: $prev_x_v_t
-                    #read FAKE
+                    #read NOP
                     prev_x_v_l_file_extant="$prev_x_v_l_file"
                     prev_x_v_t_file_extant="$prev_x_v_t_file"
                 else
@@ -558,7 +558,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             #ls -l /home/$USER/.uncenz-2nd/$prev_x_v_t_file_extant
             #echo \$prev_x_v_l: $prev_x_v_l
             #echo \$prev_x_v_t: $prev_x_v_t
-            #read FAKE
+            #read NOP
             if [ "X$(ls -1 /home/$USER/.uncenz-2nd/$prev_x_v_l_file_extant)" == "X" ] && \
                 [ "X$(ls -1 /home/$USER/.uncenz-2nd/$prev_x_t_l_file_extant)" == "X" ]; then
                 echo in main
@@ -568,14 +568,14 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 let l=$prev_x_v_l+30
                 let t=$prev_x_v_t+13
             fi
-            #read FAKE
+            #read NOP
         fi
         echo ${l} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.l
         echo ${t} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.t
         echo "Will run next:"
         echo "xterm -g ${w_v}x${h_v}+${l}+${t} -fn \"-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1\" \
 -e \"`pwd`/CMD\" &"
-        read FAKE
+        read NOP
         xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn "-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1" \
             -e "`pwd`/CMD" & x_v_pid=$!     # [x]term [v]im pid
         echo $x_v_pid > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.pid
@@ -586,7 +586,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # If ${i_h_p}_list is saved, will get this timestamp:
     ts=$(date +%y%m%d_%H%M)
     echo $ts # ts is for timestamp
-    read FAKE
+    read NOP
     echo "The list: "
     ls -l $TMP/${i_h_p}_list
     echo "cat $TMP/${i_h_p}_list"
@@ -614,10 +614,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         touch ${i_h_p}_list${name}_${ts}
         echo "cat $TMP/${i_h_p}_list"
         cat $TMP/${i_h_p}_list
-        read FAKE
+        read NOP
         echo "ls -l ${i_h_p}_list${name}_${ts}"
         ls -l ${i_h_p}_list${name}_${ts}
-        read FAKE
+        read NOP
         echo \$TMP: $TMP
         cat $TMP/${i_h_p}_list|wc -l
         list_nr_lines=$(cat $TMP/${i_h_p}_list|wc -l)
@@ -678,7 +678,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "We next will try and create .$scrg2_base.CMD"
             echo "(needed for archiving, when only $scr_bare is kept)"
             echo "and hit Enter"
-            read FAKE_permanent
+            read NOP_permanent
             if [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ] && [ -e ".$scrg2_base.CMD_pre" ]; then 
                 parts_start=$(<.$scrg2_base-0)
                 echo \$parts_start: $parts_start
@@ -716,7 +716,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     if [ -e "$scrg2_0" ] && [ -e "$scrg2" ]; then
         # Mostly, if $scrg2_0, $scrg2 not needed
         rm -v $scrg2
-        read FAKE
+        read NOP
     fi
     if [ -e "$scrg2_0" ]; then
         # Keep $scrg2_0 or not? Probably remove. If short duration, easy to
@@ -750,6 +750,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     export TMP
 done
 ls -l $TMP
-read FAKE
+read NOP
 trap "rm -rf $TMP/" EXIT INT TERM
 # vim: set tabstop=4 expandtab:

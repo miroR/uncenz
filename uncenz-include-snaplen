@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# see uncenz-include-vimeo which used as template
+#
+
+. /home/$USER/.uncenz.conf
+dumper=$DUMPER
+echo \$dumper: $dumper
+read FAKE
+echo "WARNING: do not user this filter when online!"
+echo "type snaplen: "
+read snaplen
+echo \$snaplen: $snaplen
+read FAKE
+echo "sudo -s $dumper ... -i any -s $snaplen"
+if [ "$dumper" == "dumpcap" ]; then
+    echo "Warning dumpcap not tested for the "-C" option addition"
+    read FAKE
+	#sudo -s touch $the_dump
+	sudo -s $dumper -i any -s $snaplen -w $the_dump &
+fi
+if [ "$dumper" == "tcpdump" ]; then
+	sudo -s $dumper -i any -Z tcpdump -U -v -s $snaplen \
+		 -w $the_dump &
+fi
+echo "Packets are truncated to $snaplen"
+echo "			take notice!"; sleep 1.5
+# vim: set tabstop=4 expandtab:

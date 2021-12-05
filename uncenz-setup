@@ -1,0 +1,27 @@
+#
+# ip6-per-conf -- (dis)allow ipv6 according to conf
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+myuid=$(id -u)
+uncenz_run="/run/user/$myuid/uncenz"
+if [ ! -e "$uncenz_run" ]; then
+    mkdir $uncenz_run
+    chmod 700 $uncenz_run
+fi
+# debug 5 ln
+#echo \$myuid: $myuid
+#echo \$uncenz_run: $uncenz_run
+#ls -l $uncenz_run
+#echo "(ls -l $uncenz_run)"
+#read NOP
+# This line takes your hostname and retains only the first three letters to use
+# in the infix
+hst=$(hostname|sed 's/\(...\).*/\1/')
+echo \$hst: $hst

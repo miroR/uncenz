@@ -6,13 +6,11 @@
 #
 # released under BSD license, pls. see LICENSE
 #
-# Pls. note that with this initial presentation of this program-to-be, or this
-# idea for a program to develop, you probably will not get any meaningful
-# results if you try and run concurrent sessions or if you try and run another
-# nonrelated instance of ffmpeg or dumpcap/tcpdump process.
-#
 
 . /home/$USER/.uncenz.conf
+
+echo ". uncenz-setup from ${0##/}"
+. uncenz-setup
 
 if [ "$OHST_READY" == "n" ]; then
     echo hostname
@@ -27,8 +25,8 @@ function show_help {
     echo
     echo "==============================================================="
     echo
-    echo "${0##*/} -- the exit/terminate script of uncenz,"
-    echo "quits/terminates the screencasting and packet capturing"
+    echo "${0##*/} -- terminates the spawned $dumper and ffmpeg processes of uncenz,"
+    echo "(terminates the packet capturing and screencasting)"
     echo
     echo "Usage: ${0##*/} <the-other-include>"
     echo "        (if run in the uncenz-1st)"
@@ -38,12 +36,18 @@ function show_help {
 }
 
 hst=$(hostname|sed 's/\(...\).*/\1/')
-ts=$(<.uncenz-ts)
+ts=$(<$uncenz_run/uncenz-ts)
 # Optional include here, named 2 because it's (usually) the back script (that's
 # why the 2b) of the include 2 in uncenz-1st. Often both scripts must be there
 # for this optional include, completely ignored if not there, to work. Only in
 # uncenz-kill it's the first argument to $0, not the second.
-if [ "$1" ] && [ -n "$1" ]; then
+# debug 5 ln
+#echo \$1: $1
+#cont_arg_1=$(echo $1 | grep '[[:print:]]')
+#if [ "X${cont_arg_1}X" == "XX" ]; then
+#    echo "arg \$1 is empty/non-extant:"
+#fi
+if [ -z "$1" ] && [ -n "$1" ] && [ "X${1}X" != "XX" ]; then
     include_script_2b=$1
     echo \$include_script_2b: $include_script_2b
     if [ -e "/usr/local/bin/$include_script_2b" ] && [ -x "/usr/local/bin/$include_script_2b" ]; then 
@@ -58,25 +62,25 @@ if [ "$1" ] && [ -n "$1" ]; then
             echo "But you probably need to run the rest of ${0##*/}"
             sleep 2
     fi
-else
-            # Maybe better do nothing here, such as: 'echo -n', or no else at all?
-            echo "The include script you gave:"
-            echo "$include_script_2b"
-            echo "has not been supplied on the command line, or is an empty string,"
+#else
+#            # Maybe better do nothing here, such as: 'echo -n', or no else at all?
+#            echo "The include script you gave:"
+#            echo "$include_script_2b"
+#            echo "has not been supplied on the command line, or is an empty string,"
 fi
 
 # First thing to (regularly) do (the above snippet just opens more options) is
 # take the excerpt from system log. We already have what to stick in the same
 # $str0 (see uncenz-1st) taken after uncenz-1st did all it's starting of cast
 # and trace taking/dumping.
-str0=$(cat .uncenz-log_str0)
+str0=$(<$uncenz_run/uncenz-log_str0)
 echo \$str0: $str0
+# 'str0' stands for 'string 0', i.e. from where in the log we will later, at
+# termination of this session, grep out the excerpt of the log.
 # In the same fashion we take the string for grep'ing on system log below, but
 # we call it str1 this time.
 #sudo -s tail -1 /var/log/kern.log
 #sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1
-# 'str1' stands for 'string 0', i.e. from where in the log we will later, at
-# termination of this session, grep out the excerpt of the log.
 # If it were kern.log:
 #str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
 # If it is syslog:
@@ -95,7 +99,7 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
             > /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
     else
         echo "working: dump_${ts}_${hst}_messages"
-        echo "(and you shouldn't be here)"
+        echo "\$str0" and "\$str1 are identical"
     fi
 fi
 chmod 600 /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
@@ -103,16 +107,16 @@ ls -l /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
 if [ ! -s "/home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages" ]; then
     rm -v /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
 fi
-read FAKE
-dumper=$(cat .uncenz-dumper)
+read NOP
+dumper=$DUMPER
 echo \$dumper: $dumper
-#read FAKE
+#read NOP
 echo \$hst: $hst
 ssllast=SSLLAST_${ts}_${hst}.txt
 echo \$ssllast: $ssllast
 ssllast_active=SSLLAST_${ts}_${hst}_active.txt
 echo \$ssllast_active: $ssllast_active
-read FAKE
+read NOP
 tail -1 $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/$ssllast_active
 echo stored /home/$USER/.uncenz-1st/$ssllast_active ...
 chmod 600 /home/$USER/.uncenz-1st/$ssllast_active
@@ -121,11 +125,11 @@ ls -l /home/$USER/.uncenz-1st/$ssllast \
     ssllast_hash_active=$(sha256sum \
         /home/$USER/.uncenz-1st/$ssllast_active|cut -d' ' -f1)
 echo \$ssllast_hash_active: $ssllast_hash_active
-#read FAKE
+#read NOP
     ssllast_hash=$(sha256sum \
-        /home/$USER/.uncenz-1st/SSLLAST_$(<.uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
+        /home/$USER/.uncenz-1st/SSLLAST_$(<$uncenz_run/uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
 echo \$ssllast_hash: $ssllast_hash
-read FAKE
+read NOP
     echo \$ssllast_hash_active, then \$ssllast_hash:
     echo $ssllast_hash_active
     echo $ssllast_hash
@@ -144,11 +148,11 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
     echo "                            ^^^      ^^^^^^^^^^^^^ "
     aplay -q /home/$USER/tvtube.wav
     echo
-    echo "But if no SSL-key logging browser was active, all may still be fine."
+    echo "But if no TLS-key logging browser was active, all may still be fine."
     echo
     echo "Hit Enter after you have read the above."
     echo
-    read FAKE
+    read NOP
     echo
     echo "#####"
 fi
@@ -161,28 +165,19 @@ fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=`sudo -s ps aux | grep -E '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
-
-echo \$ffpid is: # ff for ffmpeg
-echo $ffpid
-
-echo \$dupid is: # du for dumpcap/tcpdump
-echo $dupid
+echo \$ffpid: $ffpid
+echo \$dupid: $dupid
 
 echo "To kill ffmpeg and dumpcap/tcpdump, hit Enter"
 # Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump
 # with issuing: Ctrl-C (but the excerpt from system log for the session will
 # not include what you do next from here).
-# it already does not include the uncenz-{1st,kill}'s script messages (well it
-# does but only a few), for that matter, and it shouldn't. This need be
-# streamlined for events concerning your work on the internet, not these tools
-# (although I might include a debugging option for logging the script's
-# messages in the future).
-read FAKE
+read NOP
 
 sudo -s kill $dupid $ffpid
 #kill $dupid $ffpid
 if [ "$INTERIM" == "y" ]; then
     echo uncenz-inter.sh
-    read FAKE
+    read NOP
     uncenz-inter.sh
 fi

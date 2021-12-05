@@ -1,0 +1,51 @@
+#
+# uncenz-dumper -- choose either dumpcap or tcpdump for tracing
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+. /home/$USER/.uncenz.conf
+
+if [ "$DUMPER" == "tcpdump" ] || [ "$DUMPER" == "dumpcap" ]; then
+    dumper=$DUMPER
+    echo \$dumper: $dumper
+else
+    if [ "X${DUMPER}" != "X" ]; then
+        echo \$DUMPER: $DUMPER
+        echo "The string above set in the .uncenz.conf is not one of"
+        echo "the options this program is able to take, maybe a typo?"
+        echo "Will not work with bad conf."
+        echo sleep 3 and exit
+        sleep 3
+        exit 1
+    else
+        echo "Can use Wireshark's dumpcap, or Tcpdump Team's tcpdump, you choose!"
+        echo "\"d\" for dumpcap"
+        echo "WARNING: the Dumpcap has not been testing in recent time."
+        echo "\"t\" for tcpdump"
+        read choice
+        case $choice in
+            "d")
+                dumper=dumpcap
+            ;;
+ 
+            "t")
+                dumper=tcpdump
+            ;;
+ 
+            * )
+                echo "only btwn dumpcap and tcpdump can you choose, at this time"
+                echo "Pls. Ctrl-C, and make the correct/possible choice."
+                exit 0
+            ;;
+        esac
+        echo \$dumper: $dumper
+        #echo $dumper > .uncenz-dumper
+    fi
+fi
+

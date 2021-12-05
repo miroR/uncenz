@@ -1,0 +1,44 @@
+#
+# uncenz-vnc-shut -- not libre software, phones home?,
+#                       allow/deny as per the conf
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+. /home/$USER/.uncenz.conf
+
+vncpid_master=$(ps aux | grep vncviewer | grep -v child \
+    | grep -v grep | awk '{print $2}')
+    echo \$vncpid_master: $vncpid_master
+vncpid_child=$(ps aux | grep vncviewer | grep child \
+    | grep -v grep | awk '{print $2}')
+    echo \$vncpid_child: $vncpid_child
+
+if [ "X${vncpid_master}X" == "XX" ] && [ "X${vncpid_child}X" == "XX" ]; then
+    echo "No vncviewer running" # do nothing
+    read NOP
+else
+    if [ "$VNC" != "y" ]; then
+        echo "--~==^==~--"
+        echo "        "
+        echo "        WARNING:"
+        echo "        "
+        echo "       \$VNC: $VNC"
+        echo "        "
+        echo "Finish off vnc-work if any. ** vncviewer will be shut ** next."
+        echo "        "
+        echo "--~==^==~--"
+        read NOP
+        kill $vncpid_child $vncpid_master
+    else
+        echo "** vnc ** is allowed by configuration and will _not_ be shut."
+        # To make sure vnc is shut before going online set:
+        # VNC=n in /home/$USER/.uncenz.conf
+    fi
+    read NOP
+fi

@@ -15,6 +15,9 @@
 
 . /home/$USER/.uncenz.conf
 
+echo ". uncenz-setup from ${0##/}"
+. uncenz-setup
+
 function ask()
 {
     echo -n "$@" '[y/n] ' ; read ans
@@ -61,147 +64,15 @@ while getopts "hk" opt; do      # testing the use of getopts with the shift OPTI
 done
 shift $(($OPTIND - 1))
 
-if [ "$IP6" != "y" ]; then
-    echo \$IP6: $IP6
-    echo "Meaning ip6tables must be set to DROP."
-    echo "(To open to ipv6 traffic set:"
-    echo "IP6=y in /home/$USER/.uncenz.conf)"
-   if ! ( sudo -s grep 'FORWARD DROP' /etc/ip6tables.up.rules ) && \
-       ! ( sudo -s grep 'OUTPUT DROP' /etc/ip6tables.up.rules ) && \
-       ! ( sudo -s grep 'INPUT DROP' /etc/ip6tables.up.rules ); then
-       echo "ip6tables are not set right"
-       echo "CAN NOT go online"
-       read FAKE
-       cat /etc/ip6tables.up.rules
-       echo "(cat /etc/ip6tables.up.rules)"
-        exit 1
-    else
-        echo "ip6tables _are_ set to DROP."
-    fi
-else
-    echo \$IP6: $IP6
-    echo "Meaning ip6tables may be all at ACCEPT."
-    echo "sudo -s ip6tables -L -n, next"
-    read FAKE
-    sudo -s ip6tables -L -n
-    echo "(sudo -s ip6tables -L -n)"
-    ask "Are you sure you want to allow this?"
-    if [ "$?" == 0 ]; then
-        echo "Continuing by user's choice."
-    else
-        echo "To check that ip6tables are set to DROP set:"
-        echo "IP6=n in /home/$USER/.uncenz.conf)"
-        echo "sleep 3 and exit"
-        sleep 3
-        exit 0
-    fi
-fi
-if ! ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
-    ! ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then
-    echo iptables are disabled
-    echo "CAN NOT go online"
-    read FAKE
-    cat /etc/iptables.up.rules
-    echo "(cat /etc/iptables.up.rules)"
-    exit 1
-else
-    if ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
-        ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then
-        if ( sudo -s grep -A5 OUTPUT /etc/iptables.up.rules | grep ACCEPT \
-            | grep 'gid-owner' | grep -q "$(id -g debian-tor)" ); then
-            echo "can use Tor"
-            read FAKE_permanent
-        else #if ( sudo -s grep 'dport 53' /etc/iptables.up.rules | grep ACCEPT ) && \
-            #    ( sudo -s grep 'dport 80' /etc/iptables.up.rules | grep ESTABLISHED | grep ACCEPT ) && \
-            #    ( sudo -s grep 'dport 443' /etc/iptables.up.rules | grep ESTABLISHED| grep ACCEPT ); then
-            if ( sudo -s grep 'dport 53' /etc/iptables.up.rules | grep ACCEPT ) && \
-                ( sudo -s grep 'dports 80,443' /etc/iptables.up.rules  | grep ACCEPT ); then
-                echo "iptables set for CLEAR net"
-                read FAKE_permanent
-                if [ -e "/run/tor/tor.pid" ] || \
-                    ( ps aux | grep tor | grep defaults-torrc | grep TorBrowser \
-                    | grep -q -v grep ); then
-                    echo "but Tor is running"
-                    echo "CAN NOT use Tor with this iptables setup"
-                    exit 1
-                fi
-            else
-                echo "probably NOT SAFE to go online, work out iptables first"
-                # Case arise with this server as router to allow this
-                ask "You sure the case is to allow it, type "y/Y, else we exit""
-                if [ "$?" == 0 ]; then
-                    echo "User decided: run it."
-                else
-                    exit 1
-                fi
-            fi
-        fi
-    fi
-fi
+# The includes below must reside in same dir as $0 (usually /usr/local/bin/),
+# and they are plain non-exec files
+. uncenz-ip6-per-conf
 
-# If you don't want to reply to this question below every time, you can set
-# either the string "dumpcap" or "tcpdump", no spaces, no extra chars, just the
-# usual newline at end, into:
-# .uncenz-dumper_permanent
-if [ -e ".uncenz-dumper_permanent" ]; then
-    dumper=$(<.uncenz-dumper_permanent)
-    if [ "X${dumper}" != "X" ]; then
-        if [ "$dumper" == "dumpcap" ] || [ "$dumper" == "tcpdump" ]; then
-            echo "\$dumper: $dumper, from your permanent setting";
-            echo $dumper > .uncenz-dumper
-        else
-            echo "The string in the .uncenz-dumper_permanent is not one of"
-            echo "the options this program is able to take, maybe a typo?"
-        fi
-    else
-        # TODO duplicated form just below, make a function and call it
-        echo "Can use Wireshark's dumpcap, or Tcpdump Team's tcpdump, you choose!"
-        echo "\"d\" for dumpcap"
-        echo "\"t\" for tcpdump"
-        read choice
-        case $choice in
-            "d")
-                dumper=dumpcap
-            ;;
- 
-            "t")
-                dumper=tcpdump
-            ;;
- 
-            * )
-                echo "only btwn dumpcap and tcpdump can you choose, at this time"
-                echo "Pls. Ctrl-C, and make the correct/possible choice."
-                exit 0
-            ;;
-        esac
-        echo \$dumper: $dumper
-        echo $dumper > .uncenz-dumper
-    fi
-    #read FAKE
-else
-    echo "Can use Wireshark's dumpcap, or Tcpdump Team's tcpdump, you choose!"
-    echo "\"d\" for dumpcap"
-    echo "\"t\" for tcpdump"
-    read choice
-    case $choice in
-        "d")
-            dumper=dumpcap
-        ;;
+. uncenz-ip4-open-or-tor
 
-        "t")
-            dumper=tcpdump
-        ;;
+. uncenz-vnc-per-conf
 
-        * )
-            echo "only btwn dumpcap and tcpdump can you choose, at this time"
-            echo "Pls. Ctrl-C, and make the correct/possible choice."
-            exit 0
-        ;;
-    esac
-    echo \$dumper: $dumper
-    echo $dumper > .uncenz-dumper
-#read FAKE
-fi
+. uncenz-dumper
 
 # First, the checks that apply to uncenz-1st run with and without the include
 # alike.
@@ -212,86 +83,6 @@ if [ ! -e "$SSLKEYLOGFILE" ]; then
     exit 0
 fi
 
-f=$(gpg --list-secret-keys --with-colon)
-if [ "$f" != "" ]; then
-    gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
-    col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
-    if [ "$col15" == "#" ]; then
-        echo "Secret key offlined. Pass."
-    else
-        gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
-        # Check how many keys are not offlined
-        num_keys=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
-            | awk -F: '{print $15}'|wc -l)
-        ord_key=0
-        while [ "$ord_key" -lt "$num_keys" ] ; do
-            echo
-            ord_key_plus=$(echo $ord_key + 1 | bc)
-            col15_each=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
-                | awk -F: '{print $15}'| head -${ord_key_plus} | tail -1)
-            if [ "$col15_each" == "#" ]; then
-                echo "Secret key of the iterated key offlined. Pass."
-            else
-                if [ "$col15_each" == "+" ]; then
-                    if [ -e ".uncenz-keys_allow" ]; then
-                        key_sha=$(gpg --list-secret-keys --with-colons \
-                            | grep '^sec\>' | awk -F: '{print $5}'| head -${ord_key_plus} \
-                            | tail -1| sha256sum - | cut -d' ' -f1)
-                        grep $key_sha .uncenz-keys_allow
-                        if ( grep $key_sha .uncenz-keys_allow ); then
-                            echo "This key is allowed unofflined by user's configuration"
-                        else
-                            aplay -q ~/tvtube.wav
-                            echo "Put the SHA256 (the 64 hex string above) of the 5th column"
-                            echo "of the gpg command used (see script) of this  key in"
-                            echo ".uncenz-keys_allow in this dir if you want to"
-                            echo "allow it unofflined and avoid this nagging"
-
-                            echo "This key has not been allowed by your configuration for going online."
-                            echo "It may be at risk from possible intrusion techniques."
-                            echo "Continue regardless (y), or exit and fix this"
-                            echo "key's primary secret key availability in .gnupg/?"
-                            echo
-                            ask;
-                            # the default (just hitting Enter) is exiting
-                            if [ "$?" == 1 ]; then
-                                echo "Primary secret key is not offlined, exiting by user's choice."
-                                exit 0
-                            fi
-                        fi
-                    else
-                        aplay -q ~/tvtube.wav
-                        echo "Put the SHA256 (the 64 hex string above) of the 5th column"
-                        echo "of the gpg command used (see script) of this  key in"
-                        echo ".uncenz-keys_allow in this dir if you want to"
-                        echo "allow it unofflined and avoid this nagging."
-
-                        echo "This key is has not been allowed by your configuration for going online."
-                        echo "It may be at risk from possible intrusion techniques."
-                        echo "Continue regardless (y), or exit and"
-                        echo "fix this key's primary secret key availability in .gnupg/?"
-                        echo
-                        ask;
-                        # the default (just hitting Enter) is exiting
-                        if [ "$?" == 1 ]; then
-                            echo "Primary secret key is not offlined, exiting by user's choice."
-                            exit 0
-                        fi
-                    fi
-                fi
-            fi
-            ord_key=$(echo $ord_key + 1 | bc)
-            #echo \$ord_key: $ord_key
-        done
-    fi
-fi
-
-if [ "$INTERIM" == "y" ]; then
-    echo uncenz-inter-kill.sh
-    read FAKE
-    uncenz-inter-kill.sh
-fi
-
 if [ "$SSLKEYLOGFILE_READY" != "y" ]; then
     echo \$SSLKEYLOGFILE_READY: $SSLKEYLOGFILE_READY
     echo "Pls. manage $SSLKEYLOGFILE, and set"
@@ -300,262 +91,185 @@ if [ "$SSLKEYLOGFILE_READY" != "y" ]; then
     sleep 3
     exit 0
 fi
-# This line takes your hostname and retains only the first three letters to use
-# in the infix
-hst=$(hostname|sed 's/\(...\).*/\1/')
-# We must not start ffmpeg nor dumpcap/tcpdump if another session is running.
-ffpidof=$(pidof ffmpeg)
-ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}')
-if [ -n "$ffpidof" ]; then echo "\$ffpidof: $ffpidof" ; fi
-dupidof=$(pidof $dumper)
-if [ -n "$dupidof" ]; then echo "\$dupidof: $dupidof" ; fi
 
-dupidof=$(pidof $dumper)
-if [ -n "$dupidof" ]; then
-    echo "\$dupidof: $dupidof"
+. uncenz-gpg
+
+if [ "$INTERIM" == "y" ]; then
+    echo uncenz-inter-kill.sh
+    read NOP
+    uncenz-inter-kill.sh
+fi
+# We must not start ffmpeg nor dumpcap/tcpdump if another session is running.
+ffpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
+if [ -n "$ffpid" ]; then
+    echo \$ffpid: $ffpid
+fi
+
+dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
+if [ -n "$dupid" ]; then
+    echo "\$dupid: $dupid"
 else
     echo "No $dumper running."
 fi
 
-# In case you have a different display, surely you need to change this.
-if [ -z "$ffpid" ] && [ -z "$dupidof" ] ; then
-    # We'll be launching uncenz-ts . But for uncenz-ts to run properly it need to
-    # be able to kill the process of the main script, this uncenz-1st one.
-    ps aux | grep [u]ncenz-1st | grep -v grep | awk '{ print $2 }' >  .uncenz-1st.pid
-    #echo "cat .uncenz-1st.pid"; cat .uncenz-1st.pid
-    #read FAKE
-    #
-    # This uncenz-1st script needs to start ffmpeg screencasting and immediately
-    # afterward network packet capturing. The two files that it will produce with
-    # those processes that it will start, it needs to name with the same infix, and
-    # so the first thing to run is actually the uncenz-ts:
-    #
-    uncenz-ts
-    ts=$(<.uncenz-ts)
-    tsh=${ts}_${hst}
-    ts_old=$(<.uncenz-ts.old)
-    tsh_old=${ts_old}_${hst}
-    #
-    # This stows the name to use in a file .uncenz-ts (ts is for "time stamp"), such
-    # as "150207_0636" for 2015-02-06 06:36.
-    #
-    # I have seen $SSLKEYLOGFILE on poorly maintained system, non-updated
-    # browser, diminishing, i.e. losing keys. We need to check that the
-    # append-only $SSLKEYLOGFILE is not losing content.
-    kl_size=$(ls -l $SSLKEYLOGFILE | awk '{ print $5 }')
-    kl_wc_l=$(wc -l $SSLKEYLOGFILE | awk '{ print $1 }')
-    kl_hash=$(sha256sum $SSLKEYLOGFILE | awk '{ print $1 }')
-    # We don't want to create but one only key log check file for all three above:
-    echo $kl_size $kl_wc_l $kl_hash > /home/$USER/.uncenz-1st/.kl_${tsh}_chk
-    chmod 600 /home/$USER/.uncenz-1st/.kl_${tsh}_chk
-    # All the 50 or more lines of code below only check if the previous session
-    # has lost keys... Boohoohoo... Still needed, I'd say...
-    # Aarrgh, we'll need to do a check when uncenz-kill is run too...
-    # In previous session, the /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk was made.
-    # When there were no previous sessions, we should copy the key log file to
-    # a fake old key log check file, else the code just next might break with
-    # errors.
-    ls -l /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk
-    if [ ! -e "/home/$USER/.uncenz-1st/.kl_${tsh_old}_chk" ]; then
-        cp -ia /home/$USER/.uncenz-1st/.kl_${tsh}_chk /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk
-        echo "NOTE: we created a bogus old key log check file"
-        echo "If you'll be running uncenz in this dir, it won't be happening again."
-        echo "It happens only in the first session."
-        read FAKE
-    fi
-    # Needed only for learning/debugging. Should be commented out (3 ln).
-    echo "cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk"
-    cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk
-    read FAKE
-    kl_size_old=$(cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk|awk '{ print $1 }')
-    kl_wc_l_old=$(cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk|awk '{ print $2 }')
-    kl_hash_old=$(cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk|awk '{ print $3 }')
-    # /home/$USER/.uncenz-1st/.kl_${tsh}_chk must have at least the same number of lines as old
-    if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
-        # in which case the size and hash must also be same
-        if [ "$kl_size" != "$kl_size_old" ]; then
-            echo "Same number of lines ($kl_wc_l), but different size then before."
-            echo "Check whether loss of data occurred with the key log!"
-            read FAKE
-        # The else needed only for learning/debugging. Should be commented it.
-        else
-            echo \$kl_size: $kl_size
-            echo \$kl_size_old: $kl_size_old
-            read FAKE
-        fi
-        if [ "$kl_hash" != "$kl_hash_old" ]; then
-            echo "Same number of lines ($kl_wc_l), but different hash then before."
-            echo "Check whether loss of data occurred with the key log!"
-            read FAKE
-        # The else needed only for learning/debugging. Should be commented out.
-        else
-            echo \$kl_hash: $kl_hash
-            echo \$kl_hash_old: $kl_hash_old
-            read FAKE
-        fi
-    else
-        # The first old number of lines, head'ed out, must have same size and
-        # hash as in /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk.
-        head -${kl_wc_l_old} $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/.kl_${tsh}_part
-        chmod 600 /home/$USER/.uncenz-1st/.kl_${tsh}_part
-        kl_size_part=$(ls -l /home/$USER/.uncenz-1st/.kl_${tsh}_part|awk '{ print $5 }')
-        kl_hash_part=$(sha256sum /home/$USER/.uncenz-1st/.kl_${tsh}_part|awk '{ print $1 }')
-        if [ "$kl_size_part" != "$kl_size_old" ]; then
-            echo "For the portion of old number of lines ($kl_wc_l_old), sizes don't match."
-            echo "Check whether loss of data occurred with the key log!"
-            read FAKE
-        fi
-        if [ "$kl_hash_part" != "$kl_hash_old" ]; then
-            echo "For the portion of old number of lines ($kl_wc_l_old), hashes don't match."
-            echo "Check whether loss of data occurred with the key log!"
-            read FAKE
-        fi
-        # Uncomment (1 ln) if script works well:
-        #rm -v /home/$USER/.uncenz-1st/.kl_${tsh}_part
-    fi
-            
-    #
-    # Pretty dirty, but does it for me, this below is for the purpose that I
-    # more easily find out if my browser, if active, is still
-    # logging SSL-keys. It will just compare the previous SSLLAST to the new
-    # just taken, by their hashes, and tell me to decide if they shouldn't
-    # differ, if they do.
-    tail -1 $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
-    echo stored /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt ...
-    chmod 600 /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
-    #ls -l /home/$USER/.uncenz-1st/SSLLAST_${tsh_old}.txt \
-    #    /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
-        ssllast_hash=$(sha256sum \
-            /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt|cut -d' ' -f1)
-        ssllast_hash_old=$(sha256sum \
-            /home/$USER/.uncenz-1st/SSLLAST_${tsh_old}.txt|cut -d' ' -f1)
-        #echo \$ssllast_hash, then \$ssllast_hash_old:
-        #echo $ssllast_hash
-        #echo $ssllast_hash_old
-    if [ "$ssllast_hash" == "$ssllast_hash_old" ]; then
-        echo \$ssllast_hash, then \$ssllast_hash_old:
-        echo $ssllast_hash
-        echo $ssllast_hash_old
-        echo
-        echo "#####"
-        echo
-        echo " The last key is the same as at the start of last session "
-        echo
-    fi
-
-    the_dump=dump_${tsh}.pcap
-    the_cast=Screen_${tsh}.mkv
-    export the_dump
-    export the_cast
-    if [ "$dumper" == "dumpcap" ]; then
-        sudo -s touch $the_dump
-    fi
-    if [ "$dumper" == "tcpdump" ]; then
-        echo sudo -s touch $the_dump
-        sudo -s touch $the_dump
-        echo sudo -s chown tcpdump:tcpdump $the_dump
-        sudo -s chown tcpdump:tcpdump $the_dump
-        read FAKE
-    fi
-    #
-    ## When I have issues with configuring network (such as setting up bridges)
-    ## I like to take the state of the network when I'm online before I disconnect
-    ## (this is not to be taken every time by default, it's a lot, like debugging)
-    #   echo
-    #   echo "the iptables, and the link layer conf states"
-    #   echo "      will be taken in 30 sec          "
-    #   echo "sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &"
-    #   sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &
-    #   sleep 1.5
-    #   echo
-    #
-
-    #
-    # Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
-    #
-    if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
-        include_filter_run=$1
-        echo \$include_filter_run: $include_filter_run
-        if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
-                /usr/local/bin/$include_filter_run
-            else
-                echo "The include script you gave:"
-                echo "$include_filter_run"
-                echo "does not exist, or is not in the /usr/local/bin/ directory,"
-                echo "or is not executable"
-                sleep 3
-                show_help
-                exit 0
-        fi
-    fi
-    if [ "$dumper" == "dumpcap" ]; then
-        echo "Warning dumpcap not tested for the "-C" option addition"
-        read FAKE
-        sudo -s $dumper -i any -C 10000 -w $the_dump &
-    fi
-    if [ "$dumper" == "tcpdump" ]; then
-        # For "-Z tcpdump" option, in Devuan/Debian based systems,
-        # tcpdump system user/group needs to be created, maybe:
-        # "adduser --system --group --no-create-home tcpdump"
-        sudo -s $dumper -C 10000 -i any -U -v -f \
-            "net not 192.168.88.0 mask 255.255.255.0 \
-            and net not 192.168.2.0 mask 255.255.255.0" \
-            -w $the_dump -Z tcpdump &
-    fi
-    #sudo -s $dumper -i any -w $the_dump &
-    echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
-    read FAKE
-    if [ "$dumper" == "tcpdump" ]; then
-        sudo -s touch $the_cast
-        sudo -s chown $USER:$USER $the_cast
-    fi
-
-    echo "will be: Monitor screen 1920x1080, take notice!"; sleep 0.5
-    read FAKE
-    ffmpeg -y -f x11grab -nostdin -loglevel quiet -s 1920x1080 -r 2 -i :0.0 \
-        -c:v libx264 -preset ultrafast -threads 0 \
-        $the_cast &
-
-    echo "Monitor screen 1920x1080, take notice!"; sleep 0.5
-    read FAKE
-# A sample modification (just: the six '#' column cut and paste above this line):
-#   ffmpeg -f x11grab -nostdin -loglevel quiet -s 800x600 -r 5 -i :1.0 \
-#       -c:v libx264 -preset ultrafast -threads 0 \
-#       Screen_${tsh}.mkv &
-#
-#   echo "Monitor screen 800x600, take notice!"; sleep 1.5
-#   read FAKE
-
-else
-    echo "An ffmpeg process is running, but is it uncenz's? Look up:" ; echo
+# If our x11grab'ing FFmpeg is running, we can't really (re)start uncenz'ing.
+if [ -n "$ffpid" ] && [ "X${ffpid}X" != "XX" ] ; then
+    echo "An ffmpeg process is running, and it likely is uncenz's." ; echo
     ls -ltr | tail -4 ; sleep 2 ; echo
     ls -ltr | tail -4 ; sleep 1
+    echo "Enter y/Y when you have killed FFmpeg if it indeed is the uncenz one,"
+    echo "or allowed it if it is a non-related FFmpeg run."
+    echo "(Hit anything other than y/Y and we will exit.)"
+    ask 
+    if [ "$?" == 0 ]; then
+        echo "Move on by users choice."
+    else
+        exit 0
+    fi
 fi
+# To start uncenz'ing the uncenz's $dumper also should not be running.
+if [ -n "$dupid" ] || [ "X${dupid}X" != "XX" ] ; then
+    echo "An $dumper process is running, and it likely is uncenz's." ; echo
+    ls -ltr | tail -4 ; sleep 2 ; echo
+    ls -ltr | tail -4 ; sleep 1
+    echo "Enter y/Y when you have killed $dumper if it indeed is the uncenz one,"
+    echo "or allowed it if it is a run non-related to uncenz."
+    echo "(Hit anything other than y/Y and we will exit.)"
+    ask 
+    if [ "$?" == 0 ]; then
+        echo "Move on by users choice."
+    else
+        exit 0
+    fi
+fi
+# This uncenz-1st script starts ffmpeg screencasting and immediately
+# afterward network packet capturing. The two files that it will produce with
+# those processes that it will start, it needs to name with the same
+# timestamp infix, and so the first thing to run is actually the uncenz-ts:
+#
+uncenz-ts
+ts=$(<$uncenz_run/uncenz-ts)
+tsh=${ts}_${hst}
+echo \$tsh: $tsh
+if [ -e "$uncenz_run/uncenz-ts.old" ]; then
+    ts_old=$(<$uncenz_run/uncenz-ts.old)
+    tsh_old=${ts_old}_${hst}
+fi
+#
+# This stows the name to use in a file $uncenz_run/uncenz-ts (ts is for
+# "time stamp"), such as "150207_0636" for 2015-02-06 06:36.
+#
 
-# We need to find the pid of each of the above processes.
-ffpid=$(sudo -s ps aux | egrep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}')
+. uncenz-tlskeylog
+
+the_dump=dump_${tsh}.pcap
+the_cast=Screen_${tsh}.mkv
 if [ "$dumper" == "dumpcap" ]; then
-    dupid=`sudo -s ps aux | egrep '[d]umpcap' | grep -v grep | awk '{ print $2}'`
+    sudo -s touch $the_dump
 fi
 if [ "$dumper" == "tcpdump" ]; then
-    dupid=`sudo -s ps aux | egrep '[t]cpdump' | grep -v grep | awk '{ print $2}'`
+    echo sudo -s touch $the_dump
+    sudo -s touch $the_dump
+    echo sudo -s chown tcpdump.tcpdump $the_dump
+    sudo -s chown tcpdump.tcpdump $the_dump
+    read NOP
 fi
+#
+## When I have issues with configuring network (such as setting up bridges)
+## I like to take the state of the network when I'm online before I disconnect
+## (this is not to be taken every time by default, it's a lot, like debugging)
+#   echo
+#   echo "the iptables, and the link layer conf states"
+#   echo "      will be taken in 30 sec          "
+#   echo "sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &"
+#   sleep 30 &&  sudo -s uncenz-ipt-conf-states.sh &
+#   sleep 1.5
+#   echo
+#
 
-# ff for ffmpeg
+#
+# Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
+#
+if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
+    include_filter_run=$1
+    echo \$include_filter_run: $include_filter_run
+    if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
+            /usr/local/bin/$include_filter_run
+        else
+            echo "The include script you gave:"
+            echo "$include_filter_run"
+            echo "does not exist, or is not in the /usr/local/bin/ directory,"
+            echo "or is not executable"
+            sleep 3
+            show_help
+            exit 0
+    fi
+fi
+if [ "$dumper" == "dumpcap" ]; then
+    echo "Warning dumpcap not tested for the "-C" option addition"
+    read NOP
+    sudo -s $dumper -i any -C 10000 -w $the_dump &
+fi
+if [ "$dumper" == "tcpdump" ]; then
+    # For "-Z tcpdump" option, in Devuan/Debian based systems,
+    # tcpdump system user/group needs to be created, maybe:
+    # "adduser --system --group --no-create-home tcpdump"
+    sudo -s $dumper -C 10000 -i any -U -v -f \
+        "net not 192.168.88.0 mask 255.255.255.0 \
+        and net not 192.168.2.0 mask 255.255.255.0" \
+        -w $the_dump -Z tcpdump &
+fi
+echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
+read NOP
+
+sudo -s touch $the_cast
+sudo -s chown $USER.$USER $the_cast
+
+if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
+    # debug
+    echo "in $0"
+    read NOP
+    echo "You need to set your screen resolution in:"
+    ls -l /home/$USER/.uncenz.conf
+    show_help
+fi
+echo \$SCR: $SCR
+# Not checking for mistaken entries, user needs to know what (s)he is doing.
+echo "will be: Monitor screen $SCR, take notice!"; sleep 0.5
+read NOP
+ffmpeg -y -f x11grab -nostdin -loglevel quiet -s $SCR -r 2 -i :0.0 \
+    -c:v libx264 -preset ultrafast -threads 0 \
+    $the_cast &
+
+echo "Monitor screen $SCR, take notice!"; sleep 0.5
+read NOP
+
+# We need to find the pid of each of the above processes.
+# ff for ffmpeg, du for $dumper
+ffpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
+dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
+
 echo \$ffpid is: $ffpid
+echo $ffpid > $uncenz_run/uncenz-ff.pid
 # Note that if $dumper is tcpdump you get two pids, because it shows as two
 # processes, one owned by sudo, the other by user tcpdump
-# I've been using only tcpdump since months now. Reports for dumpcap as $dumper
-# welcome.
-# du for $dumper
+# I've been using only tcpdump for capturing traffic since years now. Reports
+# for dumpcap as $dumper welcome.
 echo \$dupid is: $dupid
+echo $dupid > $uncenz_run/uncenz-du.pid
 
-# The log file with some (in no-grsec linux) rarely relevant messages is
-# /var/log/syslog, or with kernel set to debugging  /var/log/kern.log.
+# I used grsecurity-patched kernels until google openly arranged for basically
+# robbing grsecurity authors of their code, in late 2010s.
+# The log file, with some current kernels, with somewhat relevant messages, is
+# /var/log/syslog, or with kernel set to debugging /var/log/kern.log.
 # During my years with Gentoo it used to be /var/log/messages. Edit according
-# to where you get the logging.
+# to where you get the most relevent logging.
 sudo -s tail -1 /var/log/syslog
 sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
+# WARNING: this $str0 extraction works correcly only if you in:
+# /etc/rsyslog.conf have commented out:
+# #$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+# as above. I have not tested other system loggers.
 # 'str0' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
 # If it were kern.log:
@@ -563,13 +277,11 @@ sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
 # If it is syslog:
 str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
 #echo \$str0: $str0
-# I've learned to use mktemp a little in the meantime, but not yet so well, and
-# it's too many changes needed. Only uncenz-2nd uses mktemp at this time...
-echo $str0 > .uncenz-log_str0
-cat .uncenz-log_str0
-read FAKE
+echo $str0 > $uncenz_run/uncenz-log_str0
+cat $uncenz_run/uncenz-log_str0
+read NOP
 
-# An/More other/logging include(s) might be added here. I'll tie it to $2
+# Another/More logging include(s) might be added here. I'll tie it to $2
 # (ermh, for now).  Pls. note that if you give empty string for $1 arg, then
 # you can easily/effectively get a $2 <another-include> to be run Like:
 # uncenz-1st "" <another-include>
@@ -593,11 +305,6 @@ if [ "$2" ] && [ -n "$2" ] && [ "X${2}" != "X" ]; then
             show_help
             exit 0
     fi
-# Uncomment 4 lines below if you're struggling to get this to work.
-#else
-#           echo "The include script you gave:"
-#           echo "$include_script_2"
-#           echo "has not been supplied on the command line, or is an empty string,"
 else
     echo "To end a session issue \"uncenz-kill <Enter>\" from this terminal."
 fi

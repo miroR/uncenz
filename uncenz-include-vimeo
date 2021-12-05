@@ -26,7 +26,9 @@
 # The better but more complicated way is to limit the size of the packets. Some
 # other time I'll make that kind of include.
 #
-dumper=$(cat .uncenz-dumper)
+
+. /home/$USER/.uncenz.conf
+dumper=$DUMPER
 echo \$dumper: $dumper
 read FAKE
 # Vimeo (not complete), I perfectly understand it's duplicated, can't go and
