@@ -17,10 +17,11 @@ if ! ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
     ! ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then
     echo iptables are disabled
     echo "CAN NOT go online"
+    echo "will dump iptables and exit next"
     read NOP
     cat /etc/iptables.up.rules
     echo "(cat /etc/iptables.up.rules)"
-    exit 1
+    exit 0
 else
     if ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
         ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then

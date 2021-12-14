@@ -5,7 +5,7 @@
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
-# Copyright (C) 2015,2020 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+# Copyright (C) 2015, 2020, 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -59,6 +59,13 @@ while getopts "hk" opt; do      # testing the use of getopts with the shift OPTI
             ;;
         k)
             chk-tls
+			sleep 0.20
+			if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+				ls -l $uncenz_run/chk-tls_calls_exit
+				exit 1
+			#else
+			#	echo $?
+			fi
             ;;
     esac
 done
@@ -142,10 +149,11 @@ if [ -n "$dupid" ] || [ "X${dupid}X" != "XX" ] ; then
         exit 0
     fi
 fi
-# This uncenz-1st script starts ffmpeg screencasting and immediately
-# afterward network packet capturing. The two files that it will produce with
-# those processes that it will start, it needs to name with the same
-# timestamp infix, and so the first thing to run is actually the uncenz-ts:
+# This uncenz-1st script starts concurrently (as close as possible) ffmpeg
+# screencasting and network packet capturing. The two files that it will
+# produce with those processes that it will start, it needs to name with the
+# same timestamp infix, and so the first thing to run is actually the
+# uncenz-ts:
 #
 uncenz-ts
 ts=$(<$uncenz_run/uncenz-ts)
@@ -234,10 +242,14 @@ if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
     show_help
 fi
 echo \$SCR: $SCR
+if [ ! -n "$DISPLAY" ] || [ "X${DISPLAY}" == "X" ]; then
+    DISPLAY=0.0
+fi
+echo \$DISPLAY: $DISPLAY
 # Not checking for mistaken entries, user needs to know what (s)he is doing.
 echo "will be: Monitor screen $SCR, take notice!"; sleep 0.5
 read NOP
-ffmpeg -y -f x11grab -nostdin -loglevel quiet -s $SCR -r 2 -i :0.0 \
+ffmpeg -y -f x11grab -nostdin -loglevel quiet -s $SCR -r 2 -i :$DISPLAY \
     -c:v libx264 -preset ultrafast -threads 0 \
     $the_cast &
 
