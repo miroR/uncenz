@@ -15,7 +15,7 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##/}"
+echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 function ask()
@@ -49,27 +49,27 @@ function show_help {
     echo "  usually in /usr/local/bin ."
     echo
 }
-# Reset in case getopts has been used previously in the shell.
-OPTIND=1
-while getopts "hk" opt; do      # testing the use of getopts with the shift OPTIND reset right after loop
-    case "$opt" in
-        h)
-            show_help
-            exit 0
-            ;;
-        k)
-            chk-tls
-			sleep 0.20
-			if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-				ls -l $uncenz_run/chk-tls_calls_exit
-				exit 1
-			#else
-			#	echo $?
-			fi
-            ;;
-    esac
-done
-shift $(($OPTIND - 1))
+
+#OPTIND=1
+#while getopts "hk" opt; do
+#    case "$opt" in
+#        h)
+#            show_help
+#            exit 0
+#            ;;
+#        k)
+#            chk-tls
+#            sleep 0.20
+#            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+#                ls -l $uncenz_run/chk-tls_calls_exit
+#                exit 1
+#            #else
+#            #    echo $?
+#            fi
+#            ;;
+#    esac
+#done
+#shift $(($OPTIND - 1))
 
 # The includes below must reside in same dir as $0 (usually /usr/local/bin/),
 # and they are plain non-exec files
@@ -198,34 +198,54 @@ fi
 #
 # Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
 #
-if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
-    include_filter_run=$1
-    echo \$include_filter_run: $include_filter_run
-    if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
-            /usr/local/bin/$include_filter_run
-        else
-            echo "The include script you gave:"
-            echo "$include_filter_run"
-            echo "does not exist, or is not in the /usr/local/bin/ directory,"
-            echo "or is not executable"
-            sleep 3
-            show_help
-            exit 0
-    fi
-fi
+#if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
+#    include_filter_run=$1
+#    echo \$include_filter_run: $include_filter_run
+#    if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
+#            /usr/local/bin/$include_filter_run
+#        else
+#            echo "The include script you gave:"
+#            echo "$include_filter_run"
+#            echo "does not exist, or is not in the /usr/local/bin/ directory,"
+#            echo "or is not executable"
+#            sleep 3
+#            show_help
+#            exit 0
+#    fi
+#fi
 if [ "$dumper" == "dumpcap" ]; then
     echo "Warning dumpcap not tested for the "-C" option addition"
     read NOP
     sudo -s $dumper -i any -C 10000 -w $the_dump &
 fi
 if [ "$dumper" == "tcpdump" ]; then
-    # For "-Z tcpdump" option, in Devuan/Debian based systems,
-    # tcpdump system user/group needs to be created, maybe:
-    # "adduser --system --group --no-create-home tcpdump"
-    sudo -s $dumper -C 10000 -i any -U -v -f \
+    echo "sudo -s $dumper -C 10000 -i any -U -v -f \
         "net not 192.168.88.0 mask 255.255.255.0 \
-        and net not 192.168.2.0 mask 255.255.255.0" \
-        -w $the_dump -Z tcpdump &
+        and net not 192.168.2.0 mask 255.255.255.0 \
+        and net not 192.168.3.0 mask 255.255.255.0" \
+        -w $the_dump &"
+	# In case of problems, uncomment 5 ln, and below, or the opposite
+    echo "Pls. run the command above manually"
+    echo "from another terminal at this time."
+    echo "         just"
+    echo "       not in bg"
+    echo "         ..."
+    read NOP
+	# The command, apparently with experimental Debian kernel compiled with
+	# gcc-11, end y. 2021, does not bg, halting the execution of the script:
+    #sudo -s $dumper -C 10000 -i any -U -v -f \
+    #    "net not 192.168.88.0 mask 255.255.255.0 \
+    #    and net not 192.168.2.0 mask 255.255.255.0 \
+    #    and net not 192.168.3.0 mask 255.255.255.0" \
+    #    -w $the_dump &
+	# In case of problems, comment out 5 ln above and uncomment 6 ln beloa and
+	# 5 above, or the opposite
+    dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
+    while [ "X$dupid" == "X" ]; do
+        echo -n "Pls. do run the above... "
+        sleep 3
+        dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
+    done
 fi
 echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
 read NOP
@@ -301,34 +321,69 @@ read NOP
 # See the comments about the include with $1 above.
 # Also note that this will silently just be ignored if any of the conditions do
 # not hold.
-if [ "$2" ] && [ -n "$2" ] && [ "X${2}" != "X" ]; then
-    include_script_2=$2
-    echo \$include_script_2: $include_script_2
-    if [ -e "/usr/local/bin/$include_script_2" ] && [ -x "/usr/local/bin/$include_script_2" ]; then
-            /usr/local/bin/$include_script_2
-        echo "To end a session issue \"uncenz-kill \
-<the counterpart script of the $include_script_2> <Enter>\" from this terminal."
-        else
-            echo "The include script you gave:"
-            echo "$include_script_2"
-            echo "does not exist, or is not in the /usr/local/bin/ directory,"
-            echo "or is not executable"
-            sleep 3
+#if [ "$2" ] && [ -n "$2" ] && [ "X${2}" != "X" ]; then
+#    include_script_2=$2
+#    echo \$include_script_2: $include_script_2
+#    if [ -e "/usr/local/bin/$include_script_2" ] && [ -x "/usr/local/bin/$include_script_2" ]; then
+#            /usr/local/bin/$include_script_2
+#        echo "To end a session issue \"uncenz-kill \
+#<the counterpart script of the $include_script_2> <Enter>\" from this terminal."
+#        else
+#            echo "The include script you gave:"
+#            echo "$include_script_2"
+#            echo "does not exist, or is not in the /usr/local/bin/ directory,"
+#            echo "or is not executable"
+#            sleep 3
+#            show_help
+#            exit 0
+#    fi
+#else
+#    echo "To end a session issue \"uncenz-kill <Enter>\" from this terminal."
+#fi
+OPTIND=1
+while getopts "hkr:" opt; do
+    case "$opt" in
+        h)
             show_help
             exit 0
-    fi
-else
-    echo "To end a session issue \"uncenz-kill <Enter>\" from this terminal."
-fi
-if [ -e ".uncenz-include2_abort" ]; then
-    echo "The $include_script_2 mandates to abort the session."
-    echo "########################################"
-    echo; echo "We are aborting."; echo; echo
-    uncenz-kill
-    echo; echo "The session has been aborted.";
-    echo "as $include_script_2 requested"; echo; echo
-    echo "########################################"
-fi
+            ;;
+        k)
+            chk-tls
+            sleep 0.20
+            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+                ls -l $uncenz_run/chk-tls_calls_exit
+                exit 1
+            #else
+            #    echo $?
+            fi
+            ;;
+        r)
+            if [ "X$OPTARG" != "X" ]; then 
+                if [ -e "/usr/local/bin/$OPTARG" ] && [ -x "/usr/local/bin/$OPTARG" ]; then
+                    $OPTARG
+                    sleep 0.20
+                    if [ -e "$uncenz_run/${OPTARG}_calls_exit" ]; then
+                        ls -l $uncenz_run/${OPTARG}_calls_exit
+                        exit 1
+                    fi
+                fi
+            else
+                echo "You gave an empty argument, or something else is wrong."
+            fi
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+#if [ -e ".uncenz-include2_abort" ]; then
+#    echo "The $include_script_2 mandates to abort the session."
+#    echo "########################################"
+#    echo; echo "We are aborting."; echo; echo
+#    uncenz-kill
+#    echo; echo "The session has been aborted.";
+#    echo "as $include_script_2 requested"; echo; echo
+#    echo "########################################"
+#fi
 # I added a similar snippet in the uncenz-kill, without which this $2 include
 # may not work (say if it's about extracting from another log).
 

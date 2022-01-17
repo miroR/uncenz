@@ -9,7 +9,7 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##/}"
+echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 # "ts" is for "time stamp"

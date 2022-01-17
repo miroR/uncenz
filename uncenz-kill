@@ -9,7 +9,7 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##/}"
+echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 if [ "$OHST_READY" == "n" ]; then
@@ -47,27 +47,51 @@ ts=$(<$uncenz_run/uncenz-ts)
 #if [ "X${cont_arg_1}X" == "XX" ]; then
 #    echo "arg \$1 is empty/non-extant:"
 #fi
-if [ -z "$1" ] && [ -n "$1" ] && [ "X${1}X" != "XX" ]; then
-    include_script_2b=$1
-    echo \$include_script_2b: $include_script_2b
-    if [ -e "/usr/local/bin/$include_script_2b" ] && [ -x "/usr/local/bin/$include_script_2b" ]; then 
-            /usr/local/bin/$include_script_2b
-        else
-            echo "The include script you gave:"
-            echo "$include_script_2b"
-            echo "does not exist, or is not in the /usr/local/bin/ directory,"
-            echo "or is not executable"
-            show_help
-            sleep 3
-            echo "But you probably need to run the rest of ${0##*/}"
-            sleep 2
-    fi
+#if [ -z "$1" ] && [ -n "$1" ] && [ "X${1}X" != "XX" ]; then
+#    include_script_2b=$1
+#    echo \$include_script_2b: $include_script_2b
+#    if [ -e "/usr/local/bin/$include_script_2b" ] && [ -x "/usr/local/bin/$include_script_2b" ]; then 
+#            /usr/local/bin/$include_script_2b
+#        else
+#            echo "The include script you gave:"
+#            echo "$include_script_2b"
+#            echo "does not exist, or is not in the /usr/local/bin/ directory,"
+#            echo "or is not executable"
+#            show_help
+#            sleep 3
+#            echo "But you probably need to run the rest of ${0##*/}"
+#            sleep 2
+#    fi
 #else
 #            # Maybe better do nothing here, such as: 'echo -n', or no else at all?
 #            echo "The include script you gave:"
 #            echo "$include_script_2b"
 #            echo "has not been supplied on the command line, or is an empty string,"
-fi
+#fi
+OPTIND=1
+while getopts "hr:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+            ;;
+        r)
+            if [ "X$OPTARG" != "X" ]; then 
+                if [ -e "/usr/local/bin/$OPTARG" ] && [ -x "/usr/local/bin/$OPTARG" ]; then
+                    $OPTARG
+                    sleep 0.20
+                    if [ -e "$uncenz_run/${OPTARG}_calls_exit" ]; then
+                        ls -l $uncenz_run/${OPTARG}_calls_exit
+                        exit 1
+                    fi
+                fi
+            else
+                echo "You gave an empty argument, or something else is wrong."
+            fi
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 # First thing to (regularly) do (the above snippet just opens more options) is
 # take the excerpt from system log. We already have what to stick in the same

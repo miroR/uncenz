@@ -573,10 +573,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo ${l} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.l
         echo ${t} > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.t
         echo "Will run next:"
-        echo "xterm -g ${w_v}x${h_v}+${l}+${t} -fn \"-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1\" \
+        echo "xterm -g ${w_v}x${h_v}+${l}+${t} -fn 8x13 \
 -e \"`pwd`/CMD\" &"
         read NOP
-        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn "-misc-fixed-medium-r-normal--13-120-75-75-c-80-iso10646-1" \
+        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn 8x13
             -e "`pwd`/CMD" & x_v_pid=$!     # [x]term [v]im pid
         echo $x_v_pid > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.pid
         sleep 10 && rm CMD &
