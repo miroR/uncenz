@@ -13,25 +13,25 @@
 
 # This is as per the iptables setup by my usual scripts. Will need adjustments
 # for different scripts.
-if ! ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
-    ! ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then
-    echo iptables are disabled
+if ! ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) || \
+	! ( sudo -s iptables -L -n | grep FORWARD | grep -q DROP ); then
+    echo iptables are disabled or improperly set up
     echo "CAN NOT go online"
     echo "will dump iptables and exit next"
     read NOP
-    cat /etc/iptables.up.rules
-    echo "(cat /etc/iptables.up.rules)"
+    sudo -s iptables -L -n
+    echo "(sudo -s iptables -L -n)"
     exit 0
 else
-    if ( sudo -s grep 'FORWARD DROP' /etc/iptables.up.rules ) && \
-        ( sudo -s grep 'INPUT DROP' /etc/iptables.up.rules ); then
-        if ( sudo -s grep -A5 OUTPUT /etc/iptables.up.rules | grep ACCEPT \
-            | grep 'gid-owner' | grep -q "$(id -g debian-tor)" ); then
+	if ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) && \
+		( sudo -s iptables -L -n | grep FORWARD | grep -q DROP ); then
+        if ( sudo -s iptables -L -n | grep ACCEPT \
+            | grep 'owner GID match' | grep "$(id -g debian-tor)" ); then
             echo "can use Tor"
             read NOP_permanent
         else
-            if ( sudo -s grep 'dport 53' /etc/iptables.up.rules | grep ACCEPT ) && \
-                ( sudo -s grep 'dports 80,443' /etc/iptables.up.rules  | grep ACCEPT ); then
+            if ( sudo -s iptables -L -n | grep 'dpt:53' | grep ACCEPT ) && \
+                ( sudo -s iptables -L -n | grep 'dports 80,443' | grep ACCEPT ); then
                 echo "iptables set for CLEAR net"
                 read NOP_permanent
                 if [ -e "/run/tor/tor.pid" ] || \

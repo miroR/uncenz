@@ -160,7 +160,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         fi
     fi
     if [ ! -e ".${i_h_p}_no_scr" ]; then
-		ls -l ${scrg2_base}-0.mkv
+        ls -l ${scrg2_base}-0.mkv
         echo "${scrg2_base}-0.mkv exists?"
         read NOP
     fi
@@ -349,21 +349,19 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo \$hst_p: $hst_p
     echo \$i_h_p: $i_h_p
     read NOP
-    ls -1 ${i_h_p}_conv-ip_l.txt \
+    # the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
+    ls -1d ${i_h_p}_conv-ip_l.txt \
         ${i_h_p}_NOTES.txt \
-        ${i_h_p}_messages ${i_h_p}_r \
-        ${i_h_p}_r_dt ${i_h_p}_r_tb \
-        ${i_h_p}_r_dt_d ${i_h_p}_r_dt_d.xz ${i_h_p}_r_tb_d ${i_h_p}_r_tb_d.xz \
-        ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
+        ${i_h_p}_* \
         ${i_h_p}-msg_r_PDU*.txt \
-        ${i_h_p}_t_fetch* \
-        ${i_h_p}_t_mutt* \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
         ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
         ${i_h_p}_rn.d/*.log \
-        | grep -v '\.pcap\|SSLKEYLOGFILE.txt' \
-        | grep -v '\.:'|grep '[[:print:]]'
+        | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
+        | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
+        | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
+        | grep -v '\.:'|grep '[[:print:]]' | uniq
     read NOP
     touch $TMP/${i_h_p}_list
     echo "Possible old (previous) lists: "
@@ -394,21 +392,19 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "${i_h_p}_list"
         echo "now mandatory."
         read NOP
-        for file in $(ls -1 ${i_h_p}_conv-ip_l.txt \
+        # the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
+        for file in $(ls -1d ${i_h_p}_conv-ip_l.txt \
             ${i_h_p}_NOTES.txt \
-            ${i_h_p}_messages ${i_h_p}_r \
-            ${i_h_p}_r_dt ${i_h_p}_r_tb \
-            ${i_h_p}_r_dt_d ${i_h_p}_r_dt_d.xz ${i_h_p}_r_tb_d ${i_h_p}_r_tb_d.xz \
-            ${i_h_p}_r_vd ${i_h_p}_r_vt ${i_h_p}_r_v \
+            ${i_h_p}_* \
             ${i_h_p}-msg_r_PDU*.txt \
-            ${i_h_p}_t_fetch* \
-            ${i_h_p}_t_mutt* \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
             ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
             ${i_h_p}_rn.d/*.log \
-            | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|CMD' \
-            | grep -v '\.hosts$' | grep -v '\.:' | grep '[[:print:]]'); do
+            | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
+            | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
+            | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
+            | grep -v '\.hosts$' | grep -v '\.:' | uniq | grep '[[:print:]]'); do
             if [ -e "$file" ]; then
                 echo "$file" >> $TMP/${i_h_p}_list
             fi
@@ -430,36 +426,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         cat $TMP/${i_h_p}_list | wc -l
         echo "            entries"
         echo "-=-=-"
-        echo "NOTE: in a separate terminal you may now edit:"
-        echo "$TMP/${i_h_p}_list"
-        read NOP_permanent
-        # Fixing the ${i_h_p}_list for ${i_h_p}_conv-ip_l.txt listing, merged from part of
-        # and ${i_h_p}.conv-ip
-        #if [ -e "${i_h_p}_conv-ip_l.txt" ] && [ -s "${i_h_p}_conv-ip_l.txt" ]; then
-        #    grep -v "\|${i_h_p}.conv-ip\>" $TMP/${i_h_p}_list
-        #    read NOP
-        #    grep -v "\|${i_h_p}.conv-ip\>\|${i_h_p}_list" \
-        #        $TMP/${i_h_p}_list > ${i_h_p}_list_tmp
-        #    diff ${i_h_p}_list_tmp $TMP/${i_h_p}_list
-        #    read NOP
-        #    echo  ${i_h_p}_conv-ip_l.txt > ${i_h_p}_list
-        #    cat ${i_h_p}_list_tmp >> ${i_h_p}_list
-        #    mv -v ${i_h_p}_list $TMP/${i_h_p}_list
-        #    read NOP
-        #    rm -v ${i_h_p}_list_tmp
-        #    cat ${i_h_p}_conv-ip_l.txt
-        #    echo "(cat ${i_h_p}_conv-ip_l.txt)"
-        #else
-        #    echo "${i_h_p}_conv-ip_l.txt not extant or empty."
-        #    echo "Pls. mend for that, and hit Enter."
-        #    echo "(and if it still will not be right, we'll exit)"
-        #    read NOP_permanent
-        #    if [ ! -e "${i_h_p}_conv-ip_l.txt" ] || [ ! -s "${i_h_p}_conv-ip_l.txt" ]; then
-        #    echo "${i_h_p}_conv-ip_l.txt is essential for this script."
-        #    echo "And is either not extant or empty. Can't work."
-        #        exit 1
-        #    fi
-        #fi
     fi
     # Adding the list to be shown as the last tab in Vim
     echo $TMP/${i_h_p}_list >> $TMP/${i_h_p}_list
@@ -576,7 +542,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "xterm -g ${w_v}x${h_v}+${l}+${t} -fn 8x13 \
 -e \"`pwd`/CMD\" &"
         read NOP
-        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn 8x13
+        xterm -g ${w_v}x${h_v}+${l}+${t} -T ${i_h_p}_VIM -fn 8x13 \
             -e "`pwd`/CMD" & x_v_pid=$!     # [x]term [v]im pid
         echo $x_v_pid > /home/$USER/.uncenz-2nd/${i_h_p}_x_v.pid
         sleep 10 && rm CMD &
@@ -595,12 +561,12 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "The list will be saved as:"
     echo "${i_h_p}_list_<the-infix-go-give>_${ts} ?"
     read name
-	if [ ! -n "$name" ]; then
-		echo "Do you want to save that list anyway, the name will be:"
+    if [ ! -n "$name" ]; then
+        echo "Do you want to save that list anyway, the name will be:"
         echo "${i_h_p}_list_${ts} ?"
         ask
         if [ "$?" == 0 ]; then
-	        # touch to save the list
+            # touch to save the list
             touch .${i_h_p}_list_do_save
         else
             echo "list not saved by user choice"
@@ -610,7 +576,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         name="_${name}"
         echo \$name: $name
     fi
-	if [ -n "$name" ] || [ -e ".${i_h_p}_list_do_save" ]; then
+    if [ -n "$name" ] || [ -e ".${i_h_p}_list_do_save" ]; then
         touch ${i_h_p}_list${name}_${ts}
         echo "cat $TMP/${i_h_p}_list"
         cat $TMP/${i_h_p}_list

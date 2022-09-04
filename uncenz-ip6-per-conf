@@ -18,14 +18,14 @@ if [ "$IP6" != "y" ]; then
     echo "Meaning ip6tables must be set to DROP."
     # To open to ipv6 traffic set:
     # IP6=y in /home/$USER/.uncenz.conf)
-    if ! ( sudo -s grep 'FORWARD DROP' /etc/ip6tables.up.rules ) && \
-       ! ( sudo -s grep 'OUTPUT DROP' /etc/ip6tables.up.rules ) && \
-       ! ( sudo -s grep 'INPUT DROP' /etc/ip6tables.up.rules ); then
+    if ! ( sudo -s ip6tables -L -n | grep INPUT | grep -q DROP ) || \
+       ! ( sudo -s ip6tables -L -n | grep FORWARD | grep -q DROP ) || \
+       ! ( sudo -s ip6tables -L -n | grep OUTPUT | grep -q DROP ); then
        echo "ip6tables are not set right"
        echo "CAN NOT go online"
        read FAKE
-       cat /etc/ip6tables.up.rules
-       echo "(cat /etc/ip6tables.up.rules)"
+       sudo -s ip6tables -L -n
+       echo "(sudo -s ip6tables -L -n)"
         exit 1
     else
         echo "ip6tables _are_ set to DROP."
