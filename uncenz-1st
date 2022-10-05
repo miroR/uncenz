@@ -81,6 +81,24 @@ function show_help {
 
 . uncenz-dumper
 
+CUR_DIR=$(pwd)
+echo \$CUR_DIR: $CUR_DIR
+if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
+    echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
+    echo "sleep 3 and exit"
+    sleep 3
+    exit 0
+else
+    if [ "$CUR_DIR" != "$UNCENZ_DIR" ]; then
+        echo "You are in:"
+        ls -ld $CUR_DIR
+        echo "but you must be in $UNCENZ_DIR to run ${0##*/},"
+        echo "sleep 3 and exit"
+        sleep 3
+        exit 0
+    fi
+fi
+read NOP
 # First, the checks that apply to uncenz-1st run with and without the include
 # alike.
 #
