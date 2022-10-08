@@ -254,6 +254,11 @@ if [ "$dumper" == "tcpdump" ]; then
         and net not 192.168.2.0 mask 255.255.255.0 \
         and net not 192.168.3.0 mask 255.255.255.0\" \
         -w $the_dump" &
+    if [ "$?" == 0 ]; then
+        echo "The xterm seems to be executing the command."
+    else
+        echo "Pls. run the command above manually."
+    fi
     read NOP
     # The command, apparently with experimental Debian kernel compiled with
     # gcc-11, end y. 2021, does not bg, halting the execution of the script:
