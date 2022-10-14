@@ -276,8 +276,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "User declined to open ${i}_${hst_p}.pcap with Wireshark"
         else
             if [ -e "${i_h_p}_SSLKEYLOGFILE.txt" ]; then
-                echo "wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap"
-                wireshark -ossl.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap & pid=$!
+                echo "wireshark -otls.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap"
+                wireshark -otls.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap & pid=$!
                 read NOP
             else
                 echo "wireshark ${i_h_p}.pcap"
@@ -317,8 +317,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap
             if [ -e "${i_h_p}.SSLKEYLOGFILE.txt" ]; then
                 for k in $(ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap|sed 's/\.pcap//'); do
-                    echo "wireshark -ossl.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap"
-                    wireshark -ossl.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap &
+                    echo "wireshark -otls.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap"
+                    wireshark -otls.keylog_file:${k}_SSLKEYLOGFILE.txt $k.pcap &
                     pid=$!
                     echo $pid
                     echo $pid > $TMP/${k}_wireshark_${num_pid}.pid
