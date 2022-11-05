@@ -23,44 +23,44 @@ while [ "$num" -lt "$homes_num" ]; do
     let num+=1
 done
 echo \$USER: $USER
-homes_this_sslk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
-echo \$homes_this_sslk: $homes_this_sslk
+homes_this_tlsk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
+echo \$homes_this_tlsk: $homes_this_tlsk
 read NOP
-homes_prev_sslk=""
+homes_prev_tlsk=""
 # debug 3
-echo "X${homes_prev_sslk}X"
-echo you see "XX" when \${homes_prev_sslk} is empty
-read NOP
+#echo "X${homes_prev_tlsk}X"
+#echo you see "XX" when \${homes_prev_tlsk} is empty
+#read NOP
 num=0
 while [ "$num" -lt "$homes_num" ]; do
     echo \$homes[$num]: ${homes[$num]}
     sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
     read NOP
-    homes_cur_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+    homes_cur_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
     # debug 2 ln
-    echo \$homes_cur_sslk: $homes_cur_sslk
+    echo \$homes_cur_tlsk: $homes_cur_tlsk
     read NOP
-    if [ "X${homes_prev_sslk}" == "X" ];then
-        homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+    if [ "X${homes_prev_tlsk}" == "X" ];then
+        homes_prev_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
         # debug 2ln
-        echo \$homes_prev_sslk: $homes_prev_sslk
+        echo \$homes_prev_tlsk: $homes_prev_tlsk
         read NOP
     else
-        echo \$homes_cur_sslk: $homes_cur_sslk
-        if [ "X${homes_highest_sslk}" != "X" ]; then
-            homes_prev_sslk=$homes_highest_sslk
+        echo \$homes_cur_tlsk: $homes_cur_tlsk
+        if [ "X${homes_highest_tlsk}" != "X" ]; then
+            homes_prev_tlsk=$homes_highest_tlsk
         fi
-        echo \$homes_prev_sslk: $homes_prev_sslk
-        if [ "$homes_cur_sslk" -ne "$homes_prev_sslk" ]; then
-            if [ "$homes_cur_sslk" -gt "$homes_prev_sslk" ]; then
-                homes_highest_sslk="$homes_cur_sslk"
+        echo \$homes_prev_tlsk: $homes_prev_tlsk
+        if [ "$homes_cur_tlsk" -ne "$homes_prev_tlsk" ]; then
+            if [ "$homes_cur_tlsk" -gt "$homes_prev_tlsk" ]; then
+                homes_highest_tlsk="$homes_cur_tlsk"
             else
-                homes_highest_sslk="$homes_prev_sslk"
+                homes_highest_tlsk="$homes_prev_tlsk"
             fi
         else
-            homes_highest_sslk="$homes_cur_sslk"
+            homes_highest_tlsk="$homes_cur_tlsk"
         fi
-        echo \$homes_highest_sslk: $homes_highest_sslk
+        echo \$homes_highest_tlsk: $homes_highest_tlsk
         read NOP
     fi
     let num+=1
@@ -68,15 +68,15 @@ done
 if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
 	rm -v $uncenz_run/chk-tls_calls_exit
 fi
-if [ "$homes_this_sslk" == "$homes_highest_sslk" ]; then
-    echo \$homes_this_sslk: $homes_this_sslk
-    echo "The highest size of sslk is (also) of this \$USER. Read the STDOUT above."
+if [ "$homes_this_tlsk" == "$homes_highest_tlsk" ]; then
+    echo \$homes_this_tlsk: $homes_this_tlsk
+    echo "The highest size of tlsk is (also) of this \$USER. Read the STDOUT above."
 else
     ls -l /home/$USER/.kl/.sslkey.log
     echo "##################################################"
-    echo "# The highest size of sslk is NOT of this \$USER."
+    echo "# The highest size of tlsk is NOT of this \$USER."
     echo "# Fix that manually NOW."
-	touch touch $uncenz_run/chk-tls_calls_exit
+	touch $uncenz_run/chk-tls_calls_exit
     echo "###############################################"
     exit 1
 fi
