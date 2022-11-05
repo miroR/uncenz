@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# uncenz-chk-tlsfile
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# Copyright (C) 2015,2020 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+# released under BSD license, pls. see LICENSE
+#
+
+echo ". uncenz-setup from ${0##*/}"
+. uncenz-setup
+
+homes=( $(ls -1 /home) )
+homes_num=${#homes[@]}
+echo \$homes_num: $homes_num
+num=0
+# debug while
+while [ "$num" -lt "$homes_num" ]; do
+    echo \$homes[$num]: ${homes[$num]}
+    let num+=1
+done
+echo \$USER: $USER
+homes_this_sslk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
+echo \$homes_this_sslk: $homes_this_sslk
+read NOP
+homes_prev_sslk=""
+# debug 3
+echo "X${homes_prev_sslk}X"
+echo you see "XX" when \${homes_prev_sslk} is empty
+read NOP
+num=0
+while [ "$num" -lt "$homes_num" ]; do
+    echo \$homes[$num]: ${homes[$num]}
+    sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
+    read NOP
+    homes_cur_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+    # debug 2 ln
+    echo \$homes_cur_sslk: $homes_cur_sslk
+    read NOP
+    if [ "X${homes_prev_sslk}" == "X" ];then
+        homes_prev_sslk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+        # debug 2ln
+        echo \$homes_prev_sslk: $homes_prev_sslk
+        read NOP
+    else
+        echo \$homes_cur_sslk: $homes_cur_sslk
+        if [ "X${homes_highest_sslk}" != "X" ]; then
+            homes_prev_sslk=$homes_highest_sslk
+        fi
+        echo \$homes_prev_sslk: $homes_prev_sslk
+        if [ "$homes_cur_sslk" -ne "$homes_prev_sslk" ]; then
+            if [ "$homes_cur_sslk" -gt "$homes_prev_sslk" ]; then
+                homes_highest_sslk="$homes_cur_sslk"
+            else
+                homes_highest_sslk="$homes_prev_sslk"
+            fi
+        else
+            homes_highest_sslk="$homes_cur_sslk"
+        fi
+        echo \$homes_highest_sslk: $homes_highest_sslk
+        read NOP
+    fi
+    let num+=1
+done
+if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+	rm -v $uncenz_run/chk-tls_calls_exit
+fi
+if [ "$homes_this_sslk" == "$homes_highest_sslk" ]; then
+    echo \$homes_this_sslk: $homes_this_sslk
+    echo "The highest size of sslk is (also) of this \$USER. Read the STDOUT above."
+else
+    ls -l /home/$USER/.kl/.sslkey.log
+    echo "##################################################"
+    echo "# The highest size of sslk is NOT of this \$USER."
+    echo "# Fix that manually NOW."
+	touch touch $uncenz_run/chk-tls_calls_exit
+    echo "###############################################"
+    exit 1
+fi
