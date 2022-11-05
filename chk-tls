@@ -81,6 +81,7 @@ while [ "$num" -lt "$homes_num" ]; do
                 num_highest="$num"
             else
                 homes_highest_tlsk="$homes_prev_tlsk"
+                num_highest="$num_prev"
             fi
         else
             homes_highest_tlsk="$homes_cur_tlsk"
@@ -154,7 +155,7 @@ else
     done
     # Previously was: That we reached here means all non-highest ones are equal.
 
-    for tmp_tlsk in $uncenz_run/ADD $uncenz_run/r; do
+    for tmp_tlsk in $uncenz_run/ADD $uncenz_run/r $uncenz_run/homes_num_file; do
         if [ -e "$tmp_tlsk" ]; then
             ls -l $tmp_tlsk; rm -fv $tmp_tlsk
         fi
@@ -205,7 +206,15 @@ else
             sudo -s chown $USER:$USER $uncenz_run/homes_num_file
             sudo -s chown $USER:$USER $uncenz_run/ADD
             ls -l $uncenz_run/homes_num_file
+			if [ -e "$uncenz_run/r" ]; then
+            	echo "sudo -s chown ${homes[$num]}:${homes[$num]} $uncenz_run/r"
+            	sudo -s chown ${homes[$num]}:${homes[$num]} $uncenz_run/r
+			fi
+			echo "Next: cat $uncenz_run/homes_num_file $uncenz_run/ADD > $uncenz_run/r"
+			read NOP
             cat $uncenz_run/homes_num_file $uncenz_run/ADD > $uncenz_run/r
+            echo "sudo -s chown ${homes[$num]}:${homes[$num]} $uncenz_run/r"
+			read NOP
             sudo -s chown ${homes[$num]}:${homes[$num]} $uncenz_run/r
             echo "Next:"
             echo "sudo -s diff $uncenz_run/r $homes_num_highest"
@@ -249,8 +258,9 @@ while [ "$num" -lt "$homes_num" ]; do
     fi
     let num+=1
 done
-sudo -s rm -v $uncenz_run/ADD $uncenz_run/r
+sudo -s rm -v $uncenz_run/ADD $uncenz_run/r $uncenz_run/homes_num_file $uncenz_run/homes_num_ar* 
 echo "We reached the state as:"
 echo "ls -l /home/{$homes_num_ar}/.kl/.sslkey.log" > $uncenz_run/homes_num_ar_CMD
 chmod 755 $uncenz_run/homes_num_ar_CMD
 sudo -s $uncenz_run/homes_num_ar_CMD
+sudo -s rm $uncenz_run/homes_num_ar* 
