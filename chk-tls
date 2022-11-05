@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# uncenz-chk-tlsfile
+# uncenz-chk-tls
 #
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
@@ -16,6 +16,28 @@ echo ". uncenz-setup from ${0##*/}"
 homes=( $(ls -1 /home) )
 homes_num=${#homes[@]}
 echo \$homes_num: $homes_num
+> $uncenz_run/homes_num_ar
+> $uncenz_run/homes_num_ar_CMD
+num=0
+while [ "$num" -lt "$homes_num" ]; do
+    let num_plus=num+1
+    if [ "$num_plus" == "$homes_num" ]; then
+        echo -n "${homes[$num]}" >> $uncenz_run/homes_num_ar
+    else
+        echo -n "${homes[$num]}," >> $uncenz_run/homes_num_ar
+    fi
+    let num+=1
+done
+#cat $uncenz_run/homes_num_ar
+#read NOP
+homes_num_ar=$(<$uncenz_run/homes_num_ar)
+
+echo "We start from:"
+echo "ls -l /home/{$homes_num_ar}/.kl/.sslkey.log" > $uncenz_run/homes_num_ar_CMD
+chmod 755 $uncenz_run/homes_num_ar_CMD
+sudo -s $uncenz_run/homes_num_ar_CMD
+read NOP
+
 num=0
 # debug while
 while [ "$num" -lt "$homes_num" ]; do
@@ -41,9 +63,11 @@ while [ "$num" -lt "$homes_num" ]; do
     echo \$homes_cur_tlsk: $homes_cur_tlsk
     read NOP
     if [ "X${homes_prev_tlsk}" == "X" ];then
-        homes_prev_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+        #homes_prev_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
         # debug 2ln
+        homes_prev_tlsk="$homes_cur_tlsk"
         echo \$homes_prev_tlsk: $homes_prev_tlsk
+        num_prev="$num"
         read NOP
     else
         echo \$homes_cur_tlsk: $homes_cur_tlsk
@@ -54,19 +78,22 @@ while [ "$num" -lt "$homes_num" ]; do
         if [ "$homes_cur_tlsk" -ne "$homes_prev_tlsk" ]; then
             if [ "$homes_cur_tlsk" -gt "$homes_prev_tlsk" ]; then
                 homes_highest_tlsk="$homes_cur_tlsk"
+                num_highest="$num"
             else
                 homes_highest_tlsk="$homes_prev_tlsk"
             fi
         else
             homes_highest_tlsk="$homes_cur_tlsk"
+            num_highest="$num"
         fi
         echo \$homes_highest_tlsk: $homes_highest_tlsk
+        echo \$num_highest: $num_highest
         read NOP
     fi
     let num+=1
 done
 if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-	rm -v $uncenz_run/chk-tls_calls_exit
+    rm -v $uncenz_run/chk-tls_calls_exit
 fi
 if [ "$homes_this_tlsk" == "$homes_highest_tlsk" ]; then
     echo \$homes_this_tlsk: $homes_this_tlsk
@@ -75,8 +102,155 @@ else
     ls -l /home/$USER/.kl/.sslkey.log
     echo "##################################################"
     echo "# The highest size of tlsk is NOT of this \$USER."
-    echo "# Fix that manually NOW."
-	touch $uncenz_run/chk-tls_calls_exit
+    echo "# We may try and fix that now."
     echo "###############################################"
-    exit 1
+    num=0
+    # debug 3ln
+    echo \$homes_this_tlsk: $homes_this_tlsk
+    echo \$homes_highest_tlsk: $homes_highest_tlsk
+    echo \$num_highest: $num_highest
+    read NOP
+    while [ "$num" -lt "$homes_num" ]; do
+        # This works only if there is one single highest, not two equal highest, but see first next cond:
+        if [ "$num" == "$num_highest" ]; then
+            echo '"$num" == "$num_highest" and we let num+=1 and continue'
+            let num+=1; echo \$num: $num
+            continue
+        fi
+        echo \$homes[$num]: ${homes[$num]}
+        sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
+        read NOP
+        homes_cur_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+        # debug 2 ln
+        echo \$homes_cur_tlsk: $homes_cur_tlsk
+        echo \$homes_highest_tlsk: $homes_highest_tlsk
+        # Another condition to continue if needed:
+        if [ "$homes_cur_tlsk" == "$homes_highest_tlsk" ]; then
+            let num+=1; echo \$num: $num
+            continue
+        else
+            echo "\$homes_cur_tlsk: $homes_cur_tlsk"
+            echo "\$homes_highest_tlsk: $homes_highest_tlsk"
+        fi
+        read NOP
+            echo \$homes_cur_tlsk: $homes_cur_tlsk
+            if [ "X${homes_second_highest_tlsk}" != "X" ]; then
+                homes_cur_tlsk=$homes_second_highest_tlsk
+            fi
+            echo \$homes_prev_tlsk: $homes_prev_tlsk
+            if [ "$homes_cur_tlsk" -ne "$homes_prev_tlsk" ]; then
+                echo "Please take notice of the above. We break now."
+                #echo "Fix the tlsk's manually if running from uncenz-1st!"
+                #touch $uncenz_run/chk-tls_calls_exit
+                #ls -l $uncenz_run/chk-tls_calls_exit
+                read NOP
+                break
+            else
+                homes_second_highest_tlsk="$homes_cur_tlsk"
+            fi
+            echo \$homes_second_highest_tlsk: $homes_second_highest_tlsk
+            read NOP
+        let num+=1
+    done
+    # Previously was: That we reached here means all non-highest ones are equal.
+
+    for tmp_tlsk in $uncenz_run/ADD $uncenz_run/r; do
+        if [ -e "$tmp_tlsk" ]; then
+            ls -l $tmp_tlsk; rm -fv $tmp_tlsk
+        fi
+    done
+    read NOP
+    num=0
+    while [ "$num" -lt "$homes_num" ]; do
+        if [ "$num" == "$num_highest" ]; then
+            echo '"$num" == "$num_highest" and we let num+=1 and continue'
+            let num+=1; echo \$num: $num
+            continue
+        fi
+        echo "\$homes[$num]: ${homes[$num]}"
+        sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
+        read NOP
+        homes_cur_tlsk="$(sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log|awk '{ print $5 }')"
+        # debug 1ln
+        #echo \$homes_cur_tlsk: $homes_cur_tlsk
+        # See previous while loop above. This is a paste.
+        if [ "$homes_cur_tlsk" == "$homes_highest_tlsk" ]; then
+            let num+=1; echo \$num: $num
+            continue
+        else
+            echo "\$homes_cur_tlsk: $homes_cur_tlsk"
+            echo "\$homes_highest_tlsk: $homes_highest_tlsk"
+        fi
+        read NOP
+        homes_num_highest="/home/${homes[$num_highest]}/.kl/.sslkey.log"
+        homes_num_file="/home/${homes[$num]}/.kl/.sslkey.log"
+        echo "sudo -s diff $homes_num_highest $homes_num_file | grep '> '"
+        read NOP
+        #sudo -s diff $homes_num_highest $homes_num_file | grep '> '   # too much to show
+        echo "(sudo -s diff $homes_num_highest $homes_num_file | grep '> ')"
+        read NOP
+        right_side=$(sudo -s diff $homes_num_highest $homes_num_file | grep '> ' | sed 's///')
+        if [ "X${right_side}X" == "XX" ]; then
+            echo "The \$homes_num_highest contains \$homes_num_file"   # could simply cat it to it
+                                                                  # but we choose secure method
+            new_keylog_lines=$(sudo -s diff $homes_num_highest \
+                $homes_num_file | grep '< ' | sed 's/< //' | wc -l)
+            echo "There are \$new_keylog_lines: $new_keylog_lines"
+            read NOP
+            sudo -s diff $homes_num_highest \
+                $homes_num_file | grep '< ' | sed 's/< //' > $uncenz_run/ADD
+            > $uncenz_run/homes_num_file
+            sudo -s cp -vf $homes_num_file $uncenz_run/homes_num_file
+            echo "sudo -s chown $USER:$USER $uncenz_run/homes_num_file"
+            sudo -s chown $USER:$USER $uncenz_run/homes_num_file
+            sudo -s chown $USER:$USER $uncenz_run/ADD
+            ls -l $uncenz_run/homes_num_file
+            cat $uncenz_run/homes_num_file $uncenz_run/ADD > $uncenz_run/r
+            sudo -s chown ${homes[$num]}:${homes[$num]} $uncenz_run/r
+            echo "Next:"
+            echo "sudo -s diff $uncenz_run/r $homes_num_highest"
+            if ( sudo -s diff -q $uncenz_run/r $homes_num_highest ); then
+                sudo -s ls -l $uncenz_run/r $homes_num_highest
+                echo PASS
+                sudo -s cp -av $uncenz_run/r /home/${homes[$num]}/r
+                sudo -s -u ${homes[$num]} cp -av /home/${homes[$num]}/r $homes_num_file
+                if ( sudo -s diff -q /home/${homes[$num]}/r $homes_num_file ); then
+                    sudo -s ls -l $uncenz_run/r /home/${homes[$num]}/r $homes_num_file
+                    echo PASS
+                fi
+            else
+                echo "These:"
+                ls -l $uncenz_run/r $homes_num_highest
+                echo "differ"
+            fi
+            read NOP
+        else                # It should never happen to get here, but...
+            echo "The $homes_highest_tlsk does NOT contain $homes_this_tlsk"
+            touch $uncenz_run/chk-tls_calls_exit
+            ls -l $uncenz_run/chk-tls_calls_exit
+        fi
+        echo \$num: $num
+        let num+=1
+        echo \$num: $num
+        read NOP
+        echo "\$homes_num: $homes_num"
+        echo "\$num_highest: $num_highest"
+        read NOP
+    done
 fi
+num=0
+while [ "$num" -lt "$homes_num" ]; do
+    if [ -e "/home/${homes[$num]}/r" ]; then
+        if ( diff -q /home/${homes[$num]}/r $uncenz_run/r ); then
+            sudo -s rm -v /home/${homes[$num]}/r
+        else # Do I remember that I didn't save somthing else as r?
+            sudo -s rm -iv /home/${homes[$num]}/r
+        fi
+    fi
+    let num+=1
+done
+sudo -s rm -v $uncenz_run/ADD $uncenz_run/r
+echo "We reached the state as:"
+echo "ls -l /home/{$homes_num_ar}/.kl/.sslkey.log" > $uncenz_run/homes_num_ar_CMD
+chmod 755 $uncenz_run/homes_num_ar_CMD
+sudo -s $uncenz_run/homes_num_ar_CMD
