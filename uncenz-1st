@@ -196,8 +196,8 @@ fi
 if [ "$dumper" == "tcpdump" ]; then
     echo sudo -s touch $the_dump
     sudo -s touch $the_dump
-    echo sudo -s chown tcpdump.tcpdump $the_dump
-    sudo -s chown tcpdump.tcpdump $the_dump
+    echo sudo -s chown tcpdump:tcpdump $the_dump
+    sudo -s chown tcpdump:tcpdump $the_dump
     read NOP
 fi
 #
@@ -248,7 +248,7 @@ if [ "$dumper" == "tcpdump" ]; then
     sleep 0.5
     # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
     # see note with FF_DISPLAY
-    xterm -g 80x9-0+315 -fn 8x13 -e "sudo -v && \
+    xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
         sudo -s $dumper -C 10000 -i any -U -v -f \
         \"net not 192.168.88.0 mask 255.255.255.0 \
         and net not 192.168.2.0 mask 255.255.255.0 \
@@ -280,7 +280,7 @@ echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
 read NOP
 
 sudo -s touch $the_cast
-sudo -s chown $USER.$USER $the_cast
+sudo -s chown $USER:$USER $the_cast
 
 if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
     # debug
@@ -291,7 +291,8 @@ if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
     show_help
 fi
 echo \$SCR: $SCR
-# if var is DISPLAY as in man ffmpeg-all, there is no launching xterm:
+# if in /home/$USER/.uncenz.conf var is DISPLAY as in man ffmpeg-all, there is
+# no launching xterm:
 # xterm: Xt error: Can't open display: 0.0
 if [ ! -n "$FF_DISPLAY" ] || [ "X${FF_DISPLAY}" == "X" ]; then
     FF_DISPLAY=0.0
