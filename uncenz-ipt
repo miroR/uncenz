@@ -1,0 +1,85 @@
+#
+# ip4-open-or-tor -- iptables up and in the right mode
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+. /home/$USER/.uncenz.conf
+
+ipt_n_end=""
+if [ "$IPT" != "y" ]; then
+    echo \$IPT: $IPT
+    echo "################################################################"
+    echo "You are not checking iptables setup/allowing unfiltered traffic."
+    echo "Type in a sleep interval after which we set \"IPT=y\""
+    echo "     in /home/$USER/.uncenz.conf in seconds"
+    echo "btwn 30s and 8h, i.e. 30 to 28800"
+fi
+if [ "$IPT" != "y" ]; then
+    while [ ! -n "$ipt_n_end" ]; do
+        read ipt_n_end
+        if [ "$ipt_n_end" -ge "30" ] && [ "$ipt_n_end" -le "28800" ]; then
+            echo "$ipt_n_end is legal"
+        else
+            ipt_n_end=""
+            echo "30 to 28800: "
+        fi
+    done
+    echo "sleep $ipt_n_end && sed -i 's/IPT=n/IPT=y/' /home/$USER/.uncenz.conf"
+    read NOP
+    sleep $ipt_n_end && sed -i 's/IPT=n/IPT=y/' /home/$USER/.uncenz.conf &
+    echo "(sleep $ipt_n_end && sed -i 's/IPT=n/IPT=y/' /home/$USER/.uncenz.conf)"
+    echo "WARNING: if shutdown/reboot before $ipt_n_end, this will not execute." 
+    read NOP
+    echo "################################################################"
+fi
+# This is as per the iptables setup by my usual scripts. Will need adjustments
+# for different scripts.
+if [ "$IPT" == "y" ]; then
+    if ! ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) || \
+        ! ( sudo -s iptables -L -n | grep FORWARD | grep -q DROP ); then
+        echo iptables are disabled or improperly set up
+        echo "CAN NOT go online"
+        echo "will dump iptables and exit next"
+        read NOP
+        sudo -s iptables -L -n
+        echo "(sudo -s iptables -L -n)"
+        exit 0
+    else
+        if ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) && \
+            ( sudo -s iptables -L -n | grep FORWARD | grep -q DROP ); then
+            if ( sudo -s iptables -L -n | grep ACCEPT \
+                | grep 'owner GID match' | grep "$(id -g debian-tor)" ); then
+                echo "can use Tor"
+                read NOP_permanent
+            else
+                if ( sudo -s iptables -L -n | grep 'dpt:53' | grep ACCEPT ) && \
+                    ( sudo -s iptables -L -n | grep 'dports 80,443' | grep ACCEPT ); then
+                    echo "iptables set for CLEAR net"
+                    read NOP_permanent
+                    if [ -e "/run/tor/tor.pid" ] || \
+                        ( ps aux | grep tor | grep defaults-torrc | grep TorBrowser \
+                        | grep -q -v grep ); then
+                        echo "but Tor is running"
+                        echo "CAN NOT use Tor with this iptables setup"
+                        exit 1
+                    fi
+                else
+                    echo "probably NOT SAFE to go online, work out iptables first"
+                    # Case arise with this server as router to allow this
+                    ask "You sure the case is to allow it, type "y/Y, else we exit""
+                    if [ "$?" == 0 ]; then
+                        echo "User decided: run it."
+                    else
+                        exit 1
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
