@@ -50,32 +50,11 @@ function show_help {
     echo
 }
 
-#OPTIND=1
-#while getopts "hk" opt; do
-#    case "$opt" in
-#        h)
-#            show_help
-#            exit 0
-#            ;;
-#        k)
-#            chk-tls
-#            sleep 0.20
-#            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-#                ls -l $uncenz_run/chk-tls_calls_exit
-#                exit 1
-#            #else
-#            #    echo $?
-#            fi
-#            ;;
-#    esac
-#done
-#shift $(($OPTIND - 1))
-
 # The includes below must reside in same dir as $0 (usually /usr/local/bin/),
 # and they are plain non-exec files
 . uncenz-ip6-per-conf
 
-. uncenz-ip4-open-or-tor
+. uncenz-ipt
 
 . uncenz-vnc-per-conf
 
@@ -98,6 +77,9 @@ else
         exit 0
     fi
 fi
+read NOP
+
+sudo -s rm -v /home/*/Pas-*.txt ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &
 read NOP
 # First, the checks that apply to uncenz-1st run with and without the include
 # alike.
@@ -231,52 +213,158 @@ fi
 #            exit 0
 #    fi
 #fi
-if [ "$dumper" == "dumpcap" ]; then
-    echo "Warning dumpcap not tested for the "-C" option addition"
-    read NOP
-    sudo -s $dumper -i any -C 10000 -w $the_dump &
-fi
+OPTIND=1
+while getopts "hf:kr:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+            ;;
+        f)
+            if [ "X$OPTARG" != "X" ]; then 
+                if [ "$OPTARG" == "nofilter" ]; then
+                    if [ "$dumper" == "dumpcap" ]; then
+                        echo "Warning dumpcap not tested for the "-C" option addition"
+                        read NOP
+                        sudo -s $dumper -i any -C 10000 -w $the_dump &
+                    fi
+                    if [ "$dumper" == "tcpdump" ]; then
+                        echo "sudo -s $dumper -C 10000 -i any -U -v \
+                            -w $the_dump"
+                        # In case of problems, uncomment 5 ln, and below, or the opposite
+                        echo "Next, xterm runs that command."
+                        echo "         ..."
+                        sleep 0.5
+                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
+                        # see note with FF_DISPLAY
+                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
+                            sudo -s $dumper -C 10000 -i any -U -v \
+                            -w $the_dump" &
+                        if [ "$?" == 0 ]; then
+                            echo "The xterm seems to be executing the command."
+                        else
+                            echo "Pls. run the command above manually."
+                        fi
+                        read NOP
+                    fi
+                fi
+                if [ "$OPTARG" == "read_args" ]; then
+                    echo "Type the filter expression: "
+                    read args_read
+                    echo \$args_read: $args_read
+                    read NOP
+                    if [ "$dumper" == "dumpcap" ]; then
+                        echo "Warning dumpcap not tested for the "-C" option addition"
+                        read NOP
+                        sudo -s $dumper -i any -C 10000 -w $the_dump &
+                    fi
+                    if [ "$dumper" == "tcpdump" ]; then
+                        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
+                            $args_read \
+                            -w $the_dump"
+                        # In case of problems, uncomment 5 ln, and below, or the opposite
+                        echo "Next, xterm runs that command."
+                        echo "         ..."
+                        sleep 0.5
+                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
+                        # see note with FF_DISPLAY
+                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
+                            sudo -s $dumper -C 10000 -i any -U -v -f \
+                                $args_read \
+                            -w $the_dump" &
+                        if [ "$?" == 0 ]; then
+                            echo "The xterm seems to be executing the command."
+                        else
+                            echo "Pls. run the command above manually."
+                        fi
+                        read NOP
+                    fi
+                fi
+                if [ "$OPTARG" == "nolocal" ]; then
+                    if [ "$dumper" == "dumpcap" ]; then
+                        echo "Warning dumpcap not tested for the "-C" option addition"
+                        read NOP
+                        sudo -s $dumper -i any -C 10000 -w $the_dump &
+                    fi
+                    if [ "$dumper" == "tcpdump" ]; then
+                        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
+                            "net not 192.168.88.0 mask 255.255.255.0 \
+                            and net not 192.168.2.0 mask 255.255.255.0 \
+                            and net not 192.168.3.0 mask 255.255.255.0" \
+                            -w $the_dump"
+                        # In case of problems, uncomment 5 ln, and below, or the opposite
+                        echo "Next, xterm runs that command."
+                        echo "         ..."
+                        sleep 0.5
+                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
+                        # see note with FF_DISPLAY
+                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
+                            sudo -s $dumper -C 10000 -i any -U -v -f \
+                            \"net not 192.168.88.0 mask 255.255.255.0 \
+                            and net not 192.168.2.0 mask 255.255.255.0 \
+                            and net not 192.168.3.0 mask 255.255.255.0\" \
+                            -w $the_dump" &
+                        if [ "$?" == 0 ]; then
+                            echo "The xterm seems to be executing the command."
+                        else
+                            echo "Pls. run the command above manually."
+                        fi
+                        read NOP
+                    fi
+                fi
+            else
+                echo "To -f you must give arg one of:" 
+                echo "nofilter nolocal read_args" 
+                read NOP
+            fi
+            ;;
+        k)
+            chk-tls
+            sleep 0.20
+            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+                ls -l $uncenz_run/chk-tls_calls_exit
+                exit 1
+            #else
+            #    echo $?
+            fi
+            ;;
+        r)
+            if [ "X$OPTARG" != "X" ]; then 
+                script_to_run="$OPTARG" # but is run at end
+            else
+                echo "You gave an empty argument, or something else is wrong."
+            fi
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
 if [ "$dumper" == "tcpdump" ]; then
-    echo "sudo -s $dumper -C 10000 -i any -U -v -f \
-        "net not 192.168.88.0 mask 255.255.255.0 \
-        and net not 192.168.2.0 mask 255.255.255.0 \
-        and net not 192.168.3.0 mask 255.255.255.0" \
-        -w $the_dump"
-    # In case of problems, uncomment 5 ln, and below, or the opposite
-    echo "Next, xterm runs that command."
-    echo "         ..."
-    sleep 0.5
-    # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
-    # see note with FF_DISPLAY
-    xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
-        sudo -s $dumper -C 10000 -i any -U -v -f \
-        \"net not 192.168.88.0 mask 255.255.255.0 \
-        and net not 192.168.2.0 mask 255.255.255.0 \
-        and net not 192.168.3.0 mask 255.255.255.0\" \
-        -w $the_dump" &
-    if [ "$?" == 0 ]; then
-        echo "The xterm seems to be executing the command."
-    else
-        echo "Pls. run the command above manually."
-    fi
-    read NOP
-    # The command, apparently with experimental Debian kernel compiled with
-    # gcc-11, end y. 2021, does not bg, halting the execution of the script:
-    #sudo -s $dumper -C 10000 -i any -U -v -f \
-    #    "net not 192.168.88.0 mask 255.255.255.0 \
-    #    and net not 192.168.2.0 mask 255.255.255.0 \
-    #    and net not 192.168.3.0 mask 255.255.255.0" \
-    #    -w $the_dump &
-    # In case of problems, comment out 5 ln above and uncomment 6 ln below and
-    # 5 above, or the opposite
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
-        echo -n "Pls. do run the above... "
+        # tcpdump not running because no -f option with arg given (or something else),
+        # so default action is nolocal
+        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
+            "net not 192.168.88.0 mask 255.255.255.0 \
+            and net not 192.168.2.0 mask 255.255.255.0 \
+            and net not 192.168.3.0 mask 255.255.255.0" \
+            -w $the_dump"
+        echo "Next, xterm runs that command."
+        echo "         ..."
+        sleep 0.5
+        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
+            sudo -s $dumper -C 10000 -i any -U -v -f \
+            \"net not 192.168.88.0 mask 255.255.255.0 \
+            and net not 192.168.2.0 mask 255.255.255.0 \
+            and net not 192.168.3.0 mask 255.255.255.0\" \
+            -w $the_dump" &
+
+        echo -n "Not running? pls. run manually, separate teminal."
         sleep 3
         dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     done
 fi
-echo "No hosts are filtered, all are traced, take notice!"; sleep 0.2
+sleep 0.2
 read NOP
 
 sudo -s touch $the_cast
@@ -372,40 +460,14 @@ read NOP
 #else
 #    echo "To end a session issue \"uncenz-kill <Enter>\" from this terminal."
 #fi
-OPTIND=1
-while getopts "hkr:" opt; do
-    case "$opt" in
-        h)
-            show_help
-            exit 0
-            ;;
-        k)
-            chk-tls
-            sleep 0.20
-            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-                ls -l $uncenz_run/chk-tls_calls_exit
-                exit 1
-            #else
-            #    echo $?
-            fi
-            ;;
-        r)
-            if [ "X$OPTARG" != "X" ]; then 
-                if [ -e "/usr/local/bin/$OPTARG" ] && [ -x "/usr/local/bin/$OPTARG" ]; then
-                    $OPTARG
-                    sleep 0.20
-                    if [ -e "$uncenz_run/${OPTARG}_calls_exit" ]; then
-                        ls -l $uncenz_run/${OPTARG}_calls_exit
-                        exit 1
-                    fi
-                fi
-            else
-                echo "You gave an empty argument, or something else is wrong."
-            fi
-            ;;
-    esac
-done
-shift $(($OPTIND - 1))
+if [ -e "/usr/local/bin/$script_to_run" ] && [ -x "/usr/local/bin/$script_to_run" ]; then
+    $script_to_run
+    sleep 0.20
+    if [ -e "$uncenz_run/${script_to_run}_calls_exit" ]; then # delete this if, does not apply
+        ls -l $uncenz_run/${script_to_run}_calls_exit
+        exit 1
+    fi
+fi
 
 #if [ -e ".uncenz-include2_abort" ]; then
 #    echo "The $include_script_2 mandates to abort the session."
