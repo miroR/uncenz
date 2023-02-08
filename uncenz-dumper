@@ -26,7 +26,7 @@ else
     else
         echo "Can use Wireshark's dumpcap, or Tcpdump Team's tcpdump, you choose!"
         echo "\"d\" for dumpcap"
-        echo "WARNING: the Dumpcap has not been testing in recent time."
+        echo "WARNING: the Dumpcap has not been tested in recent time."
         echo "\"t\" for tcpdump"
         read choice
         case $choice in

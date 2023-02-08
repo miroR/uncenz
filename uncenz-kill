@@ -25,7 +25,7 @@ function show_help {
     echo
     echo "==============================================================="
     echo
-    echo "${0##*/} -- terminates the spawned $dumper and ffmpeg processes of uncenz,"
+    echo "${0##*/} -- terminates the spawned $dumper and ffmpeg/wf-recorder processes of uncenz,"
     echo "(terminates the packet capturing and screencasting)"
     echo
     echo "Usage: ${0##*/} <the-other-include>"
@@ -182,24 +182,31 @@ if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
 fi
 rm /home/$USER/.uncenz-1st/$ssllast_active
 
-ffpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
+if [ "$TERM" == "xterm" ]; then
+    recpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
+fi
+if [ "$TERM" == "alacritty" ]; then
+    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | grep hevc_vaapi \
+        | grep renderD128 | awk '{ print $2 }')
+fi
+
 if [ "$dumper" == "dumpcap" ]; then
     dupid=`sudo -s ps aux | grep -E '[d]umpcap' | grep -v grep | awk '{ print $2}'`
 fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=`sudo -s ps aux | grep -E '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
-echo \$ffpid: $ffpid
+echo \$recpid: $recpid
 echo \$dupid: $dupid
 
-echo "To kill ffmpeg and dumpcap/tcpdump, hit Enter"
-# Or you can terminate this script without killing ffmpeg and dumpcap/tcpdump
+echo "To kill ffmpeg/wf-recorder and dumpcap/tcpdump, hit Enter"
+# Or you can terminate this script without killing ffmpeg/wf-recorder and dumpcap/tcpdump
 # with issuing: Ctrl-C (but the excerpt from system log for the session will
 # not include what you do next from here).
 read NOP
 
-sudo -s kill $dupid $ffpid
-#kill $dupid $ffpid
+sudo -s kill -2 $dupid $recpid
+#kill $dupid $recpid
 if [ "$INTERIM" == "y" ]; then
     echo uncenz-inter.sh
     read NOP

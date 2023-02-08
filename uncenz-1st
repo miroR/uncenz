@@ -18,6 +18,25 @@
 echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
+CUR_DIR=$(pwd)
+echo \$CUR_DIR: $CUR_DIR
+if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
+    echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
+    echo "sleep 3 and exit"
+    sleep 3
+    exit 0
+else
+    if [ "$CUR_DIR" != "$UNCENZ_DIR" ]; then
+        echo "You are in:"
+        ls -ld $CUR_DIR
+        echo "but you must be in $UNCENZ_DIR to run ${0##*/},"
+        echo "sleep 3 and exit"
+        sleep 3
+        exit 0
+    fi
+fi
+read NOP
+
 function ask()
 {
     echo -n "$@" '[y/n] ' ; read ans
@@ -60,25 +79,6 @@ function show_help {
 
 . uncenz-dumper
 
-CUR_DIR=$(pwd)
-echo \$CUR_DIR: $CUR_DIR
-if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
-    echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
-    echo "sleep 3 and exit"
-    sleep 3
-    exit 0
-else
-    if [ "$CUR_DIR" != "$UNCENZ_DIR" ]; then
-        echo "You are in:"
-        ls -ld $CUR_DIR
-        echo "but you must be in $UNCENZ_DIR to run ${0##*/},"
-        echo "sleep 3 and exit"
-        sleep 3
-        exit 0
-    fi
-fi
-read NOP
-
 sudo -s rm -v /home/*/Pas-*.txt ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &
 read NOP
 # First, the checks that apply to uncenz-1st run with and without the include
@@ -107,11 +107,20 @@ if [ "$INTERIM" == "y" ]; then
     uncenz-inter-kill.sh
 fi
 # We must not start ffmpeg nor dumpcap/tcpdump if another session is running.
-ffpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
-if [ -n "$ffpid" ]; then
-    echo \$ffpid: $ffpid
+if [ "$TERM" == "xterm" ]; then
+    recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
+    if [ -n "$recpid" ]; then
+        echo \$recpid: $recpid
+    fi
 fi
-
+if [ "$TERM" == "alacritty" ]; then
+    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | grep hevc_vaapi \
+        | grep renderD128 | awk '{ print $2 }')
+    if [ -n "$recpid" ]; then
+        echo \$recpid: $recpid
+    fi
+fi
+    
 dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
 if [ -n "$dupid" ]; then
     echo "\$dupid: $dupid"
@@ -119,13 +128,13 @@ else
     echo "No $dumper running."
 fi
 
-# If our x11grab'ing FFmpeg is running, we can't really (re)start uncenz'ing.
-if [ -n "$ffpid" ] && [ "X${ffpid}X" != "XX" ] ; then
-    echo "An ffmpeg process is running, and it likely is uncenz's." ; echo
+# If our x11grab'ing FFmpeg/Wayland wf-recorder is running, we can't really (re)start uncenz'ing.
+if [ -n "$recpid" ] && [ "X${recpid}X" != "XX" ] ; then
+    echo "An ffmpeg/wf-recorder process is running, and it likely is uncenz's." ; echo
     ls -ltr | tail -4 ; sleep 2 ; echo
     ls -ltr | tail -4 ; sleep 1
-    echo "Enter y/Y when you have killed FFmpeg if it indeed is the uncenz one,"
-    echo "or allowed it if it is a non-related FFmpeg run."
+    echo "Enter y/Y when you have killed FFmpeg/wf-recorder if it indeed is the uncenz one,"
+    echo "or allowed it if it is a non-related FFmpeg/wf-recorder run."
     echo "(Hit anything other than y/Y and we will exit.)"
     ask 
     if [ "$?" == 0 ]; then
@@ -182,10 +191,9 @@ if [ "$dumper" == "tcpdump" ]; then
     sudo -s chown tcpdump:tcpdump $the_dump
     read NOP
 fi
-#
-## When I have issues with configuring network (such as setting up bridges)
-## I like to take the state of the network when I'm online before I disconnect
-## (this is not to be taken every time by default, it's a lot, like debugging)
+#TO_DO convert uncenz-ipt-conf-states.sh to an include
+# Sometimes I like to take the state of the network when I'm online before I disconnect
+# (this is not to be taken every time by default, it's a lot, like debugging)
 #   echo
 #   echo "the iptables, and the link layer conf states"
 #   echo "      will be taken in 30 sec          "
@@ -195,9 +203,7 @@ fi
 #   echo
 #
 
-#
-# Only one line starting with "sudo -s $dumper -i any ..." is allowed, of course.
-#
+#TO_DO check if any of this old way I used to do it exist, revise/delete them
 #if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
 #    include_filter_run=$1
 #    echo \$include_filter_run: $include_filter_run
@@ -213,151 +219,85 @@ fi
 #            exit 0
 #    fi
 #fi
+if [ "$TERM" == "xterm" ]; then
+    POSITION="-g 80x4+500+0"
+    FONT_SIZE="-fn 8x13"
+else
+    POSITION=""
+    FONT_SIZE=""
+fi
 OPTIND=1
 while getopts "hf:kr:" opt; do
     case "$opt" in
         h)
             show_help
             exit 0
-            ;;
+        ;;
         f)
-            if [ "X$OPTARG" != "X" ]; then 
-                if [ "$OPTARG" == "nofilter" ]; then
-                    if [ "$dumper" == "dumpcap" ]; then
-                        echo "Warning dumpcap not tested for the "-C" option addition"
-                        read NOP
-                        sudo -s $dumper -i any -C 10000 -w $the_dump &
-                    fi
-                    if [ "$dumper" == "tcpdump" ]; then
-                        echo "sudo -s $dumper -C 10000 -i any -U -v \
-                            -w $the_dump"
-                        # In case of problems, uncomment 5 ln, and below, or the opposite
-                        echo "Next, xterm runs that command."
-                        echo "         ..."
-                        sleep 0.5
-                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
-                        # see note with FF_DISPLAY
-                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
-                            sudo -s $dumper -C 10000 -i any -U -v \
-                            -w $the_dump" &
-                        if [ "$?" == 0 ]; then
-                            echo "The xterm seems to be executing the command."
-                        else
-                            echo "Pls. run the command above manually."
-                        fi
-                        read NOP
-                    fi
-                fi
-                if [ "$OPTARG" == "read_args" ]; then
-                    echo "Type the filter expression: "
+            case "$OPTARG" in
+                "nofilter" )
+                    FILTER_ARGS=""
+                ;;
+                "nolocal" )
+                    FILTER_ARGS="-f net not 192.168.88.0 mask 255.255.255.0 and net not 192.168.2.0 mask 255.255.255.0 and net not 192.168.3.0 mask 255.255.255.0"
+                ;;
+                "read_args" )
+                    echo "Type (or paste) the filter expression: "
                     read args_read
                     echo \$args_read: $args_read
                     read NOP
-                    if [ "$dumper" == "dumpcap" ]; then
-                        echo "Warning dumpcap not tested for the "-C" option addition"
-                        read NOP
-                        sudo -s $dumper -i any -C 10000 -w $the_dump &
-                    fi
-                    if [ "$dumper" == "tcpdump" ]; then
-                        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
-                            $args_read \
-                            -w $the_dump"
-                        # In case of problems, uncomment 5 ln, and below, or the opposite
-                        echo "Next, xterm runs that command."
-                        echo "         ..."
-                        sleep 0.5
-                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
-                        # see note with FF_DISPLAY
-                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
-                            sudo -s $dumper -C 10000 -i any -U -v -f \
-                                $args_read \
-                            -w $the_dump" &
-                        if [ "$?" == 0 ]; then
-                            echo "The xterm seems to be executing the command."
-                        else
-                            echo "Pls. run the command above manually."
-                        fi
-                        read NOP
-                    fi
-                fi
-                if [ "$OPTARG" == "nolocal" ]; then
-                    if [ "$dumper" == "dumpcap" ]; then
-                        echo "Warning dumpcap not tested for the "-C" option addition"
-                        read NOP
-                        sudo -s $dumper -i any -C 10000 -w $the_dump &
-                    fi
-                    if [ "$dumper" == "tcpdump" ]; then
-                        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
-                            "net not 192.168.88.0 mask 255.255.255.0 \
-                            and net not 192.168.2.0 mask 255.255.255.0 \
-                            and net not 192.168.3.0 mask 255.255.255.0" \
-                            -w $the_dump"
-                        # In case of problems, uncomment 5 ln, and below, or the opposite
-                        echo "Next, xterm runs that command."
-                        echo "         ..."
-                        sleep 0.5
-                        # the DISPLAY must be normal for xorg (':0' or, I believe, ':1' or such),
-                        # see note with FF_DISPLAY
-                        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
-                            sudo -s $dumper -C 10000 -i any -U -v -f \
-                            \"net not 192.168.88.0 mask 255.255.255.0 \
-                            and net not 192.168.2.0 mask 255.255.255.0 \
-                            and net not 192.168.3.0 mask 255.255.255.0\" \
-                            -w $the_dump" &
-                        if [ "$?" == 0 ]; then
-                            echo "The xterm seems to be executing the command."
-                        else
-                            echo "Pls. run the command above manually."
-                        fi
-                        read NOP
-                    fi
-                fi
-            else
-                echo "To -f you must give arg one of:" 
-                echo "nofilter nolocal read_args" 
-                read NOP
-            fi
-            ;;
+                    FILTER_ARGS="-f $args_read"
+                ;;
+                "file_with_args" )
+                    echo "Don't forget: the one-liner file must start with \"-f \" "
+                    echo "and here give its full path, or it must be in current dir"
+                    read the_filename
+                    read NOP
+                    FILTER_ARGS=$(<$the_filename)
+                ;;
+                * )
+                    echo "The arg to -f is one of:" 
+                    echo "nofilter nolocal read_args file_with_args" 
+                    echo "Setting up \$FILTER_ARGS  to \"nofilter\""
+                    FILTER_ARGS=""
+                ;;
+            esac
+        ;;
         k)
             chk-tls
             sleep 0.20
             if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
                 ls -l $uncenz_run/chk-tls_calls_exit
                 exit 1
-            #else
-            #    echo $?
             fi
-            ;;
+        ;;
         r)
             if [ "X$OPTARG" != "X" ]; then 
                 script_to_run="$OPTARG" # but is run at end
             else
                 echo "You gave an empty argument, or something else is wrong."
             fi
-            ;;
+        ;;
     esac
 done
+echo \$FILTER_ARGS: $FILTER_ARGS
+read NOP
 shift $(($OPTIND - 1))
 
+if [ "$dumper" == "dumpcap" ]; then
+    echo "WARNING: dumpcap has not been tested for the "-C" option addition"
+    echo "let alone $FILTER_ARGS (or anything else at all for years)"
+    read NOP
+    sudo -s $dumper -i any -C 10000 -w $the_dump $FILTER_ARGS &
+fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
-        # tcpdump not running because no -f option with arg given (or something else),
-        # so default action is nolocal
-        echo "sudo -s $dumper -C 10000 -i any -U -v -f \
-            "net not 192.168.88.0 mask 255.255.255.0 \
-            and net not 192.168.2.0 mask 255.255.255.0 \
-            and net not 192.168.3.0 mask 255.255.255.0" \
-            -w $the_dump"
-        echo "Next, xterm runs that command."
-        echo "         ..."
-        sleep 0.5
-        xterm -g 80x4+500+0 -fn 8x13 -e "sudo -v && \
-            sudo -s $dumper -C 10000 -i any -U -v -f \
-            \"net not 192.168.88.0 mask 255.255.255.0 \
-            and net not 192.168.2.0 mask 255.255.255.0 \
-            and net not 192.168.3.0 mask 255.255.255.0\" \
-            -w $the_dump" &
+        # Tried but couldn't get it to work in Wayland with alacritty
+        #$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
+        echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &"
+        read NOP
+        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
 
         echo -n "Not running? pls. run manually, separate teminal."
         sleep 3
@@ -370,39 +310,45 @@ read NOP
 sudo -s touch $the_cast
 sudo -s chown $USER:$USER $the_cast
 
-if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
-    # debug
-    echo "in $0"
+if [ "$TERM" == "xterm" ]; then
+    if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
+        # debug
+        echo "in $0"
+        read NOP
+        echo "You need to set your screen resolution in:"
+        ls -l /home/$USER/.uncenz.conf
+        show_help
+    fi
+    echo \$SCR: $SCR
+    # if in /home/$USER/.uncenz.conf var is DISPLAY as in man ffmpeg-all, there is
+    # no launching xterm:
+    # xterm: Xt error: Can't open display: 0.0
+    if [ ! -n "$FF_DISPLAY" ] || [ "X${FF_DISPLAY}" == "X" ]; then
+        FF_DISPLAY=0.0
+    fi
+    echo \$FF_DISPLAY: $FF_DISPLAY
+    # Not checking for mistaken entries, user needs to know what (s)he is doing.
+    echo "will be: Monitor screen $SCR, take notice!"; sleep 0.5
     read NOP
-    echo "You need to set your screen resolution in:"
-    ls -l /home/$USER/.uncenz.conf
-    show_help
+    ffmpeg -y -f x11grab -nostdin -loglevel quiet -s $SCR -r 2 -i :$FF_DISPLAY \
+        -c:v libx264 -preset ultrafast -threads 0 \
+        $the_cast &
+    
+    echo "Monitor screen $SCR, take notice!"; sleep 0.5
+    read NOP
+    
+    # We need to find the pid of each of the above processes.
+    # ff for ffmpeg, du for $dumper
+    recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
 fi
-echo \$SCR: $SCR
-# if in /home/$USER/.uncenz.conf var is DISPLAY as in man ffmpeg-all, there is
-# no launching xterm:
-# xterm: Xt error: Can't open display: 0.0
-if [ ! -n "$FF_DISPLAY" ] || [ "X${FF_DISPLAY}" == "X" ]; then
-    FF_DISPLAY=0.0
+if [ "$TERM" == "alacritty" ]; then
+    wf-recorder -f $the_cast -c hevc_vaapi -d /dev/dri/renderD128 & recpid=$!
 fi
-echo \$FF_DISPLAY: $FF_DISPLAY
-# Not checking for mistaken entries, user needs to know what (s)he is doing.
-echo "will be: Monitor screen $SCR, take notice!"; sleep 0.5
-read NOP
-ffmpeg -y -f x11grab -nostdin -loglevel quiet -s $SCR -r 2 -i :$FF_DISPLAY \
-    -c:v libx264 -preset ultrafast -threads 0 \
-    $the_cast &
 
-echo "Monitor screen $SCR, take notice!"; sleep 0.5
-read NOP
-
-# We need to find the pid of each of the above processes.
-# ff for ffmpeg, du for $dumper
-ffpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
 dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
 
-echo \$ffpid is: $ffpid
-echo $ffpid > $uncenz_run/uncenz-ff.pid
+echo \$recpid is: $recpid
+echo $recpid > $uncenz_run/uncenz-rec.pid
 # Note that if $dumper is tcpdump you get two pids, because it shows as two
 # processes, one owned by sudo, the other by user tcpdump
 # I've been using only tcpdump for capturing traffic since years now. Reports
