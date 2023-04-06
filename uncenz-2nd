@@ -208,10 +208,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     fi
     if [ -e "$scr" ]; then ls -l $scr ; fi
     if [ ! -e ".${i_h_p}_no_scr" ]; then
-        echo "NOT run: mplayer $scr ?"
+        echo "NOT run: mpv $scr ?"
         ask
         if [ "$?" == 0 ]; then
-            echo "mplayer $scr"
+            echo "mpv $scr"
             echo "not run by user choice"
         else
             if [ ! -e ".$scrg2_base.CMD" ]; then
@@ -231,7 +231,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
             if [ -e ".$scrg2_base.CMD_advise" ]; then
                 echo "Next is:"
-                echo mplayer $scr
+                echo mpv $scr
                 echo "NOTE: With the offset in $scr that you will assess we will create later:"
                 echo ".$scrg2_base.CMD"
                 if [ -e ".$scrg2_base.CMD_pre" ]; then
@@ -251,13 +251,13 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "And before the end of this session we will create:"
                 echo ".$scrg2_base.CMD and run it."
                 echo
-                echo "NOTE: mplayer will run in bg. Do follow STDOUT here in this terminal!"
-                echo "(just, once mplayer starts, focus back to this terminal, and hit Enter)"
-                echo "mplayer $scr now"
+                echo "NOTE: mpv will run in bg. Do follow STDOUT here in this terminal!"
+                echo "(just, once mpv starts, focus back to this terminal, and hit Enter)"
+                echo "mpv $scr now"
                 read NOP
-                mplayer $scr & scr_pid=$!
+                mpv $scr & scr_pid=$!
             else
-                mplayer -really-quiet $scr & scr_pid=$!
+                mpv -really-quiet $scr & scr_pid=$!
             fi
             echo $scr_pid > $TMP/${i_h_p}_scr.pid
             echo $(<$TMP/${i_h_p}_scr.pid)
@@ -697,7 +697,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "NOT terminate all windows opened with this run of ${0##/}?"
     echo "default: do terminate (just hit Enter)"
     echo "This choice will leave all windows opened,"
-    echo "and the mplayer with the screencast running."
+    echo "and the mpv with the screencast running."
     ask
     if [ "$?" == 0 ]; then
         echo "All windows left open/running"
