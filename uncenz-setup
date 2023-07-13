@@ -7,7 +7,7 @@
 #
 # released under BSD license, pls. see LICENSE
 #
-# Copyright (C) 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+# Copyright (C) 2021, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 
 myuid=$(id -u)

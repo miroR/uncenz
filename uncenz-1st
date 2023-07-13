@@ -5,7 +5,7 @@
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
-# Copyright (C) 2015, 2020, 2021 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+# Copyright (C) 2015, 2020, 2021, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -35,7 +35,6 @@ else
         exit 0
     fi
 fi
-read NOP
 
 function ask()
 {
@@ -80,7 +79,6 @@ function show_help {
 . uncenz-dumper
 
 sudo -s rm -v /home/*/Pas-*.txt ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &
-read NOP
 # First, the checks that apply to uncenz-1st run with and without the include
 # alike.
 #
@@ -189,7 +187,6 @@ if [ "$dumper" == "tcpdump" ]; then
     sudo -s touch $the_dump
     echo sudo -s chown tcpdump:tcpdump $the_dump
     sudo -s chown tcpdump:tcpdump $the_dump
-    read NOP
 fi
 #TO_DO convert uncenz-ipt-conf-states.sh to an include
 # Sometimes I like to take the state of the network when I'm online before I disconnect
@@ -245,7 +242,6 @@ while getopts "hf:kr:" opt; do
                     echo "Type (or paste) the filter expression: "
                     read args_read
                     echo \$args_read: $args_read
-                    read NOP
                     FILTER_ARGS="-f $args_read"
                 ;;
                 "file_with_args" )
@@ -281,7 +277,6 @@ while getopts "hf:kr:" opt; do
     esac
 done
 echo \$FILTER_ARGS: $FILTER_ARGS
-read NOP
 shift $(($OPTIND - 1))
 
 if [ "$dumper" == "dumpcap" ]; then
@@ -296,7 +291,6 @@ if [ "$dumper" == "tcpdump" ]; then
         # Tried but couldn't get it to work in Wayland with alacritty
         #$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
         echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &"
-        read NOP
         $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
 
         echo -n "Not running? pls. run manually, separate teminal."
@@ -305,7 +299,6 @@ if [ "$dumper" == "tcpdump" ]; then
     done
 fi
 sleep 0.2
-read NOP
 
 sudo -s touch $the_cast
 sudo -s chown $USER:$USER $the_cast
@@ -377,7 +370,6 @@ str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
 #echo \$str0: $str0
 echo $str0 > $uncenz_run/uncenz-log_str0
 cat $uncenz_run/uncenz-log_str0
-read NOP
 
 # Another/More logging include(s) might be added here. I'll tie it to $2
 # (ermh, for now).  Pls. note that if you give empty string for $1 arg, then
