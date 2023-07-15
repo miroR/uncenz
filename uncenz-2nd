@@ -103,6 +103,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # string. But I have not tested this in longtime.
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
+    . cont_br_short
     read NOP
     scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1.mkv/'| sed 's/-00_/_/')
     echo \$scr: $scr
@@ -287,8 +288,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     echo "for first line of .$scrg2_base.CMD"
                 fi
                 echo
-                echo "You will be asked to input the offset to cut $scr from into the filename:"
                 if [ ! -e ".$scrg2_base-0" ] || [ ! -s ".$scrg2_base-0" ]; then
+                    echo "You will be asked to input the offset to cut $scr from into the filename:"
                     touch .$scrg2_base-0
                     ls -l .$scrg2_base-0
                     echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
@@ -493,7 +494,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
         ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
         read NOP
-        for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt ); do
+        for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
             echo $ip
             read NOP
             if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
@@ -641,7 +642,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -l $TMP/${i_h_p}_list
     echo "cat $TMP/${i_h_p}_list"
     cat $TMP/${i_h_p}_list
-    echo "Add an infix reminder shortcut, e.g. "_dt" if it is _dt only, to the list:"
+    echo "Add an infix reminder shortcut, e.g. "some_par" if it is based on some parameter, to the list:"
     echo "The list will be saved as:"
     echo "${i_h_p}_list_<the-infix-go-give>_${ts} ?"
     read name
@@ -689,19 +690,31 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "(cat .$scrg2_base-0)"
             ls -l .$scrg2_base-0
         else
+            echo "###########################################################"
             echo "Pls. input the offset to cut $scr from into the filename:"
             ls -l .$scrg2_base-0
             echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
             echo "such as "0:03.500" without quotes."
             echo "WARNING: I'm doing no error checking!"
-            read $offset
-            if [ -n "$offset" ]; then
-                echo "$offset" > .$scrg2_base-0
-                echo "You gave:"
-                cat .$scrg2_base-0
-                echo "(cat .$scrg2_base-0)"
-                echo "and you be the judge if that's fine."
-            fi
+            echo "###########################################################"
+            #read $offset
+            # under Wayland, bug or something, it does not read properly, when
+            # mpv or other job sent to run in bkg, so:
+            while [ ! -n "$offset" ] || [ "X${offset}" == "X" ]; do
+                read offset
+                echo \$offset: $offset
+                echo "or you can type forget to exit this read offset loop"
+                read forget_var
+                if [ "$forget_var" == "forget" ]; then
+                    break
+                fi
+                read NOP
+            done
+            echo "$offset" > .$scrg2_base-0
+            echo "You gave:"
+            cat .$scrg2_base-0
+            echo "(cat .$scrg2_base-0)"
+            echo "and you be the judge if that's fine."
         fi
     else
         if [ -e ".$scrg2_base.CMD_advise" ]; then
