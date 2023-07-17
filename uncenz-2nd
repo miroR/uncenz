@@ -33,6 +33,27 @@ function ask()
     esac
 }
 
+function cat_ls_file () {
+    if [ -e "$1" ]; then
+        cat $1
+        ls -l $1
+        echo "(cat/ls -l $1)"
+        read NOP
+    else
+        echo "$1 non extant"; echo 
+    fi
+}
+
+function ls_file () {
+    if [ -e "$1" ]; then
+        ls -l $1
+        echo "(cat/ls -l $1)"
+        read NOP
+    else
+        echo "$1 non extant"; echo 
+    fi
+}
+
 if [ $# -eq 0 ]; then
     echo "give (a list of) PCAP(s)"
     echo "(if globbing, you need to quote it, e.g.:"
@@ -41,48 +62,42 @@ if [ $# -eq 0 ]; then
 fi
 
 # You need to be in the directory where you copied over all the produce of
-# uncenz-1st, i.e. the PCAP and the dump_<the-time-stamp>_messages and the
-# screencasts and other.
-# The dump_<the-time-stamp>_r represents another log extracted. That can be by
-# any script you wrote and ran as third arg to uncenz-1st.
-# Similarly dump_<the-time-stamp>-msg_r_PDU*.txt is some produce by your own
-# scripts. 
+# uncenz-1st, i.e. the PCAP and the dump_<the-time-stamp>_messages, possibly
+# other logs and the screencasts.
+# The dump_<the-time-stamp>_r_<something> represents example of another
+# log/other extracted. That can be by any script you wrote and ran giving it as
+# arg to uncenz-1st's switch -r.
 # First the PCAP-work-sep.sh is run (see workPCAPs link above). Then
 # this script.
 
 PCAPs=$1
 
-#TO_DO remove 1 ln, not used
-#PCAPs_tr=$(ls -1 $1 | tr '\012' ' ')
-# debug 3 ln
-#echo "ls -1 $PCAPs|sed 's/\.pcap//'"
-#ls -1 $PCAPs|sed 's/\.pcap//'
-#echo
-
 > .pcaps-no-split
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
-    # I used to rename dump_<timestamp_part-of-hostname>.pcap{00,01,02,..} to
-    # dump_<timestamp-{00,01,02,..}_part-of-hostname>.pcap .
-    # I would then join some of the preprocessed dirs from those into single
-    # dir for further processing, and there would be a symlink
-    # dump_<timestamp_part-of-hostname>.pcap as name-base for scripts. So work
-    # on those is accommodated with by this scriptas well, although it has not
-    # been tested recently.
+    # See uncenz-1st for these variables:
+    # tsh=${ts}_${hst}
+    # I used to rename files dump_$tsh.pcap{00,01,02,..} to files
+    # dump_$ts-{00,01,02,..}_$hst.pcap on each of which PCAP-work-sep.sh is
+    # run.
+    # I would then join some of the produced dirs with data from those into
+    # single dir for further processing, and there would be a symlink
+    # dump_$tsh.pcap -> dump_$ts-00_$hst.pcap as name-base for scripts on them
+    # all.
+    # So work on those is accommodated with by this scriptas as well, although
+    # it has not been tested recently.
     if ( echo $i | grep '\-[0-9][0-9]_' ); then
         echo "Not echoing the split PCAP to the list file:"
         ls -l $i.pcap
     else
+        #TO_DO Do this without file .pcaps-no-split
         echo $i.pcap >> .pcaps-no-split
     fi
 done
-cat .pcaps-no-split
-echo "(cat .pcaps-no-split)"
-ls -l .pcaps-no-split
-read NOP
+cat_ls_file .pcaps-no-split
 PCAPs=$(<.pcaps-no-split)
     
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
-    ls -l $i.pcap
+    ls -l $i.pcap; echo
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
     read NOP
@@ -90,32 +105,33 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     i_tmp=$i
     echo \$i_tmp: $i_tmp
     read NOP
+    #TO_DO var i changes below from original at this for loop start. Not good.
     i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
     echo \$i: $i
-    echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*\)/\2/'
-    read NOP
     hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
-    #ls -l ${i}-[0-9][0-9]_[a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z]*.pcap
     echo \$hst_p: $hst_p
-    # i_h_p is needed to work the
-    # dump_<timestamp-{00,01,02,..}_part-of-hostname>.pcap IOW the number of
-    # ${i}_${hst_p}.pcap where ${i} may contain some of -{00,01,02,..} as last
-    # string. But I have not tested this in longtime.
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
+    # i_h_p is needed to work the
+    # dump_<timestamp-{00,01,02,..}_$hst>.pcap. IOW when
+    # ${i}_${hst}.pcap is symlink to ${i}-00_${hst}.pcap it is so for the
+    # purpose of working on ${i}-{00,01,02,..}_${hst}.pcap. But I have not
+    # tested this in long time.
     . cont_br_short
-    read NOP
-    scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1.mkv/'| sed 's/-00_/_/')
+    scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1/'| sed 's/-00_/_/')
     echo \$scr: $scr
     read NOP
-    if [ ! -e "$scr" ]; then
+    if [ ! -e "$scr.mkv" ]; then
         # The case for no-screencasting captures (with uncenz-inter{,-kill}.sh)
         touch .${i_h_p}_no_scr
         ls -l .${i_h_p}_no_scr
-        echo "(because, likely, it is an interim PCAP, without screencasting)"
+        echo "Likely, this is an interim PCAP, without screencasting."
+        echo "it has no screencast associated with it"
+        echo "(unless it was lost or misnamed or other erroneous condition incurred)"
+        read NOP
     fi
-    # See above about the symlink dump_<timestamp_part-of-hostname>.pcap when
-    # work on dump_<timestamp-{00,01,02,..}_part-of-hostname>.pcap
+    # See above about the symlink dump_$tsh.pcap when
+    # working on ${i}-{00,01,02,..}_${hst_p}.pcap .
     if [ -L "${i_h_p}.pcap" ]; then
         echo "if symlink main"
         read NOP
@@ -133,205 +149,18 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         read NOP
         ls -l ${i_h_p}.pcap
     else
-        # if it is not any of those dump_<timestamp_part-of-hostname>.pcap nor
-        # about work on dump_<timestamp-{00,01,02,..}_part-of-hostname>.pcap,
-        # but normal file dump_<timestamp_part-of-hostname>.pcap
+        # if it is not any of those ${i}-{00,01,02,..}_${hst_p}.pcap plus the
+        # symlink ${i}_${hst_p}.pcap but normal file ${i}_${hst_p}.pcap
         echo "if symlink else"
-        ls -l ${i_h_p}_tHostsConv
-        echo "(ls -l ${i_h_p}_tHostsConv)"
+        ls -m ${i_h_p}_tHostsConv
+        echo "(ls -m ${i_h_p}_tHostsConv)"
         ls -ld ${i_h_p}_tHostsConv
         read NOP
-    fi
-    # will keep using these unwieldy var names, priority is get things work
-    # with Wayland's wf-recorder screencasts, and keep the ability to use old
-    # Xorg ffmpeg screencasts as well.
-    if [ -e "$scr" ]; then
-        scr_bare=$scr
-        scrg2=$(echo ${i_h_p}|sed 's/dump_\(.*\)/Screen_\1-g2.mkv/' | sed 's/-[0-9][0-9]_/_/')
-        scrg2_0=$(echo $scrg2|sed 's/-g2.mkv/-g2_0.mkv/')
-        scrg2_base=${scrg2%*.mkv}
-        # debug, del 5 ln
-        echo \$scr: $scr
-        echo \$scr_bare: $scr_bare
-        echo \$scrg2_base: $scrg2_base
-        echo \$scrg2_0: $scrg2_0
-        echo \$scrg2: $scrg2
-        read NOP
-    fi
-    echo \$TERM: $TERM
-    read NOP
-    # Set at start here separately, because this will be the usual case for
-    # working on archived PCAPs. Namely, with Xorg casts, $scrg2 and
-    # $scrg2_0 will not be kept, as they are usually 5-8 times larger than
-    # original $scr. For Wayland casts, $scrg2 need not be created, to create
-    # $scrg2_0 only $scrg2_base-0 with correct $offset is needed and
-    # manipulation with uncenz-scr_CMD_create.sh script.
-    if [ -e ".$scrg2_base.CMD" ] && [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ] && \
-        [ ! -e ".${i_h_p}_no_scr" ]; then
-        chmod 755 .$scrg2_base.CMD
-        if [ "$TERM" == "xterm" ]; then
-            if [ ! -e "$scrg2" ]; then
-                if [ ! -e "$scrg2_0" ]; then
-                   ./.$scrg2_base.CMD
-                   chmod 644 .$scrg2_base.CMD
-                fi
-            else
-                tail -1 .$scrg2_base.CMD > .$scrg2_base.CMD_TMP
-                chmod 755 .$scrg2_base.CMD_TMP
-                ./.$scrg2_base.CMD_TMP
-                rm -v .$scrg2_base.CMD_TMP
-                chmod 644 .$scrg2_base.CMD
-            fi
-        else
-            if [ ! -e "$scrg2_0" ]; then
-                echo \$TERM: $TERM  # alacritty
-                echo "Next: ./.$scrg2_base.CMD"
-                read NOP
-                ./.$scrg2_base.CMD
-                chmod 644 .$scrg2_base.CMD
-            else
-                ls -l $scrg2_0
-            fi
-        fi
-    fi
-    if [ ! -e ".${i_h_p}_no_scr" ]; then
-        ls -l ${scrg2_base}_0.mkv
-        echo "${scrg2_base}_0.mkv exists?"
-        read NOP
-    fi
-    if [ "$TERM" == "xterm" ]; then
-        if [ ! -e ".$scrg2_base.CMD" ] && [ ! -e ".${i_h_p}_no_scr" ]; then
-            echo "ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2" \
-                > .$scrg2_base.CMD_pre # the full .$scrg2_base.CMD may need
-            cat .$scrg2_base.CMD_pre
-            echo "(cat .$scrg2_base.CMD_pre)"
-            ls -l .$scrg2_base.CMD_pre
-            echo "(is base for .$scrg2_base.CMD)"
-            read NOP
-        fi
-        # may be the sole content of it, but only if ${i_h_p}.pcap and $scr are synced
-        # when originally captured
-    fi
-    if [ ! -e "$scrg2_0" ] && \
-        [ ! -e ".${i_h_p}_no_scr" ]; then # Before perusal of course only $scr there.
-                                          # if we have $scrg2_0 it should be final, no
-                                          # $scrg2 needed, in the perusal-state. For
-                                          # archive-state only $scr (orig) is kept (Xorg's
-                                          # ($scrg{,_0}'s are too large), IOW either $srg2_0 is
-                                          # sufficient (perusal-state) or $scr orig and
-                                          # .$scrg2_base.CMD must exist, archive-state
-                                          # (after perusal). Only the .$scrg2_base.CMD
-                                          # could add to original archive, in which,
-                                          # basically, no files are changed since
-                                          # creation during online capture. For
-                                          # Wayland casts, $scrg2 is never needed.
-        if [ "$TERM" == "xterm" ]; then
-            if [ ! -e "$scrg2" ]; then
-                echo "To properly play the $scr and move in it to around 2 sec precision"
-                echo "\"ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2\" is needed"
-                ask "NOT do that? (default, just Enter, will do it)"
-                if [ "$?" == 0 ]; then
-                    echo "User declined to create $scrg2"
-                else
-                        ffmpeg -i $scr -map 0:v -c:v libx264 -g 2 $scrg2
-                        scr="$scrg2"
-                fi
-            else
-                # first round perusal, we don't yet know at what NNsec.NNNmilisec
-                # offset to sync $scr and ${i_h_p}.pcap
-                touch .$scrg2_base.CMD_advise
-                scr="$scrg2"
-            fi
-        else
-            echo \$TERM: $TERM  # alacritty
-            touch .$scrg2_base.CMD_advise
-            echo \$scr: $scr
-        fi
-    else
-        scr="$scrg2_0"
-    fi
-    if [ -e "$scr" ]; then ls -l $scr ; fi
-    echo "Next is: NOT run: mpv $scr ?..."
-    . cont_br_short
-    if [ ! -e ".${i_h_p}_no_scr" ]; then
-        echo "NOT run: mpv $scr ?"
-        ask
-        if [ "$?" == 0 ]; then
-            echo "mpv $scr"
-            echo "not run by user's choice"
-        else
-            if [ ! -e ".$scrg2_base.CMD" ]; then
-                # $scrg2_0 .$scrg2_base.CMD must both exist, in normal workflow,
-                # so if any of the two is missing, it must be created from the
-                # other. Give warning to user to create the missing .$scrg2_base.CMD.
-                echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-                echo "$scrg2_0 was (previously) made; will be mpv'ed"
-                echo "However, pls. create .$scrg2_base.CMD"
-                echo "(needed for archiving, when only $scr_bare is kept)"
-                echo "(another reminder shortly)"
-                touch .$scrg2_base.CMD_advise
-                ls -l .$scrg2_base.CMD_advise
-                echo "(sleep 1.5)"
-                echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="
-                sleep 3.5
-            fi
-            if [ -e ".$scrg2_base.CMD_advise" ]; then
-                echo "Next is:"
-                echo mpv $scr
-                echo "NOTE: With the offset in $scr that you will assess we will create later:"
-                echo ".$scrg2_base.CMD"
-                if [ -e ".$scrg2_base.CMD_pre" ]; then
-                    echo "We will use:"
-                    cat .$scrg2_base.CMD_pre
-                    echo "(cat .$scrg2_base.CMD_pre)"
-                    ls -l .$scrg2_base.CMD_pre
-                    echo "for first line of .$scrg2_base.CMD"
-                fi
-                echo
-                if [ ! -e ".$scrg2_base-0" ] || [ ! -s ".$scrg2_base-0" ]; then
-                    echo "You will be asked to input the offset to cut $scr from into the filename:"
-                    touch .$scrg2_base-0
-                    ls -l .$scrg2_base-0
-                    echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
-                    echo "such as "0:03.500" without quotes."
-                    echo
-                    echo "And before the end of this session we will create:"
-                    echo ".$scrg2_base.CMD and in next run of this script we will execute it."
-                else
-                    cat .$scrg2_base-0
-                    echo "(cat .$scrg2_base-0)"
-                fi
-                echo
-                echo "NOTE: mpv may run really quietly in bg. If so"
-                echo "do follow STDOUT here in this terminal!"
-                echo "(just, once mpv starts, focus back to this terminal, and hit Enter)"
-                echo "mpv --window-scale=0.95 -really-quiet $scr now"
-                read NOP
-                mpv --window-scale=0.95 -really-quiet $scr & scr_pid=$!
-            else
-                mpv --window-scale=0.95 -really-quiet $scr & scr_pid=$!
-            fi
-            echo $scr_pid > $TMP/${i_h_p}_scr.pid
-            echo $(<$TMP/${i_h_p}_scr.pid)
-            read NOP
-        fi
     fi
     if [ "$TERM" == "xterm" ]; then
         echo \$TERM: $TERM
     else
         echo \$TERM: $TERM  # alacritty
-        #echo "##################                 These:             ##################"
-        #echo \$scr_bare: $scr_bare
-        #echo \$scrg2_base: $scrg2_base
-        #echo \$scrg2: $scrg2
-        #echo "##################    are unuseable or unwieldy      ##################"
-        echo "############    For Wayland's wf-recorder's casts I'll use:    ############"
-        echo \$scr: $scr
-        echo \$scrg2_0: $scrg2_0
-        echo "file .$scrg2_base-0 in curdir"
-        echo "file .$scrg2_base.CMD in curdir"
-        echo "#####  (can not mend all the flawed concepts in this script so fast) #####"
-        read NOP
     fi
     pwd
     echo \$i: $i
@@ -355,9 +184,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 read NOP
             fi
             echo $pid > $TMP/${i_h_p}_wireshark.pid
-            cat $TMP/${i_h_p}_wireshark.pid
-            echo "(cat $TMP/${i_h_p}_wireshark.pid)"
-            ls -l $TMP/${i_h_p}_wireshark.pid
+            cat_ls_file $TMP/${i_h_p}_wireshark.pid
         fi
     else
         echo \$i: $i
@@ -414,27 +241,28 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
         fi
     fi
+    #echo \$i: $i
+    #echo \$hst_p: $hst_p
+    #echo \$i_h_p: $i_h_p
+    #read NOP
+    ## the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
+    #ls -1d ${i_h_p}_conv-ip_l.txt \
+    #    ${i_h_p}_NOTES.txt \
+    #    ${i_h_p}_* \
+    #    ${i_h_p}-msg_r_PDU*.txt \
+    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
+    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
+    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
+    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http2-request-full_uri.txt \
+    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http2-request-full_uri.txt \
+    #    ${i_h_p}_rn.d/*.log \
+    #    | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
+    #    | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
+    #    | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
+    #    | grep -v '\.:'|grep '[[:print:]]' | uniq
+    #read NOP
+    echo "Next is: Possible old (previous) lists: "
     . cont_br_short
-    echo \$i: $i
-    echo \$hst_p: $hst_p
-    echo \$i_h_p: $i_h_p
-    read NOP
-    # the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
-    ls -1d ${i_h_p}_conv-ip_l.txt \
-        ${i_h_p}_NOTES.txt \
-        ${i_h_p}_* \
-        ${i_h_p}-msg_r_PDU*.txt \
-        ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
-        ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
-        ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
-        ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http2-request-full_uri.txt \
-        ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http2-request-full_uri.txt \
-        ${i_h_p}_rn.d/*.log \
-        | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
-        | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
-        | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
-        | grep -v '\.:'|grep '[[:print:]]' | uniq
-    read NOP
     touch $TMP/${i_h_p}_list
     echo "Possible old (previous) lists: "
     for old_list in $(ls -1 ${i_h_p}_list_*); do
@@ -475,7 +303,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             ${i_h_p}_rn.d/*.log \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
             | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
-            | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
+            | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' | grep -v "${i_h_p}_CMD" \
             | grep -v '\.hosts$' | grep -v '\.:' | uniq | grep '[[:print:]]'); do
             if [ -e "$file" ]; then
                 echo "$file" >> $TMP/${i_h_p}_list
@@ -496,7 +324,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         read NOP
         for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
             echo $ip
-            read NOP
+            #read NOP
             if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
                 ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
                 echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
@@ -625,15 +453,195 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             if [ "$TERM" == "alacritty" ]; then
                 echo \$TERM: $TERM
             fi
-            # However, what to do here is yet to be written.
-            # Tentatively:
             mv -iv CMD ${i_h_p}_CMD
+            echo "Next is: alacritty -e $(<${i_h_p}_CMD)"
+            read NOP
             alacritty -e $(<${i_h_p}_CMD) & a_v_pid=$!    # [a]lacritty [v]im pid
             echo $a_v_pid > $TMP/${i_h_p}_a_v.pid
             echo "(alacritty -e $(<${i_h_p}_CMD) &)"
             read NOP
         fi
     fi
+
+
+    if [ -e "$scr.mkv" ]; then
+        # debug, del 2 ln
+        echo \$scr: $scr
+        read NOP
+    fi
+    echo \$TERM: $TERM
+    read NOP
+    # Before perusal of course only $scr.mkv there.
+    #
+    # With Xorg casts, $scr-g2.mkv and $scr-g2_0.mkv are usually made
+    # but will not be kept, as they are often 5-8 times larger than
+    # original $scr.mkv.
+    #
+    # For Wayland casts, $scr-g2.mkv may often not be created, such as for
+    # several hours casts, as it is too expensive and too large. Instead
+    # the $scr-g2_0.mkv created from Wayland cast has only the 'g2' in name so
+    # I can use the same script uncenz-scr_CMD_create.sh for both Wayland and
+    # Xorg casts.
+    #
+    # Which script need only correct offset given in .$scr-g2-0
+    #
+    # For both Xorg and Wayland either $scr-g2_0.mkv is sufficient
+    # (perusal-state) or $scr.mkv orig and/or .$scr-g2.CMD and .$scr-g2-0
+    # should exist (archive-state), so $scr-g2_0.mkv can be re-created.
+    #
+    for file in .$scr-g2.CMD .$scr-g2-0 ; do
+        cat_ls_file $file
+    done
+    ls_file $scr-g2_0.mkv
+
+    echo "Next is if not exist .${i_h_p}_no_scr"
+    . cont_br_short
+    if [ ! -e ".${i_h_p}_no_scr" ]; then
+        unset scr_g2_0_ok
+        echo "Next is: NOT run: mpv $scr{,-g2,-g2_0}.mkv ?"
+        . cont_br_short
+        echo "NOT run: mpv $scr{,-g2,-g2_0}.mkv ?"
+        ask
+        if [ "$?" == 0 ]; then
+            echo "mpv $scr{,-g2,-g2_0}.mkv"
+            echo "not run by user's choice"
+        else
+            if [ -e "$scr-g2_0.mkv" ]; then
+                ls_file $scr-g2_0.mkv
+                scr_e=$scr-g2_0
+                echo "Assuming the PCAP/screencast have already been synced."
+            else
+                if [ -e "$scr-g2.mkv" ]; then
+                    ls_file $scr-g2.mkv
+                    scr_e=$scr-g2
+                else
+                    ls_file $scr.mkv
+                    scr_e=$scr
+                fi
+                echo "NOTE: With the offset in $scr.mkv that you will assess we will create next:"
+                cat_ls_file .$scr-g2.CMD
+                echo "You will be asked to input the offset to cut $scr from into the file:"
+                cat_ls_file .$scr-g2-0
+                echo "with sole content of Nmin:NNsec.NNNmilisec of the offset"
+                echo "such as \"0:03.500\" without quotes."
+            fi
+            echo "NOTE: mpv will run in bg with terminal I/O disabled."
+            echo "Do follow STDOUT here in this terminal!"
+            echo "(just, once mpv starts, focus back to this terminal, and hit Enter)"
+            echo "mpv --window-scale=0.95 -no-terminal $scr_e.mkv now"
+            . cont_br_short
+            mpv --window-scale=0.95 -no-terminal $scr_e.mkv & scr_pid=$!
+            echo $scr_pid > $TMP/${i_h_p}_scr.pid
+            echo $(<$TMP/${i_h_p}_scr.pid)
+            read NOP
+            if [ -e "$scr-g2_0.mkv" ] || [ -e ".$scr-g2-0" ] && [ -s ".$scr-g2-0" ] && [ -e ".$scr-g2.CMD" ] && [ -s ".$scr-g2.CMD" ]; then
+                echo "We will check on these:"
+                ls_file $scr-g2_0.mkv
+                cat_ls_file .$scr-g2-0
+                cat_ls_file .$scr-g2.CMD
+                echo \$scr_g2_0_ok: $scr_g2_0_ok
+
+                echo "Next is if not exist .$scr-g2_0.mkv"
+                . cont_br_short
+                # '&&' stronger then '||' ? Else script wrong!
+                # This is the case with already worked and archived
+                # PCAPs/screencast/other-related sets, that have all
+                # set to recreate synced/perusable casts
+                if [ ! -e "$scr-g2_0.mkv" ]; then
+                    cat_ls_file .$scr-g2.CMD
+                    ask "Execute it now?"
+                    if [ "$?" == 0 ]; then  
+                        chmod 755 .$scr-g2.CMD
+                        ./.$scr-g2.CMD
+                    else
+                        echo "User declined to execute ./.$scr-g2.CMD"
+                    fi
+                    if [ -e ".$scr-g2-0" ] && [ -s ".$scr-g2-0" ]; then
+                        parts_start=$(<.$scr-g2-0)
+                        echo \$parts_start: $parts_start
+                    fi
+                fi
+                if [ -e "$scr-g2_0.mkv" ]; then
+                    ls -l $scr-g2_0.mkv
+                    echo "WARNING: to decline below may be DANGEROUS"
+                fi
+                ask "set scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv if exist"
+                if [ "$?" == 0 ]; then
+                    scr_g2_0_ok="y"
+                else
+                    if [ -e "$scr-g2_0.mkv" ]; then
+                        rm -iv $scr-g2_0.mkv
+                    fi
+                fi
+            else
+                echo "Next is if not exist/empty .$scr-g2-0"
+                . cont_br_short
+                if [ ! -e ".$scr-g2-0" ] || [ ! -s ".$scr-g2-0" ]; then
+                    cat_ls_file .$scr-g2-0
+                    echo "###########################################################"
+                    echo "Pls. input the offset to cut $scr.mkv from into the filename:"
+                    ls -l .$scr-g2-0
+                    echo "with sole content of Nmin:NNsec.NNNmilisec of the offset"
+                    echo "such as "0:03.500" without quotes."
+                    echo "WARNING: I am doing no error checking!"
+                    echo "###########################################################"
+                    while [ ! -n "$offset" ] || [ "X${offset}" == "X" ]; do
+                        read offset
+                        echo \$offset: $offset
+                    done
+                    echo "$offset" > .$scr-g2-0
+                    cat_ls_file .$scr-g2-0
+                else
+                    cat_ls_file .$scr-g2-0
+                fi
+                parts_start=$(<.$scr-g2-0)
+                echo \$parts_start: $parts_start
+            fi
+            echo \$scr_g2_0_ok: $scr_g2_0_ok
+            read NOP
+            echo "Next is while not exists \$scr-g2_0.mkv and \$scr_g2_0_ok not y"
+            . cont_br_short
+            while [ ! -e "$scr-g2_0.mkv" ] || [ "$scr_g2_0_ok" != "y" ]; do
+                echo "uncenz-scr_CMD_create.sh $scr.mkv $parts_start"
+                # $parts_start can even be not set, would work with 1st arg
+                # but only if exists correct .$scr-g2-0 file
+                uncenz-scr_CMD_create.sh $scr.mkv $parts_start
+                echo "(${0##/}: uncenz-scr_CMD_create.sh $scr.mkv $parts_start)"
+                echo
+                ask "set scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv"
+                if [ "$?" == 0 ]; then
+                    scr_g2_0_ok="y"
+                else
+                    rm -iv $scr-g2_0.mkv
+                fi
+                echo \$scr_g2_0_ok: $scr_g2_0_ok
+                read NOP
+            done
+        fi
+    else
+        echo "We stick: "
+        ls_file .${i_h_p}_no_scr
+        echo "Likely, this is an interim PCAP, without screencasting."
+        echo "it has no screencast associated with it"
+        echo "(unless it was lost or misnamed or other erroneous condition incurred)"
+    fi
+
+    echo "Next is prepare for archiving, as \$scr... manipulation should be over."
+    . cont_br_short
+    # Another job before termination is removal of $scr temps.
+    if [ -e "$scr-g2_0.mkv" ] && [ -e "$scr-g2.mkv" ]; then
+        # Mostly, if $scr-g2_0.mkv, $scr-g2.mkv not needed
+        rm -v $scr-g2.mkv
+        read NOP
+    fi
+    if [ -e "$scr-g2_0.mkv" ]; then
+        # Keep $scr-g2_0.mkv or not? Probably remove. If short duration, easy to
+        # recreate, if long, too large. However, on repeated analysis, keep
+        # yet! So, ask with '-i'.
+        ls -l $scr-g2_0.mkv
+        rm -iv $scr-g2_0.mkv
+    fi
+
     # If ${i_h_p}_list is saved, will get this timestamp:
     ts=$(date +%y%m%d_%H%M)
     echo $ts # ts is for timestamp
@@ -644,7 +652,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     cat $TMP/${i_h_p}_list
     echo "Add an infix reminder shortcut, e.g. "some_par" if it is based on some parameter, to the list:"
     echo "The list will be saved as:"
-    echo "${i_h_p}_list_<the-infix-go-give>_${ts} ?"
+    echo "${i_h_p}_list_<the-infix>_${ts} ?"
     read name
     if [ ! -n "$name" ]; then
         echo "Do you want to save that list anyway, the name will be:"
@@ -681,156 +689,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     fi
     rm -v .${i_h_p}_list_do_save
     read NOP
-    # Before termination of all created jobs, sync ${i_h_p}.pcap and $scr
-    # (likely its derivative). Note that there's no talk if no .$scrg2_base.CMD_advise
-    if [ -e ".$scrg2_base-0" ]; then
-        if [ -s ".$scrg2_base-0" ]; then
-            ls -l .$scrg2_base-0
-            cat .$scrg2_base-0
-            echo "(cat .$scrg2_base-0)"
-            ls -l .$scrg2_base-0
-        else
-            echo "###########################################################"
-            echo "Pls. input the offset to cut $scr from into the filename:"
-            ls -l .$scrg2_base-0
-            echo "with sole content of Nhour:NNsec.NNNmilisec of the offset"
-            echo "such as "0:03.500" without quotes."
-            echo "WARNING: I'm doing no error checking!"
-            echo "###########################################################"
-            #read $offset
-            # under Wayland, bug or something, it does not read properly, when
-            # mpv or other job sent to run in bkg, so:
-            while [ ! -n "$offset" ] || [ "X${offset}" == "X" ]; do
-                read offset
-                echo \$offset: $offset
-                echo "or you can type forget to exit this read offset loop"
-                read forget_var
-                if [ "$forget_var" == "forget" ]; then
-                    break
-                fi
-                read NOP
-            done
-            echo "$offset" > .$scrg2_base-0
-            echo "You gave:"
-            cat .$scrg2_base-0
-            echo "(cat .$scrg2_base-0)"
-            echo "and you be the judge if that's fine."
-        fi
-    else
-        if [ -e ".$scrg2_base.CMD_advise" ]; then
-            echo ".$scrg2_base-0 does not exist"
-        fi
-    fi
-    if [ "$TERM" == "xterm" ]; then
-        if [ -e ".$scrg2_base.CMD_pre" ]; then
-            cat .$scrg2_base.CMD_pre
-            echo "(cat .$scrg2_base.CMD_pre)"
-            ls -l .$scrg2_base.CMD_pre
-        else
-            if [ -e ".$scrg2_base.CMD_advise" ]; then
-                echo ".$scrg2_base.CMD_pre does not exist"
-            fi
-        fi
-        if [ -e ".$scrg2_base.CMD" ]; then
-            cat .$scrg2_base.CMD
-            echo "(cat .$scrg2_base.CMD)"
-            ls -l .$scrg2_base.CMD
-        else
-            if [ -e ".$scrg2_base.CMD_advise" ]; then
-                echo "Pls. mend for the above missing requisites,"
-                echo "(in case any is missing)"
-                echo "We next will try and create .$scrg2_base.CMD"
-                echo "(needed for archiving, when only $scr_bare is kept)"
-                echo "and hit Enter"
-                read NOP_permanent
-                if [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ] && [ -e ".$scrg2_base.CMD_pre" ]; then 
-                    parts_start=$(<.$scrg2_base-0)
-                    echo \$parts_start: $parts_start
-                    cat .$scrg2_base.CMD_pre >> .$scrg2_base.CMD
-                    if [ "$parts_start" != "0:00.000" ]; then
-                        echo "mkvmerge -o ${scrg2_base}_0.mkv --split parts:$parts_start- $scrg2" \
-                            >> .$scrg2_base.CMD
-                        mkvmerge -o ${scrg2_base}_0.mkv --split parts:$parts_start- $scrg2
-                    else
-                        echo "#mkvmerge -o ${scrg2_base}_0.mkv --split parts:$parts_start- $scrg2" \
-                            >> .$scrg2_base.CMD
-                        echo "mv -iv $scrg2 ${scrg2_base}_0.mkv" >> .$scrg2_base.CMD
-                        mv -iv $scrg2 ${scrg2_base}_0.mkv
-                        ln -s ${scrg2_base}_0.mkv $scrg2
-                    fi
-                    cat .$scrg2_base.CMD
-                    echo "(cat .$scrg2_base.CMD)"
-                    ls -l .$scrg2_base.CMD
-                else
-                    echo "At least one of these two are nonextant or empty:"
-                    ls -l .$scrg2_base-0 .$scrg2_base.CMD_pre
-                    echo "Not creating .$scrg2_base.CMD ."
-                    echo "Run uncenz-2nd again on ${i_h_p}.pcap"
-                    echo "or create .$scrg2_base.CMD manually."
-                fi
-            fi
-        fi
-        # Another job before termination is removal of $scr temps.
-        if [ -e ".$scrg2_base.CMD_advise" ]; then
-            rm -v .$scrg2_base.CMD_advise
-        fi
-        if [ -e ".$scrg2_base.CMD_pre" ]; then
-            rm -v .$scrg2_base.CMD_pre
-        fi
-        if [ -e "$scrg2_0" ] && [ -e "$scrg2" ]; then
-            # Mostly, if $scrg2_0, $scrg2 not needed
-            rm -v $scrg2
-            read NOP
-        fi
-        if [ -e "$scrg2_0" ]; then
-            # Keep $scrg2_0 or not? Probably remove. If short duration, easy to
-            # recreate, if long, too large. However, on repeated analysis, keep
-            # yet! So, ask with '-i'.
-            ls -l $scrg2_0
-            rm -iv $scrg2_0
-        fi
-    else
-        if [ "$TERM" == "alacritty" ]; then
-            echo \$TERM: $TERM
-        fi
-        echo "########    For Wayland's wf-recorder's casts I'll use:    ########"
-        echo \$scr: $scr
-        echo \$scrg2_0: $scrg2_0
-        echo "file .$scrg2_base-0 in curdir"
-        echo "file .$scrg2_base.CMD in curdir"
-        echo "########    (can not mend all the flawed concepts in this script so fast)   ########"
-        read NOP
-        if [ -e ".$scrg2_base.CMD" ]; then
-            cat .$scrg2_base.CMD
-            echo "(cat .$scrg2_base.CMD)"
-            ls -l .$scrg2_base.CMD
-        else
-            if [ -e ".$scrg2_base-0" ] && [ -s ".$scrg2_base-0" ]; then 
-                parts_start=$(<.$scrg2_base-0)
-                echo \$parts_start: $parts_start
-                if [ "$parts_start" != "0:00.000" ]; then
-                    echo "scrg2_base_CMD_create $scr $parts_start"
-                    export scrg2_base && uncenz-scr_CMD_create.sh $scr $parts_start
-                    echo "(uncenz-scr_CMD_create.sh $scr $parts_start)"
-                    read NOP
-                else
-                    echo "mv -iv $scr ${scrg2_base}_0.mkv" >> .$scrg2_base.CMD
-                    echo "ln -s ${scrg2_base}_0.mkv $scr" >> .$scrg2_base.CMD
-                    mv -iv $scr ${scrg2_base}_0.mkv
-                    ln -s ${scrg2_base}_0.mkv $scr
-                fi
-                cat .$scrg2_base.CMD
-                echo "(cat .$scrg2_base.CMD)"
-                ls -l .$scrg2_base.CMD
-            else
-                echo "Probably nonextant or empty:"
-                ls -l .$scrg2_base-0
-                echo "Not creating .$scrg2_base.CMD ."
-                echo "Run uncenz-2nd again on ${i_h_p}.pcap"
-                echo "or create .$scrg2_base.CMD manually."
-            fi
-        fi
-    fi 
     if [ -e ".pcaps-no-split" ]; then
         rm -v .pcaps-no-split
     fi

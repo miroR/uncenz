@@ -19,12 +19,11 @@ fi
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
 hst=$(hostname|sed 's/\(...\).*/\1/')
-echo \$hst: $hst
 # I'll be running either xterm's under xorg or alacritty under wayland, either, never both.
 if [ ! -n "$TERM" ]; then
     # Likely not needed, will else will always execute.
     ALACRITTY_CHK=$( ps aux | grep '\<alacritty\>' | grep -v grep )
-    XTERM_CHK=$( ps aux | grep '\<xter\>' | grep -v grep )
+    XTERM_CHK=$( ps aux | grep '\<xterm\>' | grep -v grep )
     read NOP
     if [ "X${ALACRITTY_CHK}" != "X" ] && [ "X${XTERM_CHK}" == "X" ]; then
         TERM="alacritty" 
@@ -33,7 +32,8 @@ if [ ! -n "$TERM" ]; then
         TERM="xterm" 
     fi
 else
-    # TERM is a defined envvar, xorg or wayland, is there
-    echo "The envvar is:"
+    # TERM is a defined envvar, xorg or wayland, in my case, modify these scripts
+    # if your setup is different
+    echo -n "The envvar is: "
 fi
 echo \$TERM: $TERM
