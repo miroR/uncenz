@@ -47,7 +47,7 @@ function cat_ls_file () {
 function ls_file () {
     if [ -e "$1" ]; then
         ls -l $1
-        echo "(cat/ls -l $1)"
+        echo "(ls -l $1)"
         read NOP
     else
         echo "$1 non extant"; echo 
@@ -241,26 +241,6 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
         fi
     fi
-    #echo \$i: $i
-    #echo \$hst_p: $hst_p
-    #echo \$i_h_p: $i_h_p
-    #read NOP
-    ## the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
-    #ls -1d ${i_h_p}_conv-ip_l.txt \
-    #    ${i_h_p}_NOTES.txt \
-    #    ${i_h_p}_* \
-    #    ${i_h_p}-msg_r_PDU*.txt \
-    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}.POST \
-    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http-request-full_uri.txt \
-    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http-request-full_uri.txt \
-    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}-frame-http2-request-full_uri.txt \
-    #    ${i_h_p}_tHostsConv/${i}*_${hst_p}_*-frame-http2-request-full_uri.txt \
-    #    ${i_h_p}_rn.d/*.log \
-    #    | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
-    #    | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
-    #    | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' \
-    #    | grep -v '\.:'|grep '[[:print:]]' | uniq
-    #read NOP
     echo "Next is: Possible old (previous) lists: "
     . cont_br_short
     touch $TMP/${i_h_p}_list
@@ -319,8 +299,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         cat $TMP/${i_h_p}_list | wc -l
         echo "            entries, but it may not be complete yet"
         echo "-=-=-"
-        ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
-        ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
+        ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt
+        ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt
         read NOP
         for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
             echo $ip
@@ -520,6 +500,14 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 fi
                 echo "NOTE: With the offset in $scr.mkv that you will assess we will create next:"
                 cat_ls_file .$scr-g2.CMD
+                if [ -e ".$scr-g2-0" ]; then
+                    # if non printing char in .$scr-g2-0, get rid of it
+                    parts_start=$(<.$scr-g2-0)
+                    if [ "X${parts_start}X" == "XX" ]; then
+                        echo \$parts_start: $parts_start
+                         > .$scr-g2-0
+                    fi
+                fi
                 echo "You will be asked to input the offset to cut $scr from into the file:"
                 cat_ls_file .$scr-g2-0
                 echo "with sole content of Nmin:NNsec.NNNmilisec of the offset"
@@ -546,7 +534,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 # '&&' stronger then '||' ? Else script wrong!
                 # This is the case with already worked and archived
                 # PCAPs/screencast/other-related sets, that have all
-                # set to recreate synced/perusable casts
+                # been adjusted so that synced/perusable casts can be
+                # re-created.
                 if [ ! -e "$scr-g2_0.mkv" ]; then
                     cat_ls_file .$scr-g2.CMD
                     ask "Execute it now?"
@@ -608,7 +597,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 uncenz-scr_CMD_create.sh $scr.mkv $parts_start
                 echo "(${0##/}: uncenz-scr_CMD_create.sh $scr.mkv $parts_start)"
                 echo
-                ask "set scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv"
+                ask "set \$scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv"
                 if [ "$?" == 0 ]; then
                     scr_g2_0_ok="y"
                 else

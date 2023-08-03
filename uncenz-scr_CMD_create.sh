@@ -79,8 +79,13 @@ unset part_001_001_ok
 part_001_001_initial=y
 while [ "$part_001_001_ok" != "y" ]; do
     if [ "$part_001_001_initial" != "y" ]; then
-        echo "give new value for \$parts_start: "
-        read parts_start
+        parts_start=$(<.$scr-g2-0)
+        while [ ! -n "$parts_start" ] || [ "X$parts_start" == "X" ]; do
+            echo "Pls. type the equivalent of Nm:NNs.NNNms value to echo to .$scr-g2-0"
+            read parts_start
+            echo $parts_start > .$scr-g2-0
+            cat_ls_file .$scr-g2-0
+        done
     fi
     if [ "$parts_start" != "0:00.000" ]; then
         echo \$parts_start: $parts_start
@@ -91,7 +96,7 @@ while [ "$part_001_001_ok" != "y" ]; do
         part_001=$(ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001.$ext)
         echo "# \$part_001: $part_001" >> .$scr-g2.CMD
         part_001M=$(echo $part_001*1000/1|bc)
-        echo "# \$part_001M: $part_001M" >> .$scr-g2.CMD
+        echo "# \$part_001M: $part_001M" |& tee -a .$scr-g2.CMD
         read NOP
         echo \$parts_start: $parts_start
         parts_start_min=$(echo $parts_start | awk -F: '{print $1}')
@@ -180,7 +185,9 @@ while [ "$part_001_001_ok" != "y" ]; do
             rm -v ${scr}_-00[12].mkv ${scr}_-001-g2.mkv
             echo "rm -v ${scr}_-001-g2_-00[12].mkv" >> .$scr-g2.CMD
             rm -v ${scr}_-001-g2_-00[12].mkv
-            echo "Pls. edit the script file:"
+            echo "Pls. review/edit the script file:"
+            echo "(cat_ls_file .$scr-g2.CMD next)"
+            read NOP
             cat_ls_file .$scr-g2.CMD
             echo "so this procedure can be repeated, without reassessing all anew."
             cat_ls_file .$scr-g2-0
@@ -193,8 +200,8 @@ while [ "$part_001_001_ok" != "y" ]; do
         ask "echo new value to .$scr-g2-0?"
         if [ "$?" == 0 ]; then
             echo "Pls. type the equivalent of Nm:NNs.NNNms value to echo to .$scr-g2-0"
-            read new_scr_g2_0
-            echo $new_scr_g2_0 > .$scr-g2-0
+            read parts_start
+            echo $parts_start > .$scr-g2-0
             cat_ls_file .$scr-g2-0
         fi
         ask "truncate .$scr-g2.CMD ?"
