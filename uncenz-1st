@@ -15,11 +15,11 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 CUR_DIR=$(pwd)
-echo \$CUR_DIR: $CUR_DIR
+#echo \$CUR_DIR: $CUR_DIR
 if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
     echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
     echo "sleep 3 and exit"
@@ -78,7 +78,7 @@ function show_help {
 
 . uncenz-dumper
 
-sudo -s rm -v /home/*/Pas-*.txt ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &
+sudo -s rm -v /home/*/Pas-*.txt &> /dev/null ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &> /dev/null &
 # First, the checks that apply to uncenz-1st run with and without the include
 # alike.
 #
@@ -122,8 +122,8 @@ fi
 dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
 if [ -n "$dupid" ]; then
     echo "\$dupid: $dupid"
-else
-    echo "No $dumper running."
+#else
+#    echo "No $dumper running."
 fi
 
 # If our x11grab'ing FFmpeg/Wayland wf-recorder is running, we can't really (re)start uncenz'ing.
@@ -165,7 +165,7 @@ fi
 uncenz-ts
 ts=$(<$uncenz_run/uncenz-ts)
 tsh=${ts}_${hst}
-echo \$tsh: $tsh
+#echo \$tsh: $tsh
 if [ -e "$uncenz_run/uncenz-ts.old" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts.old)
     tsh_old=${ts_old}_${hst}
@@ -276,7 +276,7 @@ while getopts "hf:kr:" opt; do
         ;;
     esac
 done
-echo \$FILTER_ARGS: $FILTER_ARGS
+#echo \$FILTER_ARGS: $FILTER_ARGS
 shift $(($OPTIND - 1))
 
 if [ "$dumper" == "dumpcap" ]; then
@@ -288,13 +288,13 @@ fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
-        # Tried but couldn't get it to work in Wayland with alacritty
-        #$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
-        echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &"
+        ## Tried but couldn't get it to work in Wayland with alacritty
+        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
+        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &"
         $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
 
-        echo -n "Not running? pls. run manually, separate teminal."
-        sleep 3
+        #echo -n "Not running? pls. run manually, separate teminal."
+        sleep 0.3
         dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     done
 fi

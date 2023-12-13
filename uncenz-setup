@@ -31,9 +31,9 @@ if [ ! -n "$TERM" ]; then
     if [ "X${XTERM_CHK}" != "X" ] && [ "X${ALACRITTY_CHK}" == "X" ]; then
         TERM="xterm" 
     fi
-else
-    # TERM is a defined envvar, xorg or wayland, in my case, modify these scripts
-    # if your setup is different
-    echo -n "The envvar is: "
+#else
+#    # TERM is a defined envvar, xorg or wayland, in my case, modify these scripts
+#    # if your setup is different
+#    echo -n "The envvar is: "
 fi
-echo \$TERM: $TERM
+#echo \$TERM: $TERM

@@ -283,7 +283,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             ${i_h_p}_rn.d/*.log \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
             | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
-            | grep -v 'epoch\|\.tar\.gz\|_s_m_r_list' | grep -v "${i_h_p}_CMD" \
+            | grep -v 'epoch\|\.tar\.gz\|\.zgg\|_s_m_r_list' | grep -v "${i_h_p}_CMD" \
             | grep -v '\.hosts$' | grep -v '\.:' | uniq | grep '[[:print:]]'); do
             if [ -e "$file" ]; then
                 echo "$file" >> $TMP/${i_h_p}_list
@@ -515,7 +515,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
             echo "NOTE: mpv will run in bg with terminal I/O disabled."
             echo "Do follow STDOUT here in this terminal!"
-            echo "(just, once mpv starts, focus back to this terminal, and hit Enter)"
+            echo "(just focus back to this terminal, and hit Enter)"
             echo "mpv --window-scale=0.95 -no-terminal $scr_e.mkv now"
             . cont_br_short
             mpv --window-scale=0.95 -no-terminal $scr_e.mkv & scr_pid=$!

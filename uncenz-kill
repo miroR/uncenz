@@ -9,7 +9,7 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 if [ "$OHST_READY" == "n" ]; then
@@ -98,7 +98,7 @@ shift $(($OPTIND - 1))
 # $str0 (see uncenz-1st) taken after uncenz-1st did all it's starting of cast
 # and trace taking/dumping.
 str0=$(<$uncenz_run/uncenz-log_str0)
-echo \$str0: $str0
+#echo \$str0: $str0
 # 'str0' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
 # In the same fashion we take the string for grep'ing on system log below, but
@@ -109,7 +109,7 @@ echo \$str0: $str0
 #str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
 # If it is syslog:
 str1=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
-echo \$str1: $str1
+#echo \$str1: $str1
 # (just no need to stick it into a file)
 # 300000 is just a very likely sufficiently high integer
 if [ -n "$str0" ] && [ -n "$str1" ]; then
@@ -121,42 +121,42 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
         sudo -s cat /var/log/syslog | grep -a -A300000 $str0 \
             | grep -a -B300000 $str1 \
             > /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
-    else
-        echo "working: dump_${ts}_${hst}_messages"
-        echo "\$str0" and "\$str1 are identical"
+    #else
+    #    echo "working: dump_${ts}_${hst}_messages"
+    #    echo "\$str0" and "\$str1 are identical"
     fi
 fi
 chmod 600 /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
-ls -l /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
+#ls -l /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
 if [ ! -s "/home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages" ]; then
-    rm -v /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
+    rm -v /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages &> /dev/null
 fi
-read NOP
-dumper=$DUMPER
-echo \$dumper: $dumper
 #read NOP
-echo \$hst: $hst
+dumper=$DUMPER
+#echo \$dumper: $dumper
+#read NOP
+#echo \$hst: $hst
 ssllast=SSLLAST_${ts}_${hst}.txt
-echo \$ssllast: $ssllast
+#echo \$ssllast: $ssllast
 ssllast_active=SSLLAST_${ts}_${hst}_active.txt
-echo \$ssllast_active: $ssllast_active
-read NOP
+#echo \$ssllast_active: $ssllast_active
+#read NOP
 tail -1 $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/$ssllast_active
-echo stored /home/$USER/.uncenz-1st/$ssllast_active ...
+#echo stored /home/$USER/.uncenz-1st/$ssllast_active ...
 chmod 600 /home/$USER/.uncenz-1st/$ssllast_active
 ls -l /home/$USER/.uncenz-1st/$ssllast \
     /home/$USER/.uncenz-1st/$ssllast_active
     ssllast_hash_active=$(sha256sum \
         /home/$USER/.uncenz-1st/$ssllast_active|cut -d' ' -f1)
-echo \$ssllast_hash_active: $ssllast_hash_active
+#echo \$ssllast_hash_active: $ssllast_hash_active
 #read NOP
     ssllast_hash=$(sha256sum \
         /home/$USER/.uncenz-1st/SSLLAST_$(<$uncenz_run/uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
-echo \$ssllast_hash: $ssllast_hash
-read NOP
-    echo \$ssllast_hash_active, then \$ssllast_hash:
-    echo $ssllast_hash_active
-    echo $ssllast_hash
+#echo \$ssllast_hash: $ssllast_hash
+#read NOP
+#    echo \$ssllast_hash_active, then \$ssllast_hash:
+#    echo $ssllast_hash_active
+#    echo $ssllast_hash
 if [ "$ssllast_hash_active" == "$ssllast_hash" ]; then
     echo
     echo "#####"
@@ -196,8 +196,8 @@ fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=`sudo -s ps aux | grep -E '[t]cpdump' | grep -v grep | awk '{ print $2}'`
 fi
-echo \$recpid: $recpid
-echo \$dupid: $dupid
+#echo \$recpid: $recpid
+#echo \$dupid: $dupid
 
 echo "To kill ffmpeg/wf-recorder and dumpcap/tcpdump, hit Enter"
 # Or you can terminate this script without killing ffmpeg/wf-recorder and dumpcap/tcpdump

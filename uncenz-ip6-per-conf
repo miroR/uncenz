@@ -14,8 +14,8 @@
 # The usual conf is to drop all ipv6. Will need adjustments for more complex
 # settings.
 if [ "$IP6" != "y" ]; then
-    echo \$IP6: $IP6
-    echo "Meaning ip6tables must be set to DROP."
+    #echo \$IP6: $IP6
+    #echo "Meaning ip6tables must be set to DROP."
     # To open to ipv6 traffic set:
     # IP6=y in /home/$USER/.uncenz.conf)
     if ! ( sudo -s ip6tables -L -n | grep INPUT | grep -q DROP ) || \
@@ -27,8 +27,8 @@ if [ "$IP6" != "y" ]; then
        sudo -s ip6tables -L -n
        echo "(sudo -s ip6tables -L -n)"
         exit 1
-    else
-        echo "ip6tables _are_ set to DROP."
+    #else
+    #    echo "ip6tables _are_ set to DROP."
     fi
 else
     echo \$IP6: $IP6

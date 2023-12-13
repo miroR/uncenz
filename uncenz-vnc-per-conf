@@ -14,14 +14,14 @@
 
 vncpid_master=$(ps aux | grep vncviewer | grep -v child \
     | grep -v grep | awk '{print $2}')
-    echo \$vncpid_master: $vncpid_master
+    #echo \$vncpid_master: $vncpid_master
 vncpid_child=$(ps aux | grep vncviewer | grep child \
     | grep -v grep | awk '{print $2}')
-    echo \$vncpid_child: $vncpid_child
+    #echo \$vncpid_child: $vncpid_child
 
 if [ "X${vncpid_master}X" == "XX" ] && [ "X${vncpid_child}X" == "XX" ]; then
-    echo "No vncviewer running" # do nothing
-    read NOP
+    echo #"No vncviewer running" # do nothing
+    #read NOP
 else
     if [ "$VNC" != "y" ]; then
         echo "--~==^==~--"

@@ -13,23 +13,23 @@
 
 f=$(gpg --list-secret-keys --with-colon)
 if [ "$f" != "" ]; then
-    gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+    #gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
     col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
     if [ "$col15" == "#" ]; then
         echo "Secret key offlined. Pass."
     else
-        gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
+        #gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
         # Check how many keys are not offlined
         num_keys=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
             | awk -F: '{print $15}'|wc -l)
         ord_key=0
         while [ "$ord_key" -lt "$num_keys" ] ; do
-            echo
+            #echo
             ord_key_plus=$(echo $ord_key + 1 | bc)
             col15_each=$(gpg --list-secret-keys --with-colons | grep '^sec\>' \
                 | awk -F: '{print $15}'| head -${ord_key_plus} | tail -1)
             if [ "$col15_each" == "#" ]; then
-                echo "Secret key of the iterated key offlined. Pass."
+                : #echo "Secret key of the iterated key offlined. Pass."
             else
                 if [ "$col15_each" == "+" ]; then
                     if [ -e ".uncenz-keys_allow" ]; then

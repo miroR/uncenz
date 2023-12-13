@@ -237,9 +237,9 @@ paste ${dump}_hosts-i-h-try ${dump}_hosts-conv-traffic | sed 's/\t//' > ${dump}_
 # Now first check if it's the $r_case. The case when no IP's are resolved,
 # usual in some particular kind of browsing.
 r_case=$(awk '{ print $2 }' ${dump}_hosts-i-h-try | sort -u)
-if [ "$r_case" == "NOTICE-could-not-be-resolved-NOTICE" ]; then
+if [ "$r_case" == "NOTICE-not-resolved-NOTICE" ]; then
     # It's the $r_case. Take the $n's.
-    awk '{ print $1 }' ${dump}_hosts-i-h-try | grep -v '127.0.0.1\|224.0.0.1' \
+    awk '{ print $1 }' ${dump}_hosts-i-h-try | grep -v '127.0.0.1\|224.0.0.1\|0.0.0.0\|192.168.1.[0-9]' \
         > ${dump}_rn.txt
     cat ${dump}_rn.txt
     echo "(cat ${dump}_rn.txt)"

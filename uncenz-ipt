@@ -54,9 +54,10 @@ if [ "$IPT" == "y" ]; then
         if ( sudo -s iptables -L -n | grep INPUT | grep -q DROP ) && \
             ( sudo -s iptables -L -n | grep FORWARD | grep -q DROP ); then
             if ( sudo -s iptables -L -n | grep ACCEPT \
-                | grep 'owner GID match' | grep "$(id -g debian-tor)" ); then
-                echo "can use Tor"
-                read NOP_permanent
+                | grep 'owner GID match' | grep -q "$(id -g debian-tor)" ); then
+                #echo "can use Tor"
+                #read NOP_permanent
+                echo -n # if can not be empty
             else
                 if ( sudo -s iptables -L -n | grep 'dpt:53' | grep ACCEPT ) && \
                     ( sudo -s iptables -L -n | grep 'dports 80,443' | grep ACCEPT ); then

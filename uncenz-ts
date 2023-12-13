@@ -9,14 +9,14 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 # "ts" is for "time stamp"
 ts=$(date +%y%m%d_%H%M)
-echo \$ts: $ts
+#echo \$ts: $ts
 tsh=${ts}_${hst}
-echo \$tsh: $tsh
+#echo \$tsh: $tsh
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     cont_uncenz_ts=$(cat $uncenz_run/uncenz-ts | grep '[[:print:]]')
     if [ "X${cont_uncenz_ts}X" == "XX" ]; then
@@ -26,22 +26,26 @@ if [ -e "$uncenz_run/uncenz-ts" ]; then
 fi
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts)
-    echo \$ts_old: $ts_old
-    read NOP
+    #echo \$ts_old: $ts_old
+    #read NOP
     echo $ts_old > $uncenz_run/uncenz-ts.old
 
     if [ "$ts" == "$ts_old" ]; then
+        echo \$ts_old: $ts_old
+        echo \$ts: $ts
+        date
         echo "We won't overwrite the files just made."
         echo "Wait till this minute is over, then run the script again,"
         echo "two sessions in the same minute is a bad idea."
-        date
+        echo "Pls. cosider Ctrl-C now!"
+        read NOP_permanent
     else
         echo $ts > $uncenz_run/uncenz-ts
-        echo cat $uncenz_run/uncenz-ts
-        cat $uncenz_run/uncenz-ts
+        #echo cat $uncenz_run/uncenz-ts
+        #cat $uncenz_run/uncenz-ts
     fi
 else
     echo $ts > $uncenz_run/uncenz-ts
-    cat $uncenz_run/uncenz-ts
-    echo "(cat $uncenz_run/uncenz-ts)"
+    #cat $uncenz_run/uncenz-ts
+    #echo "(cat $uncenz_run/uncenz-ts)"
 fi
