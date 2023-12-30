@@ -283,15 +283,15 @@ if [ "$dumper" == "dumpcap" ]; then
     echo "WARNING: dumpcap has not been tested for the "-C" option addition"
     echo "let alone $FILTER_ARGS (or anything else at all for years)"
     read NOP
-    sudo -s $dumper -i any -C 10000 -w $the_dump $FILTER_ARGS &
+    sudo -s $dumper -i any -C 500 -w $the_dump $FILTER_ARGS &
 fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
         ## Tried but couldn't get it to work in Wayland with alacritty
-        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
-        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &"
-        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 10000 -i any -U -v -w $the_dump $FILTER_ARGS &
+        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &
+        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &"
+        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &
 
         #echo -n "Not running? pls. run manually, separate teminal."
         sleep 0.3
