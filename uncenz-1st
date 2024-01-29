@@ -111,7 +111,7 @@ if [ "$TERM" == "xterm" ]; then
         echo \$recpid: $recpid
     fi
 fi
-if [ "$TERM" == "alacritty" ]; then
+if [ "$TERM" == "foot" ]; then
     recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | grep hevc_vaapi \
         | grep renderD128 | awk '{ print $2 }')
     if [ -n "$recpid" ]; then
@@ -288,7 +288,7 @@ fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
-        ## Tried but couldn't get it to work in Wayland with alacritty
+        ## Tried but couldn't get it to work in Wayland with foot
         ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &
         #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &"
         $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 500 -i any -U -v -w $the_dump $FILTER_ARGS &
@@ -334,7 +334,7 @@ if [ "$TERM" == "xterm" ]; then
     # ff for ffmpeg, du for $dumper
     recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
 fi
-if [ "$TERM" == "alacritty" ]; then
+if [ "$TERM" == "foot" ]; then
     wf-recorder -f $the_cast -c hevc_vaapi -d /dev/dri/renderD128 & recpid=$!
 fi
 

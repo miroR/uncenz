@@ -147,7 +147,7 @@ while [ "$part_001_001_ok" != "y" ]; do
             echo "ln -s $scr-g2.mkv $scr-g2_0.mkv" >> .$scr-g2.CMD
             ln -s $scr-g2.mkv $scr-g2_0.mkv
         else
-            echo \$TERM: $TERM  # alacritty
+            echo \$TERM: $TERM  # foot
             echo "if [ ! -e "$scr-g2_0.mkv" ]; then ln -s $scr.mkv $scr-g2_0.mkv; fi" >> .$scr-g2.CMD
             if [ ! -e "$scr-g2_0.mkv" ]; then ln -s $scr.mkv $scr-g2_0.mkv; fi
             echo "ls -l $scr.mkv $scr-g2_0.mkv" >> .$scr-g2.CMD

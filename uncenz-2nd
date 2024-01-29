@@ -160,7 +160,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     if [ "$TERM" == "xterm" ]; then
         echo \$TERM: $TERM
     else
-        echo \$TERM: $TERM  # alacritty
+        echo \$TERM: $TERM  # foot
     fi
     pwd
     echo \$i: $i
@@ -430,15 +430,15 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             let h_p=$h_v-15
             let t_p=$t+88
         else
-            if [ "$TERM" == "alacritty" ]; then
+            if [ "$TERM" == "foot" ]; then
                 echo \$TERM: $TERM
             fi
-            mv -iv CMD ${i_h_p}_CMD
-            echo "Next is: alacritty -e $(<${i_h_p}_CMD)"
+            mv -v CMD ${i_h_p}_CMD
+            echo "Next is: foot -e $(<${i_h_p}_CMD)"
             read NOP
-            alacritty -e $(<${i_h_p}_CMD) & a_v_pid=$!    # [a]lacritty [v]im pid
-            echo $a_v_pid > $TMP/${i_h_p}_a_v.pid
-            echo "(alacritty -e $(<${i_h_p}_CMD) &)"
+            foot -e $(<${i_h_p}_CMD) & f_v_pid=$!    # [f]oot [v]im pid
+            echo $f_v_pid > $TMP/${i_h_p}_a_v.pid
+            echo "(foot -e $(<${i_h_p}_CMD) &)"
             read NOP
         fi
     fi
@@ -527,7 +527,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 ls_file $scr-g2_0.mkv
                 cat_ls_file .$scr-g2-0
                 cat_ls_file .$scr-g2.CMD
-                echo \$scr_g2_0_ok: $scr_g2_0_ok
+                echo \"\$scr_g2_0_ok\": \"$scr_g2_0_ok\"
 
                 echo "Next is if not exist .$scr-g2_0.mkv"
                 . cont_br_short
@@ -566,6 +566,10 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "Next is if not exist/empty .$scr-g2-0"
                 . cont_br_short
                 if [ ! -e ".$scr-g2-0" ] || [ ! -s ".$scr-g2-0" ]; then
+                    # debug, del 2 ln
+                    echo \"\$offset\": \"$offset\"
+                    read NOP
+                    unset offset    # else we get $offset from previous run
                     cat_ls_file .$scr-g2-0
                     echo "###########################################################"
                     echo "Pls. input the offset to cut $scr.mkv from into the filename:"

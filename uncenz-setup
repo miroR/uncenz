@@ -19,14 +19,14 @@ fi
 # This line takes your hostname and retains only the first three letters to use
 # in the infix
 hst=$(hostname|sed 's/\(...\).*/\1/')
-# I'll be running either xterm's under xorg or alacritty under wayland, either, never both.
+# I'll be running either xterm's under xorg or foot under wayland, either, never both.
 if [ ! -n "$TERM" ]; then
     # Likely not needed, will else will always execute.
-    ALACRITTY_CHK=$( ps aux | grep '\<alacritty\>' | grep -v grep )
+    ALACRITTY_CHK=$( ps aux | grep '\<foot\>' | grep -v grep )
     XTERM_CHK=$( ps aux | grep '\<xterm\>' | grep -v grep )
     read NOP
     if [ "X${ALACRITTY_CHK}" != "X" ] && [ "X${XTERM_CHK}" == "X" ]; then
-        TERM="alacritty" 
+        TERM="foot" 
     fi
     if [ "X${XTERM_CHK}" != "X" ] && [ "X${ALACRITTY_CHK}" == "X" ]; then
         TERM="xterm" 
