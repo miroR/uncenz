@@ -112,8 +112,7 @@ if [ "$TERM" == "xterm" ]; then
     fi
 fi
 if [ "$TERM" == "foot" ]; then
-    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | grep hevc_vaapi \
-        | grep renderD128 | awk '{ print $2 }')
+    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | awk '{ print $2 }')
     if [ -n "$recpid" ]; then
         echo \$recpid: $recpid
     fi
@@ -335,7 +334,7 @@ if [ "$TERM" == "xterm" ]; then
     recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
 fi
 if [ "$TERM" == "foot" ]; then
-    wf-recorder -f $the_cast -c hevc_vaapi -d /dev/dri/renderD128 & recpid=$!
+    wf-recorder -f $the_cast & recpid=$!
 fi
 
 dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
