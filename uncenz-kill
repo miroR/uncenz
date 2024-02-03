@@ -189,8 +189,7 @@ if [ "$TERM" == "xterm" ]; then
     recpid=`sudo -s ps aux | grep -E 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2}'`
 fi
 if [ "$TERM" == "foot" ]; then
-    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | grep hevc_vaapi \
-        | grep renderD128 | awk '{ print $2 }')
+    recpid=$(sudo -s ps aux | grep 'wf-recorder' | grep -v grep | awk '{ print $2 }')
 fi
 
 if [ "$dumper" == "dumpcap" ]; then
