@@ -108,7 +108,8 @@ str0=$(<$uncenz_run/uncenz-log_str0)
 # If it were kern.log:
 #str1=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
 # If it is syslog:
-str1=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
+#str1=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
+str1=$(sudo -s journalctl -o short-iso-precise -S-500 | tail -n1 | awk '{print $1}')
 #echo \$str1: $str1
 # (just no need to stick it into a file)
 # 300000 is just a very likely sufficiently high integer
@@ -118,8 +119,10 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
         # special meaning, but previously this worked, must be recent change
         # e.g. str0=2020-06-14T05:27:47.284804+00:00 and
         # str1=2020-06-14T05:29:13.648601+00:00 output only without E
-        sudo -s cat /var/log/syslog | grep -a -A300000 $str0 \
-            | grep -a -B300000 $str1 \
+        #sudo -s cat /var/log/syslog | grep -a -A300000 $str0 \
+        #    | grep -a -B300000 $str1 \
+        #    > /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
+		sudo -s journalctl -o short-iso-precise -S$str0 -U$str1 \
             > /home/$USER/.uncenz-1st/dump_${ts}_${hst}_messages
     #else
     #    echo "working: dump_${ts}_${hst}_messages"

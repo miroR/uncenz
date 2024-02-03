@@ -349,55 +349,17 @@ echo $recpid > $uncenz_run/uncenz-rec.pid
 echo \$dupid is: $dupid
 echo $dupid > $uncenz_run/uncenz-du.pid
 
-# I used grsecurity-patched kernels until google openly arranged for basically
-# robbing grsecurity authors of their code, in late 2010s.
-# The log file, with some current kernels, with somewhat relevant messages, is
-# /var/log/syslog, or with kernel set to debugging /var/log/kern.log.
-# During my years with Gentoo it used to be /var/log/messages. Edit according
-# to where you get the most relevent logging.
-sudo -s tail -1 /var/log/syslog
-sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
+#sudo -s tail -1 /var/log/syslog
+#sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
 # WARNING: this $str0 extraction works correcly only if you in:
-# /etc/rsyslog.conf have commented out:
-# #$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
-# as above. I have not tested other system loggers.
 # 'str0' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
-# If it were kern.log:
-#str0=$(sudo -s tail -1 /var/log/kern.log|cut -d\[ -f2|cut -d] -f1)
-# If it is syslog:
-str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
-#echo \$str0: $str0
+#str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
+str0=$(sudo -s journalctl -o short-iso-precise -S-500 | tail -n1 | awk '{print $1}')
+echo \$str0: $str0
 echo $str0 > $uncenz_run/uncenz-log_str0
 cat $uncenz_run/uncenz-log_str0
 
-# Another/More logging include(s) might be added here. I'll tie it to $2
-# (ermh, for now).  Pls. note that if you give empty string for $1 arg, then
-# you can easily/effectively get a $2 <another-include> to be run Like:
-# uncenz-1st "" <another-include>
-# That other script must also reside in /usr/local/bin and other conditions.
-# See the comments about the include with $1 above.
-# Also note that this will silently just be ignored if any of the conditions do
-# not hold.
-#if [ "$2" ] && [ -n "$2" ] && [ "X${2}" != "X" ]; then
-#    include_script_2=$2
-#    echo \$include_script_2: $include_script_2
-#    if [ -e "/usr/local/bin/$include_script_2" ] && [ -x "/usr/local/bin/$include_script_2" ]; then
-#            /usr/local/bin/$include_script_2
-#        echo "To end a session issue \"uncenz-kill \
-#<the counterpart script of the $include_script_2> <Enter>\" from this terminal."
-#        else
-#            echo "The include script you gave:"
-#            echo "$include_script_2"
-#            echo "does not exist, or is not in the /usr/local/bin/ directory,"
-#            echo "or is not executable"
-#            sleep 3
-#            show_help
-#            exit 0
-#    fi
-#else
-#    echo "To end a session issue \"uncenz-kill <Enter>\" from this terminal."
-#fi
 if [ -e "/usr/local/bin/$script_to_run" ] && [ -x "/usr/local/bin/$script_to_run" ]; then
     $script_to_run
     sleep 0.20
