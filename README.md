@@ -1,7 +1,11 @@
 
-Copyright 2015, Miroslav Rovis, http://www.CroatiaFidelis.hr
+Copyright 2015,2024 Miroslav Rovis, https://www.CroatiaFidelis.hr
 
 Released under BSD license, pls. see LICENSE
+
+This is nearly a decade old text, some parts of which may be useful for
+understanding of this set of scripts. Leaving it as is since I don't have time
+to udate this README.
 
 Before I explain this method let me emphasize that I am not an expert and I am
 aware that a few things from my scripts definitely need to be done, and are
