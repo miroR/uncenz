@@ -68,6 +68,62 @@ function show_help {
     echo
 }
 
+OPTIND=1
+while getopts "hf:kr:" opt; do
+    case "$opt" in
+        h)
+            show_help
+            exit 0
+        ;;
+        f)
+            case "$OPTARG" in
+                "nofilter" )
+                    FILTER_ARGS=""
+                ;;
+                "nolocal" )
+                    FILTER_ARGS="-f net not 192.168.88.0 mask 255.255.255.0 and net not 192.168.2.0 mask 255.255.255.0 and net not 192.168.3.0 mask 255.255.255.0"
+                ;;
+                "read_args" )
+                    echo "Type (or paste) the filter expression: "
+                    read args_read
+                    echo \$args_read: $args_read
+                    FILTER_ARGS="-f $args_read"
+                ;;
+                "file_with_args" )
+                    echo "Don't forget: the one-liner file must start with \"-f \" "
+                    echo "and here give its full path, or it must be in current dir"
+                    read the_filename
+                    read NOP
+                    FILTER_ARGS=$(<$the_filename)
+                ;;
+                * )
+                    echo "The arg to -f is one of:" 
+                    echo "nofilter nolocal read_args file_with_args" 
+                    echo "Setting up \$FILTER_ARGS  to \"nofilter\""
+                    FILTER_ARGS=""
+                ;;
+            esac
+        ;;
+        k)
+            chk-tls
+            sleep 0.20
+            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
+                ls -l $uncenz_run/chk-tls_calls_exit
+                exit 1
+            fi
+        ;;
+        r)
+            if [ "X$OPTARG" != "X" ]; then 
+                script_to_run="$OPTARG" # but is run at end
+            else
+                echo "You gave an empty argument, or something else is wrong."
+            fi
+        ;;
+    esac
+done
+#echo \$FILTER_ARGS: $FILTER_ARGS
+shift $(($OPTIND - 1))
+
 # The includes below must reside in same dir as $0 (usually /usr/local/bin/),
 # and they are plain non-exec files
 . uncenz-ip6-per-conf
@@ -222,62 +278,6 @@ else
     POSITION=""
     FONT_SIZE=""
 fi
-OPTIND=1
-while getopts "hf:kr:" opt; do
-    case "$opt" in
-        h)
-            show_help
-            exit 0
-        ;;
-        f)
-            case "$OPTARG" in
-                "nofilter" )
-                    FILTER_ARGS=""
-                ;;
-                "nolocal" )
-                    FILTER_ARGS="-f net not 192.168.88.0 mask 255.255.255.0 and net not 192.168.2.0 mask 255.255.255.0 and net not 192.168.3.0 mask 255.255.255.0"
-                ;;
-                "read_args" )
-                    echo "Type (or paste) the filter expression: "
-                    read args_read
-                    echo \$args_read: $args_read
-                    FILTER_ARGS="-f $args_read"
-                ;;
-                "file_with_args" )
-                    echo "Don't forget: the one-liner file must start with \"-f \" "
-                    echo "and here give its full path, or it must be in current dir"
-                    read the_filename
-                    read NOP
-                    FILTER_ARGS=$(<$the_filename)
-                ;;
-                * )
-                    echo "The arg to -f is one of:" 
-                    echo "nofilter nolocal read_args file_with_args" 
-                    echo "Setting up \$FILTER_ARGS  to \"nofilter\""
-                    FILTER_ARGS=""
-                ;;
-            esac
-        ;;
-        k)
-            chk-tls
-            sleep 0.20
-            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-                ls -l $uncenz_run/chk-tls_calls_exit
-                exit 1
-            fi
-        ;;
-        r)
-            if [ "X$OPTARG" != "X" ]; then 
-                script_to_run="$OPTARG" # but is run at end
-            else
-                echo "You gave an empty argument, or something else is wrong."
-            fi
-        ;;
-    esac
-done
-#echo \$FILTER_ARGS: $FILTER_ARGS
-shift $(($OPTIND - 1))
-
 if [ "$dumper" == "dumpcap" ]; then
     echo "WARNING: dumpcap has not been tested for the "-C" option addition"
     echo "let alone $FILTER_ARGS (or anything else at all for years)"
