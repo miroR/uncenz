@@ -72,7 +72,12 @@ fi
 
 PCAPs=$1
 
-> .pcaps-no-split
+# we need a random string so (potentially) multiple instances of uncenz-2nd can
+# run side by side (not on same PCAP though at this time)
+rand_str=$(dd if=/dev/urandom bs=4 count=1 | xxd -g0 | awk '{print $2}')
+pcaps_no_split="pcaps_no_split-$rand_str"
+> $uncenz_run/$pcaps_no_split
+read NOP
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # See uncenz-1st for these variables:
     # tsh=${ts}_${hst}
@@ -89,26 +94,27 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "Not echoing the split PCAP to the list file:"
         ls -l $i.pcap
     else
-        #TO_DO Do this without file .pcaps-no-split
-        echo $i.pcap >> .pcaps-no-split
+        #TO_DO Do this without file $uncenz_run/$pcaps_no_split
+        echo $i.pcap >> $uncenz_run/$pcaps_no_split
     fi
 done
-cat_ls_file .pcaps-no-split
-PCAPs=$(<.pcaps-no-split)
+cat_ls_file $uncenz_run/$pcaps_no_split
+PCAPs=$(<$uncenz_run/$pcaps_no_split)
     
-for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
-    ls -l $i.pcap; echo
+for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
+    ls -l $i_full.pcap; echo
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
+    echo \$i_full: $i_full
     read NOP
-    echo \$i: $i
-    i_tmp=$i
-    echo \$i_tmp: $i_tmp
-    read NOP
+    #i_tmp=$i_full
+    #echo \$i_tmp: $i_tmp
+    #read NOP
     #TO_DO var i changes below from original at this for loop start. Not good.
-    i=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
+    # changed i to i_full (for full basename)
+    i=$(echo $i_full | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
     echo \$i: $i
-    hst_p=$(echo $i_tmp | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
+    hst_p=$(echo $i_full | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
     echo \$hst_p: $hst_p
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
@@ -121,7 +127,27 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1/'| sed 's/-00_/_/')
     echo \$scr: $scr
     read NOP
-    if [ ! -e "$scr.mkv" ]; then
+    # 2024-06-22 started using also webm, so introduce var ext
+    if [ -e "$scr.mkv" ]; then
+        ext="mkv"
+    else
+        if [ -e "$scr.webm" ]; then
+            ext="webm"
+        fi
+    fi
+    if [ -e "$scr.mkv" ] && [ -e "$scr.webm" ]; then
+        echo "Pls.: there can be only one of:"
+        ls -l $scr.mkv $scr.webm
+        echo "and you have both, can't work like that."
+        ext=""
+    fi
+    if [ "${ext}X" == "X" ]; then
+        echo "\$ext: $ext"
+        echo "i.e. \$ext is empty. See the above notes, fix it,"
+        echo "and run the script again."
+        exit 0
+    fi
+    if [ ! -e "$scr.$ext" ]; then
         # The case for no-screencasting captures (with uncenz-inter{,-kill}.sh)
         touch .${i_h_p}_no_scr
         ls -l .${i_h_p}_no_scr
@@ -444,61 +470,62 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     fi
 
 
-    if [ -e "$scr.mkv" ]; then
+    if [ -e "$scr.$ext" ]; then
         # debug, del 2 ln
         echo \$scr: $scr
         read NOP
     fi
     echo \$TERM: $TERM
     read NOP
-    # Before perusal of course only $scr.mkv there.
+    # Before perusal of course only $scr.$ext there.
     #
-    # With Xorg casts, $scr-g2.mkv and $scr-g2_0.mkv are usually made
+    # With Xorg casts, $scr-g2.$ext and $scr-g2_0.$ext are usually made
     # but will not be kept, as they are often 5-8 times larger than
-    # original $scr.mkv.
+    # original $scr.$ext.
     #
-    # For Wayland casts, $scr-g2.mkv may often not be created, such as for
+    # For Wayland casts, $scr-g2.$ext may often not be created, such as for
     # several hours casts, as it is too expensive and too large. Instead
-    # the $scr-g2_0.mkv created from Wayland cast has only the 'g2' in name so
+    # the $scr-g2_0.$ext created from Wayland cast has only the 'g2' in name so
     # I can use the same script uncenz-scr_CMD_create.sh for both Wayland and
     # Xorg casts.
     #
     # Which script need only correct offset given in .$scr-g2-0
     #
-    # For both Xorg and Wayland either $scr-g2_0.mkv is sufficient
-    # (perusal-state) or $scr.mkv orig and/or .$scr-g2.CMD and .$scr-g2-0
-    # should exist (archive-state), so $scr-g2_0.mkv can be re-created.
+    # For both Xorg and Wayland either $scr-g2_0.$ext is sufficient
+    # (perusal-state) or $scr.$ext orig and/or .$scr-g2.CMD and .$scr-g2-0
+    # should exist (archive-state), so $scr-g2_0.$ext can be re-created.
     #
     for file in .$scr-g2.CMD .$scr-g2-0 ; do
         cat_ls_file $file
     done
-    ls_file $scr-g2_0.mkv
+    ls_file $scr.$ext
+    ls_file $scr-g2_0.$ext
 
     echo "Next is if not exist .${i_h_p}_no_scr"
     . cont_br_short
     if [ ! -e ".${i_h_p}_no_scr" ]; then
         unset scr_g2_0_ok
-        echo "Next is: NOT run: mpv $scr{,-g2,-g2_0}.mkv ?"
+        echo "Next is: NOT run: mpv $scr{,-g2,-g2_0}.$ext ?"
         . cont_br_short
-        echo "NOT run: mpv $scr{,-g2,-g2_0}.mkv ?"
+        echo "NOT run: mpv $scr{,-g2,-g2_0}.$ext ?"
         ask
         if [ "$?" == 0 ]; then
-            echo "mpv $scr{,-g2,-g2_0}.mkv"
+            echo "mpv $scr{,-g2,-g2_0}.$ext"
             echo "not run by user's choice"
         else
-            if [ -e "$scr-g2_0.mkv" ]; then
-                ls_file $scr-g2_0.mkv
+            if [ -e "$scr-g2_0.$ext" ]; then
+                ls_file $scr-g2_0.$ext
                 scr_e=$scr-g2_0
                 echo "Assuming the PCAP/screencast have already been synced."
             else
-                if [ -e "$scr-g2.mkv" ]; then
-                    ls_file $scr-g2.mkv
+                if [ -e "$scr-g2.$ext" ]; then
+                    ls_file $scr-g2.$ext
                     scr_e=$scr-g2
                 else
-                    ls_file $scr.mkv
+                    ls_file $scr.$ext
                     scr_e=$scr
                 fi
-                echo "NOTE: With the offset in $scr.mkv that you will assess we will create next:"
+                echo "NOTE: With the offset in $scr.$ext that you will assess we will create next:"
                 cat_ls_file .$scr-g2.CMD
                 if [ -e ".$scr-g2-0" ]; then
                     # if non printing char in .$scr-g2-0, get rid of it
@@ -516,27 +543,27 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             echo "NOTE: mpv will run in bg with terminal I/O disabled."
             echo "Do follow STDOUT here in this terminal!"
             echo "(just focus back to this terminal, and hit Enter)"
-            echo "mpv --window-scale=0.95 -no-terminal $scr_e.mkv now"
+            echo "mpv --window-scale=0.95 -no-terminal $scr_e.$ext now"
             . cont_br_short
-            mpv --window-scale=0.95 -no-terminal $scr_e.mkv & scr_pid=$!
+            mpv --window-scale=0.95 -no-terminal $scr_e.$ext & scr_pid=$!
             echo $scr_pid > $TMP/${i_h_p}_scr.pid
             echo $(<$TMP/${i_h_p}_scr.pid)
             read NOP
-            if [ -e "$scr-g2_0.mkv" ] || [ -e ".$scr-g2-0" ] && [ -s ".$scr-g2-0" ] && [ -e ".$scr-g2.CMD" ] && [ -s ".$scr-g2.CMD" ]; then
+            if [ -e "$scr-g2_0.$ext" ] || [ -e ".$scr-g2-0" ] && [ -s ".$scr-g2-0" ] && [ -e ".$scr-g2.CMD" ] && [ -s ".$scr-g2.CMD" ]; then
                 echo "We will check on these:"
-                ls_file $scr-g2_0.mkv
+                ls_file $scr-g2_0.$ext
                 cat_ls_file .$scr-g2-0
                 cat_ls_file .$scr-g2.CMD
                 echo \"\$scr_g2_0_ok\": \"$scr_g2_0_ok\"
 
-                echo "Next is if not exist .$scr-g2_0.mkv"
+                echo "Next is if not exist .$scr-g2_0.$ext"
                 . cont_br_short
                 # '&&' stronger then '||' ? Else script wrong!
                 # This is the case with already worked and archived
                 # PCAPs/screencast/other-related sets, that have all
                 # been adjusted so that synced/perusable casts can be
                 # re-created.
-                if [ ! -e "$scr-g2_0.mkv" ]; then
+                if [ ! -e "$scr-g2_0.$ext" ]; then
                     cat_ls_file .$scr-g2.CMD
                     ask "Execute it now?"
                     if [ "$?" == 0 ]; then  
@@ -550,16 +577,16 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                         echo \$parts_start: $parts_start
                     fi
                 fi
-                if [ -e "$scr-g2_0.mkv" ]; then
-                    ls -l $scr-g2_0.mkv
+                if [ -e "$scr-g2_0.$ext" ]; then
+                    ls -l $scr-g2_0.$ext
                     echo "WARNING: to decline below may be DANGEROUS"
                 fi
-                ask "set scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv if exist"
+                ask "set scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.$ext if exist"
                 if [ "$?" == 0 ]; then
                     scr_g2_0_ok="y"
                 else
-                    if [ -e "$scr-g2_0.mkv" ]; then
-                        rm -iv $scr-g2_0.mkv
+                    if [ -e "$scr-g2_0.$ext" ]; then
+                        rm -iv $scr-g2_0.$ext
                     fi
                 fi
             else
@@ -572,7 +599,7 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     unset offset    # else we get $offset from previous run
                     cat_ls_file .$scr-g2-0
                     echo "###########################################################"
-                    echo "Pls. input the offset to cut $scr.mkv from into the filename:"
+                    echo "Pls. input the offset to cut $scr.$ext from into the filename:"
                     ls -l .$scr-g2-0
                     echo "with sole content of Nmin:NNsec.NNNmilisec of the offset"
                     echo "such as "0:03.500" without quotes."
@@ -592,20 +619,20 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             fi
             echo \$scr_g2_0_ok: $scr_g2_0_ok
             read NOP
-            echo "Next is while not exists \$scr-g2_0.mkv and \$scr_g2_0_ok not y"
+            echo "Next is while not exists \$scr-g2_0.$ext and \$scr_g2_0_ok not y"
             . cont_br_short
-            while [ ! -e "$scr-g2_0.mkv" ] || [ "$scr_g2_0_ok" != "y" ]; do
-                echo "uncenz-scr_CMD_create.sh $scr.mkv $parts_start"
+            while [ ! -e "$scr-g2_0.$ext" ] || [ "$scr_g2_0_ok" != "y" ]; do
+                echo "uncenz-scr_CMD_create.sh $scr.$ext $parts_start"
                 # $parts_start can even be not set, would work with 1st arg
                 # but only if exists correct .$scr-g2-0 file
-                uncenz-scr_CMD_create.sh $scr.mkv $parts_start
-                echo "(${0##/}: uncenz-scr_CMD_create.sh $scr.mkv $parts_start)"
+                uncenz-scr_CMD_create.sh $scr.$ext $parts_start
+                echo "(${0##/}: uncenz-scr_CMD_create.sh $scr.$ext $parts_start)"
                 echo
-                ask "set \$scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.mkv"
+                ask "set \$scr_g2_0_ok to y, declining will rm -iv $scr-g2_0.$ext"
                 if [ "$?" == 0 ]; then
                     scr_g2_0_ok="y"
                 else
-                    rm -iv $scr-g2_0.mkv
+                    rm -iv $scr-g2_0.$ext
                 fi
                 echo \$scr_g2_0_ok: $scr_g2_0_ok
                 read NOP
@@ -622,17 +649,17 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "Next is prepare for archiving, as \$scr... manipulation should be over."
     . cont_br_short
     # Another job before termination is removal of $scr temps.
-    if [ -e "$scr-g2_0.mkv" ] && [ -e "$scr-g2.mkv" ]; then
-        # Mostly, if $scr-g2_0.mkv, $scr-g2.mkv not needed
-        rm -v $scr-g2.mkv
+    if [ -e "$scr-g2_0.$ext" ] && [ -e "$scr-g2.$ext" ]; then
+        # Mostly, if $scr-g2_0.$ext, $scr-g2.$ext not needed
+        rm -v $scr-g2.$ext
         read NOP
     fi
-    if [ -e "$scr-g2_0.mkv" ]; then
-        # Keep $scr-g2_0.mkv or not? Probably remove. If short duration, easy to
+    if [ -e "$scr-g2_0.$ext" ]; then
+        # Keep $scr-g2_0.$ext or not? Probably remove. If short duration, easy to
         # recreate, if long, too large. However, on repeated analysis, keep
         # yet! So, ask with '-i'.
-        ls -l $scr-g2_0.mkv
-        rm -iv $scr-g2_0.mkv
+        ls -l $scr-g2_0.$ext
+        rm -iv $scr-g2_0.$ext
     fi
 
     # If ${i_h_p}_list is saved, will get this timestamp:
@@ -682,8 +709,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     fi
     rm -v .${i_h_p}_list_do_save
     read NOP
-    if [ -e ".pcaps-no-split" ]; then
-        rm -v .pcaps-no-split
+    if [ -e "$uncenz_run/$pcaps_no_split" ]; then
+        rm -v $uncenz_run/$pcaps_no_split
     fi
     echo "NOT terminate all windows opened with this run of ${0##/}?"
     echo "default: do terminate (just hit Enter)"

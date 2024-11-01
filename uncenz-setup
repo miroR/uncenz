@@ -22,13 +22,13 @@ hst=$(hostname|sed 's/\(...\).*/\1/')
 # I'll be running either xterm's under xorg or foot under wayland, either, never both.
 if [ ! -n "$TERM" ]; then
     # Likely not needed, will else will always execute.
-    ALACRITTY_CHK=$( ps aux | grep '\<foot\>' | grep -v grep )
+    FOOT_CHK=$( ps aux | grep '\<foot\>' | grep -v grep )
     XTERM_CHK=$( ps aux | grep '\<xterm\>' | grep -v grep )
     read NOP
-    if [ "X${ALACRITTY_CHK}" != "X" ] && [ "X${XTERM_CHK}" == "X" ]; then
+    if [ "X${FOOT_CHK}" != "X" ] && [ "X${XTERM_CHK}" == "X" ]; then
         TERM="foot" 
     fi
-    if [ "X${XTERM_CHK}" != "X" ] && [ "X${ALACRITTY_CHK}" == "X" ]; then
+    if [ "X${XTERM_CHK}" != "X" ] && [ "X${FOOT_CHK}" == "X" ]; then
         TERM="xterm" 
     fi
 #else

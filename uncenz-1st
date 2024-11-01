@@ -282,15 +282,15 @@ if [ "$dumper" == "dumpcap" ]; then
     echo "WARNING: dumpcap has not been tested for the "-C" option addition"
     echo "let alone $FILTER_ARGS (or anything else at all for years)"
     read NOP
-    sudo -s $dumper -i any -C 300 -w $the_dump $FILTER_ARGS &
+    sudo -s $dumper -i any -C 2000 -w $the_dump $FILTER_ARGS &
 fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
         ## Tried but couldn't get it to work in Wayland with foot
-        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 300 -i any -U -v -w $the_dump $FILTER_ARGS &
-        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 300 -i any -U -v -w $the_dump $FILTER_ARGS &"
-        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 300 -i any -U -v -w $the_dump $FILTER_ARGS &
+        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &
+        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &"
+        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &
 
         #echo -n "Not running? pls. run manually, separate teminal."
         sleep 0.3
@@ -334,7 +334,7 @@ if [ "$TERM" == "xterm" ]; then
     recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
 fi
 if [ "$TERM" == "foot" ]; then
-    wf-recorder -c libx265 -p g=20 -f $the_cast &> /dev/null & recpid=$!
+    wf-recorder -c libx264 -p g=20 -f $the_cast &> /dev/null & recpid=$!
 fi
 
 dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')

@@ -38,7 +38,12 @@ if [ -n "$1" ]; then
     scr_file="$1"
     echo \$scr_file: $scr_file
     ext=${scr_file##*.}
-    scr=${scr_file%*.mkv}
+    if ( echo $scr_file | grep '\.webm$' ); then
+        scr=${scr_file%*.webm}
+    fi
+    if ( echo $scr_file | grep '\.mkv$' ); then
+        scr=${scr_file%*.mkv}
+    fi
     scr_file=$scr.$ext
     ls -l $scr.$ext
     echo "(ls -l \$scr.\$ext)"
@@ -110,21 +115,30 @@ while [ "$part_001_001_ok" != "y" ]; do
         read NOP
         ask "Try with these values?"
         if [ "$?" == 0 ]; then
+            if [ "$ext" == "mkv" ]; then
                 echo "Running:"
                 echo "ffmpeg -y -i ${scr}_-001.$ext -c:v hevc -g 2 ${scr}_-001-g2.$ext &> /dev/null" |& tee -a .$scr-g2.CMD
                 echo "echo \"Will notify when ${scr}_-001-g2.$ext is created\"" |& tee -a .$scr-g2.CMD
                 ffmpeg -y -i ${scr}_-001.$ext -c:v hevc -g 2 ${scr}_-001-g2.$ext &> /dev/null
                 echo "ls -l ${scr}_-001-g2.$ext" >> .$scr-g2.CMD
                 ls -l ${scr}_-001-g2.$ext
-                #read NOP
-                echo "mkvmerge -q -o ${scr}_-001-g2_.$ext --split timecodes:$parts_start ${scr}_-001-g2.$ext" |& tee -a .$scr-g2.CMD
-                mkvmerge -q -o ${scr}_-001-g2_.$ext --split timecodes:$parts_start ${scr}_-001-g2.$ext
-                echo "ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext" |& tee -a .$scr-g2.CMD
-                ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext
-                part_001_001=$(ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext)
-                echo "# \$part_001_001: $part_001_001" |& tee -a .$scr-g2.CMD
-                part_001_001M=$(echo $part_001_001*1000/1|bc)
-                echo "# \$part_001_001M: $part_001_001M" |& tee -a .$scr-g2.CMD
+            fi
+            if [ "$ext" == "webm" ]; then
+                echo "Running:"
+                echo "ffmpeg -y -i ${scr}_-001.$ext -c:v libvpx-vp9 -row-mt 1 -crf 55 -g 2 ${scr}_-001-g2.$ext &> /dev/null" |& tee -a .$scr-g2.CMD
+                echo "echo \"Will notify when ${scr}_-001-g2.$ext is created\"" |& tee -a .$scr-g2.CMD
+                ffmpeg -y -i ${scr}_-001.$ext -c:v libvpx-vp9 -row-mt 1 -crf 55 -g 2 ${scr}_-001-g2.$ext &> /dev/null
+                echo "ls -l ${scr}_-001-g2.$ext" >> .$scr-g2.CMD
+                ls -l ${scr}_-001-g2.$ext
+            fi
+            echo "mkvmerge -q -o ${scr}_-001-g2_.$ext --split timecodes:$parts_start ${scr}_-001-g2.$ext" |& tee -a .$scr-g2.CMD
+            mkvmerge -q -o ${scr}_-001-g2_.$ext --split timecodes:$parts_start ${scr}_-001-g2.$ext
+            echo "ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext" |& tee -a .$scr-g2.CMD
+            ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext
+            part_001_001=$(ffprobe -v 0 -of default=nw=1:nk=1 -show_entries format=duration ${scr}_-001-g2_-001.$ext)
+            echo "# \$part_001_001: $part_001_001" |& tee -a .$scr-g2.CMD
+            part_001_001M=$(echo $part_001_001*1000/1|bc)
+            echo "# \$part_001_001M: $part_001_001M" |& tee -a .$scr-g2.CMD
         else
             echo "user declined to manipulate starting with these:"
             echo "\$parts_start: $parts_start"
@@ -135,23 +149,24 @@ while [ "$part_001_001_ok" != "y" ]; do
             continue
         fi
     else
-        echo "in else, i.e. acceptably synced as captured"
+       echo "in else, i.e. acceptably synced as captured"
+       echo "or old Xorg 800x600 or such captures (NOT TESTED recently)"
         echo \$parts_start: $parts_start
         if [ "$TERM" == "xterm" ]; then
             echo "Running:"
-            echo "ffmpeg -i $scr.mkv -map 0:v -c:v libx264 -g 2 $scr-g2.mkv" >> .$scr-g2.CMD
+            echo "ffmpeg -i $scr.$ext -map 0:v -c:v libx264 -g 2 $scr-g2.$ext" >> .$scr-g2.CMD
             echo "echo \"Will notify when $scr-g2.$ext is created\"" >> .$scr-g2.CMD
-            ffmpeg -i $scr.mkv -map 0:v -c:v libx264 -g 2 $scr-g2.mkv
+            ffmpeg -i $scr.$ext -map 0:v -c:v libx264 -g 2 $scr-g2.$ext
             echo "ls -l $scr-g2.$ext" >> .$scr-g2.CMD
             ls -l $scr-g2.$ext
-            echo "ln -s $scr-g2.mkv $scr-g2_0.mkv" >> .$scr-g2.CMD
-            ln -s $scr-g2.mkv $scr-g2_0.mkv
+            echo "ln -s $scr-g2.$ext $scr-g2_0.$ext" >> .$scr-g2.CMD
+            ln -s $scr-g2.$ext $scr-g2_0.$ext
         else
             echo \$TERM: $TERM  # foot
-            echo "if [ ! -e "$scr-g2_0.mkv" ]; then ln -s $scr.mkv $scr-g2_0.mkv; fi" >> .$scr-g2.CMD
-            if [ ! -e "$scr-g2_0.mkv" ]; then ln -s $scr.mkv $scr-g2_0.mkv; fi
-            echo "ls -l $scr.mkv $scr-g2_0.mkv" >> .$scr-g2.CMD
-            ls -l $scr.mkv $scr-g2_0.mkv
+            echo "if [ ! -e "$scr-g2_0.$ext" ]; then ln -s $scr.$ext $scr-g2_0.$ext; fi" >> .$scr-g2.CMD
+            if [ ! -e "$scr-g2_0.$ext" ]; then ln -s $scr.$ext $scr-g2_0.$ext; fi
+            echo "ls -l $scr.$ext $scr-g2_0.$ext" >> .$scr-g2.CMD
+            ls -l $scr.$ext $scr-g2_0.$ext
         fi
         if [ ! -e ".$scr-g2-0" ] || [ ! -s ".$scr-g2-0" ]; then
             echo "$parts_start" > .$scr-g2-0
@@ -171,20 +186,25 @@ while [ "$part_001_001_ok" != "y" ]; do
             exit 0
         else
             part_001_001_ok=y
-            echo "mkvmerge -q -o ${scr}-g2_0.$ext ${scr}_-001-g2_-002.$ext + ${scr}_-002.$ext" |& tee -a .$scr-g2.CMD
-            mkvmerge -q -o ${scr}-g2_0.$ext ${scr}_-001-g2_-002.$ext + ${scr}_-002.$ext
+            if [ -e "${scr}_-001-g2_-002.$ext" ]; then
+                echo "mkvmerge -q -o ${scr}-g2_0.$ext ${scr}_-001-g2_-002.$ext + ${scr}_-002.$ext" |& tee -a .$scr-g2.CMD
+                mkvmerge -q -o ${scr}-g2_0.$ext ${scr}_-001-g2_-002.$ext + ${scr}_-002.$ext
+            # for cases where --split ${scr}_-001-g2.$ext above gets only one file
+            else
+                mv -iv ${scr}_-002.$ext ${scr}-g2_0.$ext |& tee -a .$scr-g2.CMD
+            fi
             mpv --window-scale=0.95 ${scr}-g2_0.$ext
-            echo "ls -l ${scr}_-00[12].mkv ${scr}_-001-g2.mkv" >> .$scr-g2.CMD
-            ls -l ${scr}_-00[12].mkv ${scr}_-001-g2.mkv
-            echo "ls -l ${scr}_-001-g2_-00[12].mkv" >> .$scr-g2.CMD
-            ls -l ${scr}_-001-g2_-00[12].mkv
+            echo "ls -l ${scr}_-00[12].$ext ${scr}_-001-g2.$ext" >> .$scr-g2.CMD
+            ls -l ${scr}_-00[12].$ext ${scr}_-001-g2.$ext
+            echo "ls -l ${scr}_-001-g2_-00[12].$ext" >> .$scr-g2.CMD
+            ls -l ${scr}_-001-g2_-00[12].$ext
             echo "echo \"All to be removed when you hit Enter\"" |& tee -a .$scr-g2.CMD
             echo "read NOP" |& tee -a .$scr-g2.CMD
             read NOP
-            echo "rm -v ${scr}_-00[12].mkv ${scr}_-001-g2.mkv" >> .$scr-g2.CMD
-            rm -v ${scr}_-00[12].mkv ${scr}_-001-g2.mkv
-            echo "rm -v ${scr}_-001-g2_-00[12].mkv" >> .$scr-g2.CMD
-            rm -v ${scr}_-001-g2_-00[12].mkv
+            echo "rm -v ${scr}_-00[12].$ext ${scr}_-001-g2.$ext" >> .$scr-g2.CMD
+            rm -v ${scr}_-00[12].$ext ${scr}_-001-g2.$ext
+            echo "rm -v ${scr}_-001-g2_-00[12].$ext" >> .$scr-g2.CMD
+            rm -v ${scr}_-001-g2_-00[12].$ext
             echo "Pls. review/edit the script file:"
             echo "(cat_ls_file .$scr-g2.CMD next)"
             read NOP
