@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# uncenz-browser-mods-2 --  see uncenz-browser-mods pls.
+#                    Run as "uncenz-kill -r uncenz-browser-mods-2" to save the
+#                    browser (and possibly user-) -written modifications for
+#                    later analysis
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
+#
+
+function ask()
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+function ls_dir_head_tail () {
+    # we check $2 that it greps on any decimal number
+    if [ ! -d "$1" ]; then
+        echo "$1 not a dir, can't work it with function ls_dir_head_tail"
+    else
+        if [ -n "$2" ] && ( echo $2 | grep [0-9] ); then
+            ls -l "$1"|head -n$2
+            echo "[...]"
+            ls -l "$1"|tail -n$2
+            ls -ld "$1"
+            echo "(ls -l/ld $1) | head/tail $2"
+            #read NOP
+        else
+            ls -l "$1"|head -n$2
+            echo "[...]"
+            ls -l "$1"|tail -n$2
+            ls -ld "$1"
+            echo "(ls -l/ld $1) | head/tail $2"
+            #read NOP
+        fi
+    fi
+}
+
+function cat_ls_file () {
+    if [ -e "$1" ]; then
+        cat $1
+        ls -l $1
+        echo "(cat/ls -l $1)"
+        #read NOP
+    else
+        echo "$1 non extant"; echo 
+    fi
+}
+
+. /home/$USER/.uncenz.conf
+EXCLUDES="/home/$USER/.uncenz-browser-mods.exclude"
+
+echo ". uncenz-setup from ${0##*/}"
+. uncenz-setup
+
+if ( echo $PM_BROWSER_DIR|grep moonchild|grep "pale moon" ); then
+    browser="palemoon"
+fi
+echo \$browser: $browser
+read NOP
+if [ "X$browser" != "X" ]; then
+    browser_ps=$( ps aux | grep $browser | grep -v grep )
+    while [ "X$browser_ps" != "X" ]; do #  && [ "$go_ahead_anyway" != "yes" ]
+        echo \$browser_ps: $browser_ps
+        echo -e "$browser is likely running."
+        echo -e "To flush all the cookies and other stuff,\nshut down $browser now."
+        echo "sleep 3"
+        browser_ps=$( ps aux | grep $browser | grep -v grep )
+        #echo \$browser_ps: $browser_ps
+        #echo "But if you want to go ahead anyway without shutting down the browser, type 'yes'"
+        #read go_ahead_anyway
+        #echo \$go_ahead_anyway: $go_ahead_anyway
+        sleep 3
+    done
+fi
+ts=$(<$uncenz_run/uncenz-ts)
+tsh=${ts}_${hst}
+echo \$ts: $ts
+echo \$tsh: $tsh
+read NOP
+echo \$PM_BROWSER_DIR: $PM_BROWSER_DIR
+ls_dir_head_tail "$PM_BROWSER_DIR/" 3
+ln -s "$PM_BROWSER_DIR/" dump_${tsh}_PM_current
+ls_dir_head_tail dump_${tsh}_PM_current/ 3
+read NOP
+if [ -e "$uncenz_run/uncenz-ts.old" ]; then
+    ts_old=$(<$uncenz_run/uncenz-ts.old)
+    tsh_old=${ts_old}_${hst}
+fi
+echo \$ts_old: $ts_old
+echo \$tsh_old: $tsh_old
+read NOP
+if [ -e "$uncenz_run/uncenz-ts.mod" ]; then
+    ts_mod=$(<$uncenz_run/uncenz-ts.mod)
+    tsh_mod=${ts_mod}_${hst}
+fi
+echo \$ts_mod: $ts_mod
+echo \$tsh_mod: $tsh_mod
+read NOP
+if [ -e "dump_${tsh_mod}_PM" ]; then
+    cp -ia  dump_${tsh_mod}_PM/ dump_${tsh}_PM/
+    echo "(cp -ia  dump_${tsh_mod}_PM/ dump_${tsh}_PM/)"
+else
+    cp -ia  dump_${tsh_old}_PM/ dump_${tsh}_PM/
+    echo "(cp -ia  dump_${tsh_old}_PM/ dump_${tsh}_PM/)"
+fi
+ls_dir_head_tail dump_${tsh}_PM/ 3
+read NOP
+
+rsync -cnav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_current/ dump_${tsh}_PM/
+echo "(rsync -cnav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_current/ dump_${tsh}_PM/)"
+read NOP
+
+echo \$EXCLUDES: $EXCLUDES
+cat_ls_file $EXCLUDES
+ask "Do the rsync'ing?"
+if [ "$?" == 0 ]; then
+    rsync -cav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_current/ dump_${tsh}_PM/
+fi
+
+if [ -e "dump_${tsh}_PM_current" ]; then rm -iv dump_${tsh}_PM_current; fi
+read NOP
+
+# vim: set tabstop=4 expandtab:

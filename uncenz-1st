@@ -5,7 +5,7 @@
 # this script is part the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
-# Copyright (C) 2015, 2020, 2021, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
+# Copyright (C) 2015, 2020, 2021, 2023, 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -52,17 +52,15 @@ function show_help {
     echo "${0##*/} -- first phase of uncenz,"
     echo "starting screencasting and packet capturing"
     echo
-    echo "Usage: ${0##*/} <an-include-script-with-capture-filters> <another-one>"
-    echo "Or even:"
-    echo "${0##*/} \"\" <another-one>"
-    echo "(to run, at end, just the other extra one)."
+    echo "Usage: ${0##*/} [-hfkr] [argument]"
     echo ""
-    echo "  Without arguments uncenz captures in promiscuous mode,"
+    echo "  Without switches or arguments uncenz captures in promiscuous mode,"
     echo "  on all available interfaces."
     echo
-    echo "  With first argument, an executable file \$include_filter_run,"
-    echo "  it starts the $dumper with whatever its capture filter contains."
-    echo "  \$include_filter_run is named with no spaces, and resides"
+    echo "  -h show this help and exit"
+    echo "  -f <filtering name or expression> (read the code for details)"
+    echo "  -k runs chk-tls"
+    echo "  -r <script_to_run>"
     echo "  where the ${0##*/} is regularly run from,"
     echo "  usually in /usr/local/bin ."
     echo

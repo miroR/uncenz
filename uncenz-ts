@@ -29,14 +29,17 @@ if [ -e "$uncenz_run/uncenz-ts" ]; then
     #echo \$ts_old: $ts_old
     #read NOP
     echo $ts_old > $uncenz_run/uncenz-ts.old
-
-    if [ "$ts" == "$ts_old" ]; then
+    if [ -e "$uncenz_run/uncenz-ts.mod" ]; then
+        ts_mod=$(<$uncenz_run/uncenz-ts.mod)
+    fi
+    if [ "$ts" == "$ts_old" ] || [ "$ts" == "$ts_mod" ]; then
         echo \$ts_old: $ts_old
+        echo \$ts_mod: $ts_mod
         echo \$ts: $ts
         date
         echo "We won't overwrite the files just made."
-        echo "Wait till this minute is over, then run the script again,"
-        echo "two sessions in the same minute is a bad idea."
+        echo -e "Wait till this minute (or 2 in case of \$ts_mod) is over,\n\tthen run the script again,"
+        echo "two sessions in the same minute\n\t(or 2 if there was need for creating \$ts_mod) is a bad idea."
         echo "Pls. cosider Ctrl-C now!"
         read NOP_permanent
     else

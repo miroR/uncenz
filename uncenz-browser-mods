@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# uncenz-browser-mods -- what a browser, used during the session, wrote, when accessing places,
+#                    or user set it to write such as (dis)allowing cookies, in its folder, such as
+#                    /home/$USER/.moonchild\ productions/pale\ moon/XXXXXXXX.default/
+#                    which is mostly cookies, but also other changes.
+#                    Run as "uncenz-1st [other args/switches] -r uncenz-browser-mods" 
+#                    for clean start, see also uncenz-browser-mods-2
+#
+# this script is part the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
+#
+
+function ask()
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+function ls_dir_head_tail () {
+    # we check $2 that it greps on any decimal number
+    if [ ! -d "$1" ]; then
+        echo "$1 not a dir, can't work it with function ls_dir_head_tail"
+    else
+        if [ -n "$2" ] && ( echo $2 | grep [0-9] ); then
+            ls -l "$1"|head -n$2
+            echo "[...]"
+            ls -l "$1"|tail -n$2
+            ls -ld "$1"
+            echo "(ls -l/ld $1) | head/tail $2"
+            #read NOP
+        else
+            ls -l "$1"|head -n$2
+            echo "[...]"
+            ls -l "$1"|tail -n$2
+            ls -ld "$1"
+            echo "(ls -l/ld $1) | head/tail $2"
+            #read NOP
+        fi
+    fi
+}
+
+. /home/$USER/.uncenz.conf
+
+echo ". uncenz-setup from ${0##*/}"
+. uncenz-setup
+
+if ( echo $PM_BROWSER_DIR|grep moonchild|grep "pale moon" ); then
+    browser="palemoon"
+fi
+if [ "X$browser" != "X" ]; then
+    browser_ps=$( ps aux | grep $browser | grep -v grep )
+    while [ "X$browser_ps" == "X" ]; do
+        echo -e "The $browser isn't running.\nAnd it needs to, to save data for analysis."
+        echo -e "Pls. start $browser and hit Enter"
+        read NOP_permanent
+        browser_ps=$( ps aux | grep $browser | grep -v grep )
+    done
+fi
+ts=$(<$uncenz_run/uncenz-ts)
+tsh=${ts}_${hst}
+echo \$ts: $ts
+echo \$tsh: $tsh
+#echo \$tsh_mod: $tsh_mod
+#read NOP
+echo \$PM_BROWSER_DIR: $PM_BROWSER_DIR
+ls_dir_head_tail "$PM_BROWSER_DIR/" 3
+read NOP
+ln -s "$PM_BROWSER_DIR/" dump_${tsh}_PM_atStart
+ls_dir_head_tail dump_${tsh}_PM_atStart/ 3
+read NOP
+if [ -e "$uncenz_run/uncenz-ts.old" ]; then
+    ts_old=$(<$uncenz_run/uncenz-ts.old)
+    tsh_old=${ts_old}_${hst}
+    ts_mod_first6=${ts_old:0:6}
+    ts_mod_last4=${ts_old:7:4}
+    echo \$ts_mod_first6: $ts_mod_first6
+    echo \$ts_mod_last4: $ts_mod_last4
+    read NOP
+    #TO_DO it's not decimal, but counts over from 0 after 23 and 59
+    # Allow 1359 which in ts meand 13h 59m to become 1360, since it's just namespace here? Allow, for now.
+    ts_mod_last4_p=$(echo $ts_mod_last4 + 1|bc)
+    echo \$ts_mod_last4_p: $ts_mod_last4_p
+    read NOP
+    ts_mod="${ts_mod_first6}_${ts_mod_last4_p}"
+    tsh_mod=${ts_mod}_${hst}
+    echo \$ts_mod: $ts_mod
+    echo \$tsh_mod: $tsh_mod
+fi
+read NOP
+rm -v $uncenz_run/uncenz-ts.mod # to previous not get used
+if [ -e "dump_${tsh_old}_PM" ]; then
+    rsync -cnav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_atStart/ dump_${tsh_old}_PM/
+    echo "(rsync -cnav --delete --exclude-from=$EXCLUDES dump_${tsh_old}_PM/ dump_${tsh}_PM_atStart/)"
+    echo dump_${tsh}_PM_atStart/ is for comparing/verifying with dump_${tsh_old}_PM/
+
+    echo "Nothing new? Great! Suggestion: delete symlink dump_${tsh}_PM_atStart"
+    ask; if [ "$?" == 0 ]; then rm -v dump_${tsh}_PM_atStart; fi
+
+    echo "rsync shows lots of mods in dump_${tsh}_PM_atStart ?"
+    ask "cp to dump_${tsh_mod}_PM to rsync update it in next step?"
+    if [ "$?" == 0 ]; then
+        cp -ai dump_${tsh_old}_PM dump_${tsh_mod}_PM
+        ls_dir_head_tail dump_${tsh_mod}_PM/ 3
+        echo "Now we also write file which uncenz-browser-mods-2 will read it's \$ts_mod from"
+        echo $ts_mod > $uncenz_run/uncenz-ts.mod
+    fi
+    ask "rsync -cav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_atStart/ dump_${tsh_mod}_PM/"
+    if [ "$?" == 0 ]; then
+        rsync -cav --delete --exclude-from=$EXCLUDES dump_${tsh}_PM_atStart/ dump_${tsh_mod}_PM/
+        rm -v dump_${tsh}_PM_atStart
+    fi
+else
+    ls -l dump_${tsh_old}_PM
+    echo "Maybe create one manually, for now, to get the workflow on track?..."
+fi
+if [ -e "dump_${tsh}_PM_atStart" ]; then rm -v dump_${tsh}_PM_atStart; fi
+read NOP
+
+# vim: set tabstop=4 expandtab:
