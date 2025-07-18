@@ -5,7 +5,7 @@
 #                    browser (and possibly user-) -written modifications for
 #                    later analysis
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # released under BSD license, pls. see LICENSE
@@ -67,18 +67,19 @@ if ( echo $PM_BROWSER_DIR|grep moonchild|grep "pale moon" ); then
 fi
 echo \$browser: $browser
 read NOP
+unset go_ahead_anyway
 if [ "X$browser" != "X" ]; then
     browser_ps=$( ps aux | grep $browser | grep -v grep )
-    while [ "X$browser_ps" != "X" ]; do #  && [ "$go_ahead_anyway" != "yes" ]
+    while [ "X$browser_ps" != "X" ] && [ "$go_ahead_anyway" != "yes" ]; do
         echo \$browser_ps: $browser_ps
         echo -e "$browser is likely running."
         echo -e "To flush all the cookies and other stuff,\nshut down $browser now."
         echo "sleep 3"
         browser_ps=$( ps aux | grep $browser | grep -v grep )
-        #echo \$browser_ps: $browser_ps
-        #echo "But if you want to go ahead anyway without shutting down the browser, type 'yes'"
-        #read go_ahead_anyway
-        #echo \$go_ahead_anyway: $go_ahead_anyway
+        echo \$browser_ps: $browser_ps
+        echo "But if you want to go ahead anyway without shutting down the browser, type 'yes'"
+        read go_ahead_anyway
+        echo \$go_ahead_anyway: $go_ahead_anyway
         sleep 3
     done
 fi

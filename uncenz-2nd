@@ -14,7 +14,7 @@
 # This script runs on the produce of:
 # https://github.com/miroR/workPCAPs
 #
-# Copyright 2015, 2020, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
+# Copyright 2015, 2020, 2023, 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
@@ -325,23 +325,44 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         cat $TMP/${i_h_p}_list | wc -l
         echo "            entries, but it may not be complete yet"
         echo "-=-=-"
-        ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt
-        ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt
-        read NOP
+        cont=""
         for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
-            echo $ip
-            #read NOP
-            if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
-                ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
-                echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
-                    >> $TMP/${i_h_p}_list
-            fi
-            if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
-                ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
-                echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt \
-                    >> $TMP/${i_h_p}_list
-            fi
+            cont_part=$(ls -1 ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
+                    ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt)
+            cont="$cont $cont_part"
+            # debug, del 1 ln
+            #echo \$cont: $cont | tr ' ' '\012'
         done
+        if [ "X${cont}X" != "XX" ]; then
+            ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt
+            ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt
+            read NOP
+            for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
+                echo $ip
+                #read NOP
+                if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
+                    ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
+                fi
+                if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
+                    ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
+                fi
+            done
+            echo "Do you want to list the above in the:"
+            ls -l $TMP/${i_h_p}_list
+            ask
+            if [ "$?" == 0 ]; then
+                for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
+                    if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
+                        echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
+                            >> $TMP/${i_h_p}_list
+                    fi
+                    if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
+                        echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt \
+                            >> $TMP/${i_h_p}_list
+                    fi
+                done
+            fi
+        fi
     fi
     # Adding the list to be shown as the last tab in Vim
     echo $TMP/${i_h_p}_list >> $TMP/${i_h_p}_list
@@ -515,7 +536,7 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         else
             if [ -e "$scr-g2_0.$ext" ]; then
                 ls_file $scr-g2_0.$ext
-                scr_e=$scr-g2_0
+                scr_e=$scr-g2_0     # [e]ffective
                 echo "Assuming the PCAP/screencast have already been synced."
             else
                 if [ -e "$scr-g2.$ext" ]; then
@@ -528,7 +549,7 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 echo "NOTE: With the offset in $scr.$ext that you will assess we will create next:"
                 cat_ls_file .$scr-g2.CMD
                 if [ -e ".$scr-g2-0" ]; then
-                    # if non printing char in .$scr-g2-0, get rid of it
+                    # there might be non printing char in .$scr-g2-0, so truncate it
                     parts_start=$(<.$scr-g2-0)
                     if [ "X${parts_start}X" == "XX" ]; then
                         echo \$parts_start: $parts_start
@@ -633,13 +654,14 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                     scr_g2_0_ok="y"
                 else
                     rm -iv $scr-g2_0.$ext
+                    > .$scr-g2-0
                 fi
                 echo \$scr_g2_0_ok: $scr_g2_0_ok
                 read NOP
             done
         fi
     else
-        echo "We stick: "
+        echo "There seems to be: "
         ls_file .${i_h_p}_no_scr
         echo "Likely, this is an interim PCAP, without screencasting."
         echo "it has no screencast associated with it"

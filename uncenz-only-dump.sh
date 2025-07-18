@@ -2,7 +2,7 @@
 #
 # uncenz-only-dump.sh                   capture only the network trace
 # 
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # This is a simple standalone script, actually separate from the set, that will

@@ -2,13 +2,97 @@
 # uncenz-setup -- mainly setup dir in /run
 #                 to communicate to parent script
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # released under BSD license, pls. see LICENSE
 #
 # Copyright (C) 2021, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
+
+function ls_file () {
+    if [ -n "$1" ]; then
+        file="$1"
+    else
+        echo "function ls_file needs a filename as 1st arg"; echo 
+    fi
+    if [ -n "$2" ] && [ "$2" == "pause" ]; then
+        PAUSE="y"
+    fi
+    if [ -e "$file" ]; then
+        ls -l $file
+        echo "(ls -l $file)"
+    else
+        echo "$file non extant"; echo 
+    fi
+    if [ "$PAUSE" == "y" ]; then
+        read NOP
+    fi
+}
+
+function cat_ls_file () {
+    if [ -n "$1" ]; then
+        file="$1"
+    else
+        echo "function cat_ls_file needs a filename as 1st arg"; echo 
+    fi
+    if [ -n "$2" ] && [ "$2" == "pause" ]; then
+        PAUSE="y"
+    fi
+    if [ -e "$file" ]; then
+        cat $file
+        ls -l $file
+        echo "(cat/ls -l $1)"
+    else
+        echo "$file non extant"; echo 
+    fi
+    if [ "$PAUSE" == "y" ]; then
+        read NOP
+    fi
+}
+
+function sudo_ls_file () {
+    if [ -n "$1" ]; then
+        file="$1"
+    else
+        echo "function sudo_ls_file needs a filename as 1st arg"; echo 
+    fi
+    if [ -n "$2" ] && [ "$2" == "pause" ]; then
+        PAUSE="y"
+    fi
+    check_exist=$(sudo -s ls -l $file 2>/dev/null)
+    if [ "X$check_exist" != "X" ]; then
+        sudo -s ls -l $file
+        echo "(sudo -s ls -l $file)"
+    else
+        echo "$file non extant"; echo 
+    fi
+    if [ "$PAUSE" == "y" ]; then
+        read NOP
+    fi
+}
+
+function sudo_cat_ls_file () {
+    if [ -n "$1" ]; then
+        file="$1"
+    else
+        echo "function sudo_cat_ls_file needs a filename as 1st arg"; echo 
+    fi
+    if [ -n "$2" ] && [ "$2" == "pause" ]; then
+        PAUSE="y"
+    fi
+    check_exist=$(sudo -s ls -l $file 2>/dev/null)
+    if [ "X$check_exist" != "X" ]; then
+        sudo -s cat $file
+        sudo -s ls -l $file
+        echo "(sudo -s cat/ls -l $1)"
+    else
+        echo "$file non extant"; echo 
+    fi
+    if [ "$PAUSE" == "y" ]; then
+        read NOP
+    fi
+}
 
 myuid=$(id -u)
 uncenz_run="/run/user/$myuid/uncenz"

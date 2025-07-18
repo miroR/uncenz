@@ -2,7 +2,7 @@
 #
 # uncenz-1st -- first phase, screencasting and packet capturing
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # Copyright (C) 2015, 2020, 2021, 2023, 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
@@ -15,11 +15,11 @@
 
 . /home/$USER/.uncenz.conf
 
-#echo ". uncenz-setup from ${0##*/}"
+echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 CUR_DIR=$(pwd)
-#echo \$CUR_DIR: $CUR_DIR
+echo \$CUR_DIR: $CUR_DIR
 if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
     echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
     echo "sleep 3 and exit"
@@ -105,10 +105,6 @@ while getopts "hf:kr:" opt; do
         k)
             chk-tls
             sleep 0.20
-            if [ -e "$uncenz_run/chk-tls_calls_exit" ]; then
-                ls -l $uncenz_run/chk-tls_calls_exit
-                exit 1
-            fi
         ;;
         r)
             if [ "X$OPTARG" != "X" ]; then 
@@ -185,7 +181,7 @@ if [ -n "$recpid" ] && [ "X${recpid}X" != "XX" ] ; then
     ls -ltr | tail -4 ; sleep 2 ; echo
     ls -ltr | tail -4 ; sleep 1
     echo "Enter y/Y when you have killed FFmpeg/wf-recorder if it indeed is the uncenz one,"
-    echo "or allowed it if it is a non-related FFmpeg/wf-recorder run."
+    echo "or allow it if it is a non-related FFmpeg/wf-recorder run."
     echo "(Hit anything other than y/Y and we will exit.)"
     ask 
     if [ "$?" == 0 ]; then
@@ -200,7 +196,7 @@ if [ -n "$dupid" ] || [ "X${dupid}X" != "XX" ] ; then
     ls -ltr | tail -4 ; sleep 2 ; echo
     ls -ltr | tail -4 ; sleep 1
     echo "Enter y/Y when you have killed $dumper if it indeed is the uncenz one,"
-    echo "or allowed it if it is a run non-related to uncenz."
+    echo "or allow it if it is a run non-related to uncenz."
     echo "(Hit anything other than y/Y and we will exit.)"
     ask 
     if [ "$?" == 0 ]; then
@@ -218,20 +214,20 @@ fi
 uncenz-ts
 ts=$(<$uncenz_run/uncenz-ts)
 tsh=${ts}_${hst}
-#echo \$tsh: $tsh
+echo \$tsh: $tsh
 if [ -e "$uncenz_run/uncenz-ts.old" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts.old)
     tsh_old=${ts_old}_${hst}
 fi
-#
-# This stows the name to use in a file $uncenz_run/uncenz-ts (ts is for
-# "time stamp"), such as "150207_0636" for 2015-02-06 06:36.
 #
 
 . uncenz-tlskeylog
 
 the_dump=dump_${tsh}.pcap
 the_cast=Screen_${tsh}.mkv
+echo \$the_dump: $the_dump
+echo \$the_cast: $the_cast
+read NOP
 if [ "$dumper" == "dumpcap" ]; then
     sudo -s touch $the_dump
 fi
@@ -240,6 +236,8 @@ if [ "$dumper" == "tcpdump" ]; then
     sudo -s touch $the_dump
     echo sudo -s chown tcpdump:tcpdump $the_dump
     sudo -s chown tcpdump:tcpdump $the_dump
+	ls -l $the_dump
+	read NOP
 fi
 #TO_DO convert uncenz-ipt-conf-states.sh to an include
 # Sometimes I like to take the state of the network when I'm online before I disconnect
@@ -253,22 +251,6 @@ fi
 #   echo
 #
 
-#TO_DO check if any of this old way I used to do it exist, revise/delete them
-#if [ "$1" ] && [ -n "$1" ] && [ "X${1}" != "X" ]; then
-#    include_filter_run=$1
-#    echo \$include_filter_run: $include_filter_run
-#    if [ -e "/usr/local/bin/$include_filter_run" ] && [ -x "/usr/local/bin/$include_filter_run" ]; then
-#            /usr/local/bin/$include_filter_run
-#        else
-#            echo "The include script you gave:"
-#            echo "$include_filter_run"
-#            echo "does not exist, or is not in the /usr/local/bin/ directory,"
-#            echo "or is not executable"
-#            sleep 3
-#            show_help
-#            exit 0
-#    fi
-#fi
 if [ "$TERM" == "xterm" ]; then
     POSITION="-g 80x4+500+0"
     FONT_SIZE="-fn 8x13"
@@ -276,25 +258,33 @@ else
     POSITION=""
     FONT_SIZE=""
 fi
+if [ -n "$MAX_SIZE" ] && [ ! -z "$MAX_SIZE" ]; then
+    :
+else
+    MAX_SIZE="2000"
+fi
+echo \$MAX_SIZE: $MAX_SIZE
+read NOP
 if [ "$dumper" == "dumpcap" ]; then
     echo "WARNING: dumpcap has not been tested for the "-C" option addition"
     echo "let alone $FILTER_ARGS (or anything else at all for years)"
     read NOP
-    sudo -s $dumper -i any -C 2000 -w $the_dump $FILTER_ARGS &
+    sudo -s $dumper -i any -C $MAX_SIZE -w $the_dump $FILTER_ARGS &
 fi
 if [ "$dumper" == "tcpdump" ]; then
     dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     while [ "X$dupid" == "X" ]; do
         ## Tried but couldn't get it to work in Wayland with foot
-        ##$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &
-        #echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &"
-        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C 2000 -i any -U -v -w $the_dump $FILTER_ARGS &
+        #$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C $MAX_SIZE -i any -U -v -w $the_dump $FILTER_ARGS &
+        echo "$TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C $MAX_SIZE -i any -U -v -w $the_dump $FILTER_ARGS &"
+        $TERM $POSITION $FONT_SIZE -e sudo -s $dumper -C $MAX_SIZE -i any -U -v -w $the_dump $FILTER_ARGS &
 
         #echo -n "Not running? pls. run manually, separate teminal."
         sleep 0.3
         dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     done
 fi
+read NOP
 sleep 0.2
 
 sudo -s touch $the_cast
@@ -348,7 +338,6 @@ echo $dupid > $uncenz_run/uncenz-du.pid
 
 #sudo -s tail -1 /var/log/syslog
 #sudo -s tail -1 /var/log/syslog|cut -d\[ -f2|cut -d] -f1
-# WARNING: this $str0 extraction works correcly only if you in:
 # 'str0' stands for 'string 0', i.e. from where in the log we will later, at
 # termination of this session, grep out the excerpt of the log.
 #str0=$(sudo -s tail -1 /var/log/syslog|awk '{ print $1 }')
@@ -360,23 +349,7 @@ cat $uncenz_run/uncenz-log_str0
 if [ -e "/usr/local/bin/$script_to_run" ] && [ -x "/usr/local/bin/$script_to_run" ]; then
     $script_to_run
     sleep 0.20
-    if [ -e "$uncenz_run/${script_to_run}_calls_exit" ]; then # delete this if, does not apply
-        ls -l $uncenz_run/${script_to_run}_calls_exit
-        exit 1
-    fi
 fi
-
-#if [ -e ".uncenz-include2_abort" ]; then
-#    echo "The $include_script_2 mandates to abort the session."
-#    echo "########################################"
-#    echo; echo "We are aborting."; echo; echo
-#    uncenz-kill
-#    echo; echo "The session has been aborted.";
-#    echo "as $include_script_2 requested"; echo; echo
-#    echo "########################################"
-#fi
-# I added a similar snippet in the uncenz-kill, without which this $2 include
-# may not work (say if it's about extracting from another log).
 
 exit 0
 # vim: set tabstop=4 expandtab:

@@ -9,25 +9,28 @@
 
 . /home/$USER/.uncenz.conf
 
-#echo ". uncenz-setup from ${0##*/}"
+echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 # "ts" is for "time stamp"
+# This stows part of the name to use in a file $uncenz_run/uncenz-ts
+#
 ts=$(date +%y%m%d_%H%M)
-#echo \$ts: $ts
+echo \$ts: $ts
 tsh=${ts}_${hst}
-#echo \$tsh: $tsh
+echo \$tsh: $tsh
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     cont_uncenz_ts=$(cat $uncenz_run/uncenz-ts | grep '[[:print:]]')
     if [ "X${cont_uncenz_ts}X" == "XX" ]; then
-        echo "wrong so:"
+		echo "$uncenz_run/uncenz-ts is empty"
+        echo "which is wrong, so:"
         rm -v $uncenz_run/uncenz-ts
     fi
 fi
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts)
-    #echo \$ts_old: $ts_old
-    #read NOP
+    echo \$ts_old: $ts_old
+    read NOP
     echo $ts_old > $uncenz_run/uncenz-ts.old
     if [ -e "$uncenz_run/uncenz-ts.mod" ]; then
         ts_mod=$(<$uncenz_run/uncenz-ts.mod)
@@ -44,11 +47,9 @@ if [ -e "$uncenz_run/uncenz-ts" ]; then
         read NOP_permanent
     else
         echo $ts > $uncenz_run/uncenz-ts
-        #echo cat $uncenz_run/uncenz-ts
-        #cat $uncenz_run/uncenz-ts
+        cat_ls_file $uncenz_run/uncenz-ts
     fi
 else
     echo $ts > $uncenz_run/uncenz-ts
-    #cat $uncenz_run/uncenz-ts
-    #echo "(cat $uncenz_run/uncenz-ts)"
+    cat_ls_file $uncenz_run/uncenz-ts
 fi

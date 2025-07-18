@@ -2,7 +2,7 @@
 #
 # uncenz-includ-hosts -- include dumpcap/tcpdump run with capture filters
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # released under BSD license, pls. see LICENSE

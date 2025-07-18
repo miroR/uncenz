@@ -1,7 +1,7 @@
 #
 # uncenz-gpg -- verify gpg keys are offlined
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # released under BSD license, pls. see LICENSE
@@ -14,9 +14,10 @@
 f=$(gpg --list-secret-keys --with-colon)
 if [ "$f" != "" ]; then
     #gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
-    col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}')
+    col15=$(gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'|sort -u)
     if [ "$col15" == "#" ]; then
-        echo "Secret key offlined. Pass."
+        echo "Secret key(s) offlined. Pass."
+		read NOP
     else
         #gpg --list-secret-keys --with-colons | grep '^sec\>' | awk -F: '{print $15}'
         # Check how many keys are not offlined

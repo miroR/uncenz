@@ -1,7 +1,7 @@
 #
 # uncenz-tlskeylog -- verify tlskeylog'ing is normal
 #
-# this script is part the uncenz set of scripts:
+# this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # released under BSD license, pls. see LICENSE
@@ -37,9 +37,9 @@ else
     read NOP
 fi
 # Needed only for learning/debugging. Should be commented out (3 ln).
-#echo "cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk"
-#cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk
-#read NOP
+echo "cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk"
+cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk
+read NOP
 kl_size_old=$(awk '{ print $1 }' /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk)
 kl_wc_l_old=$(awk '{ print $2 }' /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk)
 kl_hash_old=$(awk '{ print $3 }' /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk)
@@ -51,20 +51,20 @@ if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
         echo "Check whether loss of data occurred with the key log!"
         read NOP
     # The else needed only for learning/debugging. Should be commented it.
-    #else
-    #    echo \$kl_size: $kl_size
-    #    echo \$kl_size_old: $kl_size_old
-    #    read NOP
+    else
+        echo \$kl_size: $kl_size
+        echo \$kl_size_old: $kl_size_old
+        read NOP
     fi
     if [ "$kl_hash" != "$kl_hash_old" ]; then
         echo "Same number of lines ($kl_wc_l), but different hash then before."
         echo "Check whether loss of data occurred with the key log!"
         read NOP
     # The else needed only for learning/debugging. Should be commented out.
-    #else
-    #    echo \$kl_hash: $kl_hash
-    #    echo \$kl_hash_old: $kl_hash_old
-    #    read NOP
+    else
+        echo \$kl_hash: $kl_hash
+        echo \$kl_hash_old: $kl_hash_old
+        read NOP
     fi
 else
     # The first old number of lines, head'ed out, must have same size and
@@ -96,15 +96,12 @@ fi
 tail -1 $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
 echo stored /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt ...
 chmod 600 /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
-#ls -l /home/$USER/.uncenz-1st/SSLLAST_${tsh_old}.txt \
-#    /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
+ls -l /home/$USER/.uncenz-1st/SSLLAST_${tsh_old}.txt \
+    /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt
     ssllast_hash=$(sha256sum \
         /home/$USER/.uncenz-1st/SSLLAST_${tsh}.txt|cut -d' ' -f1)
     ssllast_hash_old=$(sha256sum \
         /home/$USER/.uncenz-1st/SSLLAST_${tsh_old}.txt|cut -d' ' -f1)
-    #echo \$ssllast_hash, then \$ssllast_hash_old:
-    #echo $ssllast_hash
-    #echo $ssllast_hash_old
 if [ "$ssllast_hash" == "$ssllast_hash_old" ]; then
     echo \$ssllast_hash, then \$ssllast_hash_old:
     echo $ssllast_hash
