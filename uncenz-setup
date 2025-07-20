@@ -10,6 +10,15 @@
 # Copyright (C) 2021, 2023 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 
+function ask()
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 function ls_file () {
     if [ -n "$1" ]; then
         file="$1"
