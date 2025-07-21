@@ -49,7 +49,7 @@ function show_help {
     echo
     echo "  -h show this help and exit"
     echo "  -f <filtering name or expression> (read the code for details)"
-    echo "  -k runs chk-tls"
+    echo "  -k runs uncenz-chk-tls"
     echo "  -r <script_to_run>"
     echo "  where the ${0##*/} is regularly run from,"
     echo "  usually in /usr/local/bin ."
@@ -93,7 +93,7 @@ while getopts "hf:kr:" opt; do
             esac
         ;;
         k)
-            chk-tls
+            uncenz-chk-tls
             sleep 0.20
         ;;
         r)
