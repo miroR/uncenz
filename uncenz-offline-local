@@ -69,6 +69,7 @@ sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'
 NUM=1
 num_lines=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'|wc -l)
 echo \$num_lines: $num_lines
+unset mnt_dev
 while [ "$NUM" -le "$num_lines" ]; do 
     sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1
     mnt_dev=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1)
