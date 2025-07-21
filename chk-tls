@@ -13,6 +13,10 @@
 echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
+. /home/$USER/.uncenz.conf
+echo \$KEYLOGDIR: $KEYLOGDIR
+#read NOP
+
 homes=( $(ls -1 /home) )
 homes_num=${#homes[@]}
 echo \$homes_num: $homes_num
@@ -36,7 +40,7 @@ echo "We start from:"
 echo "ls -l /home/{$homes_num_ar}/.kl/.sslkey.log" > $uncenz_run/homes_num_ar_CMD
 chmod 755 $uncenz_run/homes_num_ar_CMD
 sudo -s $uncenz_run/homes_num_ar_CMD
-read NOP
+#read NOP
 
 num=0
 # debug while
@@ -47,7 +51,7 @@ done
 echo \$USER: $USER
 homes_this_tlsk="$(ls -l /home/$USER/.kl/.sslkey.log|awk '{ print $5 }')"
 echo \$homes_this_tlsk: $homes_this_tlsk
-read NOP
+#read NOP
 homes_prev_tlsk=""
 # debug 3
 #echo "X${homes_prev_tlsk}X"
@@ -62,13 +66,13 @@ for tmp_tlsk in $uncenz_run/ADD_l $uncenz_run/ADD_r $uncenz_run/tlsk_file \
         ls -l $tmp_tlsk; rm -fv $tmp_tlsk
     fi
 done
-read NOP
+#read NOP
 num=0
 unset num_prev
 while [ "$num" -lt "$homes_num" ]; do
     echo "\$homes[$num]: ${homes[$num]}"
     sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
-    read NOP
+    #read NOP
     if [ ! -n "$num_prev" ]; then
         echo "\$num_prev was unset"
         num_prev="$num"
@@ -92,7 +96,7 @@ while [ "$num" -lt "$homes_num" ]; do
     echo \$homes_prev_tlsk: $homes_prev_tlsk
     echo \$homes_cur_file: $homes_cur_file
     echo \$homes_cur_tlsk: $homes_cur_tlsk
-    read NOP
+    #read NOP
     if [ "$homes_prev_tlsk" == "$homes_cur_tlsk" ]; then
         if ( sudo -s diff $homes_prev_file $homes_cur_file ); then
             echo "These are equal, no keys to extract/add to any of the two."
@@ -101,7 +105,7 @@ while [ "$num" -lt "$homes_num" ]; do
             echo \$num_prev: $num_prev
             echo \$num: $num
             echo "We will 'continue'"
-            read NOP
+            #read NOP
             continue
         fi
     else
@@ -112,11 +116,11 @@ while [ "$num" -lt "$homes_num" ]; do
         echo "sudo -s diff $homes_prev_file $homes_cur_file | grep '^< ' | wc -l"
         sudo -s diff $homes_prev_file $homes_cur_file | grep '^< ' | wc -l
         sudo -s diff $homes_prev_file $homes_cur_file | grep '^< '|sed 's/< //'>$uncenz_run/ADD_l
-        read NOP
+        #read NOP
         echo "sudo -s diff $homes_prev_file $homes_cur_file | grep '^> ' | wc -l"
         sudo -s diff $homes_prev_file $homes_cur_file | grep '^> ' | wc -l
         sudo -s diff $homes_prev_file $homes_cur_file | grep '^> '|sed 's/> //'>$uncenz_run/ADD_r
-        read NOP
+        #read NOP
         # a for and, s for sort
         sudo -s cat $homes_cur_file $uncenz_run/ADD_l > $uncenz_run/cur_a_prev
         sudo -s cat $homes_cur_file $uncenz_run/ADD_l | sort > $uncenz_run/cur_a_prev_s
@@ -124,10 +128,10 @@ while [ "$num" -lt "$homes_num" ]; do
         sudo -s cat $homes_prev_file $uncenz_run/ADD_r | sort > $uncenz_run/prev_a_cur_s
         ls -l $uncenz_run/cur_a_prev $uncenz_run/prev_a_cur
         ls -l $uncenz_run/cur_a_prev_s $uncenz_run/prev_a_cur_s
-        read NOP
+        #read NOP
         if ( sudo -s diff -q $uncenz_run/cur_a_prev_s $uncenz_run/prev_a_cur_s ); then
             sudo -s mv -v $uncenz_run/cur_a_prev $uncenz_run/tlsk_file
-            read NOP
+            #read NOP
             sudo -s rm -v $uncenz_run/prev_a_cur $uncenz_run/prev_a_cur_s $uncenz_run/cur_a_prev_s
             sudo -s rm -v $uncenz_run/ADD_l $uncenz_run/ADD_r
         fi
@@ -136,16 +140,16 @@ while [ "$num" -lt "$homes_num" ]; do
     let num+=1; echo \$num: $num
     echo \$num_prev: $num_prev
     echo \$num: $num
-    read NOP
+    #read NOP
 done
 num=0
 echo \$num: $num
-read NOP
+#read NOP
 while [ "$num" -lt "$homes_num" ]; do
     sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
     homes_cur_file="$(sudo -s ls -1 /home/${homes[$num]}/.kl/.sslkey.log)"
     echo \$homes_cur_file: $homes_cur_file
-    read NOP
+    #read NOP
     echo "sudo -s diff $uncenz_run/tlsk_file $homes_cur_file | grep '^> '|wc -l"
     sudo -s diff $uncenz_run/tlsk_file $homes_cur_file | grep '^> '|wc -l
     right_side=$(sudo -s diff $uncenz_run/tlsk_file $homes_cur_file | grep '^> '|wc -l)
@@ -153,6 +157,11 @@ while [ "$num" -lt "$homes_num" ]; do
         echo "$homes_cur_file"
         echo "  is contained in:"
         echo "$uncenz_run/tlsk_file"
+        # This is needed as /run/user/$USER is 700
+        TMP="$(mktemp -d "/tmp/$$.XXXXXXXX")"
+        cp $uncenz_run/tlsk_file $TMP/tlsk_file
+        ls -l $uncenz_run/tlsk_file $TMP/tlsk_file
+        #read NOP
     else
         echo "############################################################"
         echo "#                                                          #"
@@ -182,28 +191,67 @@ sudo -s rm $uncenz_run/homes_num_ar_CMD
 num=0
 echo \$num: $num
 echo "We haven't exited. That can mean two things."
-echo "1) some keylog files are contained in in $uncenz_run/tlsk_file. So:"
-echo "2) all keylog files were same to start with, and no $uncenz_run/tlsk_file was created"
-read NOP
-if [ -e "$uncenz_run/tlsk_file" ] && [ -s "$uncenz_run/tlsk_file" ]; then
+echo "1) some keylog files are contained in in $TMP/tlsk_file. So:"
+echo "2) all keylog files were same to start with, and no $TMP/tlsk_file was created"
+#read NOP
+if [ -e "$TMP/tlsk_file" ] && [ -s "$TMP/tlsk_file" ]; then
     while [ "$num" -lt "$homes_num" ]; do
         sudo -s ls -l /home/${homes[$num]}/.kl/.sslkey.log
         homes_cur_file="$(sudo -s ls -1 /home/${homes[$num]}/.kl/.sslkey.log)"
         echo \$homes_cur_file: $homes_cur_file
-        if ( sudo -s diff -q $uncenz_run/tlsk_file $homes_cur_file ); then
-            "tlsk_file and this one do NOT differ already."
+        if ( sudo -s diff -q $TMP/tlsk_file $homes_cur_file ); then
+            echo "tlsk_file and this one do NOT differ already."
         else
-            sudo -s ls -l $uncenz_run/tlsk_file $homes_cur_file
+            sudo -s ls -l $TMP/tlsk_file $homes_cur_file
             # If we overwrite, the ownership will be wrong.
-            #sudo -s cp -iav $uncenz_run/tlsk_file $homes_cur_file
-            sudo -s cat $uncenz_run/tlsk_file > $homes_cur_file
-            sudo -s ls -l $uncenz_run/tlsk_file $homes_cur_file
+            #sudo -s cp -iav $TMP/tlsk_file $homes_cur_file
+            # Would be "Permission denied" if mode 600:
+            sudo -s ls -l $homes_cur_file
+            sudo -s ls -l $homes_cur_file | awk '{print $3}'
+            the_user=$(sudo -s ls -l $homes_cur_file | awk '{print $3}')
+            echo \$the_user: $the_user
+            echo \$KEYLOGDIR: $KEYLOGDIR
+            #read NOP
+            KEYLOGDIR_full_path="/home/$the_user/$KEYLOGDIR"
+            sudo -s ls -ld $KEYLOGDIR_full_path
+            #read NOP
+            echo "sudo -u $the_user chmod 777 $KEYLOGDIR_full_path"
+            sudo -u $the_user chmod 777 $KEYLOGDIR_full_path
+            sudo -u $the_user ls -l $KEYLOGDIR_full_path
+            read NOP
+            echo "sudo -u $the_user chmod 666 $homes_cur_file"
+            sudo -u $the_user chmod 666 $homes_cur_file
+            sudo -u $the_user ls -ld $homes_cur_file
+            read NOP
+            sudo -s chown $the_user:$the_user $TMP
+            sudo -s chown $the_user:$the_user $TMP/tlsk_file
+            sudo -u $the_user  ls -ld $TMP
+            sudo -u $the_user  ls -l $TMP/tlsk_file
+            read NOP
+            echo "sudo -u $the_user cp -v $TMP/tlsk_file $homes_cur_file"
+            sudo -u $the_user cp -v $TMP/tlsk_file $homes_cur_file
+            if [ "$?" == 0 ]; then
+                sudo -u $the_user ls -l $homes_cur_file
+                num_final=$( echo $homes_num-1|bc)
+                if ( sudo -u $the_user diff $TMP/tlsk_file $homes_cur_file ) \
+                    && [ "$num" == "$num_final" ]; then
+                    echo \$num_final: $num_final
+                    sudo -u $the_user rm -v $TMP/tlsk_file
+                else
+                    echo \$num_final: $num_final
+                    echo "$TMP/tlsk_file still needed"
+                fi
+            fi
+            read NOP
+            sudo -u $the_user chmod 600 $homes_cur_file
+            sudo -u $the_user chmod 700 $KEYLOGDIR_full_path
+            sudo -u $the_user  ls -l $TMP/tlsk_file $homes_cur_file
             read NOP
         fi
         let num+=1; echo \$num: $num
     done
 fi
-sudo -s rm -v $uncenz_run/tlsk_file_prev $uncenz_run/homes_num_ar*
+sudo -s rm -v $uncenz_run/tlsk_file $uncenz_run/tlsk_file_prev $uncenz_run/homes_num_ar*
 echo "We reached the state as:"
 echo "ls -l /home/{$homes_num_ar}/.kl/.sslkey.log" > $uncenz_run/homes_num_ar_CMD
 chmod 755 $uncenz_run/homes_num_ar_CMD

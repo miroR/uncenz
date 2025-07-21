@@ -40,7 +40,7 @@ function show_help {
 hst=$(hostname|sed 's/\(...\).*/\1/')
 ts=$(<$uncenz_run/uncenz-ts)
 tsh=${ts}_${hst}
-echo \$tsh: $tsh
+#echo \$tsh: $tsh
 OPTIND=1
 while getopts "hr:" opt; do
     case "$opt" in
@@ -94,8 +94,9 @@ if [ -n "$str0" ] && [ -n "$str1" ]; then
         sudo -s journalctl -o short-iso-precise -S$str0 -U$str1 \
             > /home/$USER/.uncenz-1st/dump_${tsh}_messages
     else
-        echo "working: dump_${tsh}_messages"
-        echo "\$str0" and "\$str1 are identical"
+        #echo "working: dump_${tsh}_messages"
+        #echo "\$str0" and "\$str1 are identical"
+		:
     fi
 fi
 chmod 600 /home/$USER/.uncenz-1st/dump_${tsh}_messages
@@ -103,29 +104,29 @@ ls -l /home/$USER/.uncenz-1st/dump_${tsh}_messages
 if [ ! -s "/home/$USER/.uncenz-1st/dump_${tsh}_messages" ]; then
     rm -v /home/$USER/.uncenz-1st/dump_${tsh}_messages &> /dev/null
 fi
-read NOP
+#read NOP
 dumper=$DUMPER
-echo \$dumper: $dumper
-read NOP
-echo \$hst: $hst
+#echo \$dumper: $dumper
+#read NOP
+#echo \$hst: $hst
 ssllast=SSLLAST_${tsh}.txt
-echo \$ssllast: $ssllast
+#echo \$ssllast: $ssllast
 ssllast_active=SSLLAST_${tsh}_active.txt
-echo \$ssllast_active: $ssllast_active
-read NOP
+#echo \$ssllast_active: $ssllast_active
+#read NOP
 tail -1 $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/$ssllast_active
 echo stored /home/$USER/.uncenz-1st/$ssllast_active ...
 chmod 600 /home/$USER/.uncenz-1st/$ssllast_active
 ls -l /home/$USER/.uncenz-1st/$ssllast \
     /home/$USER/.uncenz-1st/$ssllast_active
-    ssllast_hash_active=$(sha256sum \
-        /home/$USER/.uncenz-1st/$ssllast_active|cut -d' ' -f1)
-echo \$ssllast_hash_active: $ssllast_hash_active
-read NOP
+ssllast_hash_active=$(sha256sum \
+    /home/$USER/.uncenz-1st/$ssllast_active|cut -d' ' -f1)
+#echo \$ssllast_hash_active: $ssllast_hash_active
+#read NOP
     ssllast_hash=$(sha256sum \
         /home/$USER/.uncenz-1st/SSLLAST_$(<$uncenz_run/uncenz-ts.old)_${hst}.txt|cut -d' ' -f1)
-echo \$ssllast_hash: $ssllast_hash
-read NOP
+#echo \$ssllast_hash: $ssllast_hash
+#read NOP
     echo \$ssllast_hash_active, then \$ssllast_hash:
     echo $ssllast_hash_active
     echo $ssllast_hash
@@ -183,3 +184,4 @@ if [ "$INTERIM" == "y" ]; then
     read NOP
     uncenz-inter.sh
 fi
+. uncenz-online-local

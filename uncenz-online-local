@@ -1,0 +1,28 @@
+#
+# uncenz-offline-local --  mount and export data, after a session online
+#
+# this script is part of the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2025 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+echo ". uncenz-setup from ${0##*/}"
+. uncenz-setup
+
+. /home/$USER/.uncenz.conf
+
+if [ ! -e "$uncenz_run/offlined-local" ]; then
+    echo "The system wasn't offlined-local. No work to do for ${0##*/}."
+    exit 0
+fi
+ask "exportfs -a -v ?"
+if [ "$?" == 0 ]; then
+    sudo -s exportfs -a -v
+fi
+ask "run mount-local.sh ?"
+if [ "$?" == 0 ]; then
+    sudo -s mount-local.sh
+fi

@@ -15,11 +15,10 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 CUR_DIR=$(pwd)
-echo \$CUR_DIR: $CUR_DIR
 if [ ! -n "$UNCENZ_DIR" ] || [ "X${UNCENZ_DIR}" == "X" ]; then
     echo "UNCENZ_DIR must be set in /home/$USER/.uncenz.conf"
     echo "sleep 3 and exit"
@@ -35,15 +34,6 @@ else
         exit 0
     fi
 fi
-
-function ask()
-{
-    echo -n "$@" '[y/n] ' ; read ans
-    case "$ans" in
-        y*|Y*) return 0 ;;
-        *) return 1 ;;
-    esac
-}
 
 function show_help {
     echo
@@ -127,6 +117,8 @@ shift $(($OPTIND - 1))
 . uncenz-vnc-per-conf
 
 . uncenz-dumper
+    
+. uncenz-offline-local
 
 sudo -s rm -v /home/*/Pas-*.txt &> /dev/null ; sudo -s rm -v /mnt/n?/home/*/Pas-*.txt &> /dev/null &
 # First, the checks that apply to uncenz-1st run with and without the include
@@ -227,7 +219,7 @@ the_dump=dump_${tsh}.pcap
 the_cast=Screen_${tsh}.mkv
 echo \$the_dump: $the_dump
 echo \$the_cast: $the_cast
-read NOP
+#read NOP
 if [ "$dumper" == "dumpcap" ]; then
     sudo -s touch $the_dump
 fi
@@ -236,8 +228,8 @@ if [ "$dumper" == "tcpdump" ]; then
     sudo -s touch $the_dump
     echo sudo -s chown tcpdump:tcpdump $the_dump
     sudo -s chown tcpdump:tcpdump $the_dump
-	ls -l $the_dump
-	read NOP
+    ls -l $the_dump
+    #read NOP
 fi
 #TO_DO convert uncenz-ipt-conf-states.sh to an include
 # Sometimes I like to take the state of the network when I'm online before I disconnect
@@ -284,7 +276,7 @@ if [ "$dumper" == "tcpdump" ]; then
         dupid=$(sudo -s ps aux | grep "$dumper" | grep -v grep | awk '{ print $2 }')
     done
 fi
-read NOP
+#read NOP
 sleep 0.2
 
 sudo -s touch $the_cast
@@ -315,7 +307,7 @@ if [ "$TERM" == "xterm" ]; then
         $the_cast &
     
     echo "Monitor screen $SCR, take notice!"; sleep 0.5
-    read NOP
+    #read NOP
     
     # We need to find the pid of each of the above processes.
     # ff for ffmpeg, du for $dumper

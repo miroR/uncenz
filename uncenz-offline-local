@@ -1,0 +1,89 @@
+#
+# uncenz-offline-local -- unexport and umount data, as per the conf
+#
+# this script is part of the uncenz set of scripts:
+# https://github.com/miroR/uncenz
+#
+# released under BSD license, pls. see LICENSE
+#
+# Copyright (C) 2025 Miroslav Rovis, <http://www.CroatiaFidelis.hr/>
+#
+
+echo ". uncenz-setup from ${0##*/}"
+. uncenz-setup
+
+. /home/$USER/.uncenz.conf
+
+if [ "$ISOLATE" != "y" ]; then
+    echo "Set ISOLATE=y in unfriendy region, and configure NET_LOCAL."
+    # And more, modify these scripts for your need, not all can be covered here.
+    ask "Accept the leaving of all exports and mounts as is?"
+    if [ "$?" == 0 ]; then
+        echo "We leave exports and mounts as is, by user's choice."
+    else
+        echo "'sleep 3' and 'exit 0'"
+        sleep 3
+        exit 0
+    fi
+fi
+
+sudo -s exportfs -ua
+# Check needed here if it did it.
+
+net_grep=$(echo $NET_LOCAL | sed 's/\(.\{11\}\).*/\1/')
+echo \$net_grep: $net_grep
+read NOP
+
+NUM=1
+num_lines=$(sudo -s mount | grep $net_grep | wc -l)
+while [ "$NUM" -le "$num_lines" ]; do 
+    sudo -s mount | grep $net_grep | head -n$NUM | tail -n1
+    sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}'
+    read NOP
+    mnt_dir=$(sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}')
+    echo \$mnt_dir: $mnt_dir
+    read NOP
+    echo sudo -s umount $mnt_dir
+    read NOP
+    if [ "X$mnt_dir" != "X" ]; then
+        sudo -s umount -l $mnt_dir
+    else
+        echo "\$mnt_dir is empty/unset, nothing to do"
+    fi
+    let NUM+=1
+done
+echo "sudo -s mount | grep $net_grep"
+sudo -s mount | grep $net_grep
+echo "if all of $NET_LOCAL have umounted, or you accept, if any are, to remain mounted?"
+ask "type y/Y"
+if [ "$?" == "0" ]; then
+    echo OK
+else
+    echo "Fix manually!"
+    echo "'sleep 3' and 'exit 1'"
+    sleep 3
+    exit 1
+fi
+
+sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'
+NUM=1
+num_lines=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'|wc -l)
+echo \$num_lines: $num_lines
+while [ "$NUM" -le "$num_lines" ]; do 
+    sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1
+    mnt_dev=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1)
+    sudo -s umount -l $mnt_dev
+    sudo -s cryptsetup close $mnt_dev
+    let NUM+=1
+done
+echo "if all of \$mnt_dev have umounted/luks-closed, or you accept, if any are, to remain open/mounted?"
+ask "type y/Y"
+if [ "$?" == "0" ]; then
+    touch $uncenz_run/offlined-local
+else
+    echo "Fix manually!"
+    echo "'sleep 3' and 'exit 1'"
+    sleep 3
+    exit 1
+fi
+

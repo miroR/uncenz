@@ -9,16 +9,16 @@
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 # "ts" is for "time stamp"
 # This stows part of the name to use in a file $uncenz_run/uncenz-ts
 #
 ts=$(date +%y%m%d_%H%M)
-echo \$ts: $ts
+#echo \$ts: $ts
 tsh=${ts}_${hst}
-echo \$tsh: $tsh
+#echo \$tsh: $tsh
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     cont_uncenz_ts=$(cat $uncenz_run/uncenz-ts | grep '[[:print:]]')
     if [ "X${cont_uncenz_ts}X" == "XX" ]; then
@@ -29,15 +29,15 @@ if [ -e "$uncenz_run/uncenz-ts" ]; then
 fi
 if [ -e "$uncenz_run/uncenz-ts" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts)
-    echo \$ts_old: $ts_old
-    read NOP
+    #echo \$ts_old: $ts_old
+    #read NOP
     echo $ts_old > $uncenz_run/uncenz-ts.old
     if [ -e "$uncenz_run/uncenz-ts.mod" ]; then
         ts_mod=$(<$uncenz_run/uncenz-ts.mod)
     fi
     if [ "$ts" == "$ts_old" ] || [ "$ts" == "$ts_mod" ]; then
-        echo \$ts_old: $ts_old
-        echo \$ts_mod: $ts_mod
+        #echo \$ts_old: $ts_old
+        #echo \$ts_mod: $ts_mod
         echo \$ts: $ts
         date
         echo "We won't overwrite the files just made."

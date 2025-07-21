@@ -24,36 +24,6 @@
 echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
-function ask()
-{
-    echo -n "$@" '[y/n] ' ; read ans
-    case "$ans" in
-        y*|Y*) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-function cat_ls_file () {
-    if [ -e "$1" ]; then
-        cat $1
-        ls -l $1
-        echo "(cat/ls -l $1)"
-        read NOP
-    else
-        echo "$1 non extant"; echo 
-    fi
-}
-
-function ls_file () {
-    if [ -e "$1" ]; then
-        ls -l $1
-        echo "(ls -l $1)"
-        read NOP
-    else
-        echo "$1 non extant"; echo 
-    fi
-}
-
 if [ $# -eq 0 ]; then
     echo "give (a list of) PCAP(s)"
     echo "(if globbing, you need to quote it, e.g.:"
