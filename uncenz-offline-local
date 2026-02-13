@@ -19,72 +19,137 @@ if [ "$ISOLATE" != "y" ]; then
     # And more, modify these scripts for your need, not all can be covered here.
     ask "Accept the leaving of all exports and mounts as is?"
     if [ "$?" == 0 ]; then
-        echo "We leave exports and mounts as is, by user's choice."
-    else
-        echo "'sleep 3' and 'exit 0'"
-        sleep 3
-        exit 0
+        echo "We will try and leave exports and mounts as is, by user's choice."
+		export USER_LEFT_IT_MOUNTED="y"
     fi
 fi
-
-sudo -s exportfs -ua
-# Check needed here if it did it.
-
-net_grep=$(echo $NET_LOCAL | sed 's/\(.\{11\}\).*/\1/')
-echo \$net_grep: $net_grep
-read NOP
-
-NUM=1
-num_lines=$(sudo -s mount | grep $net_grep | wc -l)
-while [ "$NUM" -le "$num_lines" ]; do 
-    sudo -s mount | grep $net_grep | head -n$NUM | tail -n1
-    sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}'
+if [ "$USER_LEFT_IT_MOUNTED" != "y" ]; then
+    sudo -s exportfs -ua
+    # Check needed here if it did it.
+    
+    net_grep=$(echo $NET_LOCAL | sed 's/\(.\{11\}\).*/\1/')
+    echo \$net_grep: $net_grep
     read NOP
-    mnt_dir=$(sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}')
-    echo \$mnt_dir: $mnt_dir
+    
+    sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'
+    NUM=1
+    num_lines=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'|wc -l)
+    echo \$num_lines: $num_lines
     read NOP
-    echo sudo -s umount $mnt_dir
-    read NOP
-    if [ "X$mnt_dir" != "X" ]; then
-        sudo -s umount -l $mnt_dir
-    else
-        echo "\$mnt_dir is empty/unset, nothing to do"
+    unset mnt_dev
+    if [ -e "$uncenz_run/offline-local-not-possible" ]; then
+        rm -v $uncenz_run/offline-local-not-possible
     fi
-    let NUM+=1
-done
-echo "sudo -s mount | grep $net_grep"
-sudo -s mount | grep $net_grep
-echo "if all of $NET_LOCAL have umounted, or you accept, if any are, to remain mounted?"
-ask "type y/Y"
-if [ "$?" == "0" ]; then
-    echo OK
+    while [ "$NUM" -le "$num_lines" ]; do 
+        sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1
+        mnt_dev=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1)
+        # Here we check if the $mnt_dev is in use, and if it is, we ask the user to
+        # either quit/exit those jobs or terminals, or accept that the $mnt_dev
+        # remain in use. Else the umount -l $mnt_dev would succeed but the cryptsetup close $mnt_dev would not.
+        lsof $mnt_dev
+        read NOP
+        lsof_mnt_dev=$(lsof $mnt_dev)
+        echo \$lsof_mnt_dev: $lsof_mnt_dev
+        read NOP
+        if [ "X$lsof_mnt_dev" == "X" ]; then
+            sudo -s umount -l $mnt_dev
+            sudo -s cryptsetup close $mnt_dev
+            let NUM+=1
+            else
+            echo "$mnt_dev is in use!"
+            touch $uncenz_run/offline-local-not-possible
+            ls -l $uncenz_run/offline-local-not-possible
+            echo "Pls. possibly end manually the jobs/processes/terminals and anyhow hit Enter"
+            read NOP_permanent
+            while [ -e "$uncenz_run/offline-local-not-possible" ]; do
+                echo "Checking if $mnt_dev is still in use..."
+                lsof_mnt_dev=$(lsof $mnt_dev)
+                echo \$lsof_mnt_dev: $lsof_mnt_dev
+                read NOP
+                if [ "X$lsof_mnt_dev" == "X" ]; then
+                    echo "Not anymore in use, can 'umount -l $mnt_dev' and 'cryptsetup close $mnt_dev'"
+                    rm -v $uncenz_run/offline-local-not-possible
+                else
+                    echo "Do you accept that if remain in use and go online?"
+                    if [ "$?" == 0 ]; then
+                        echo "Your choice..." 
+                    fi
+                fi
+            done
+        fi
+        echo \$lsof_mnt_dev: $lsof_mnt_dev
+        read NOP
+    done
+    
+    NUM=1
+    num_lines=$(sudo -s mount | grep $net_grep | wc -l)
+    if [ ! -e "$uncenz_run/offline-local-not-possible" ]; then
+        while [ "$NUM" -le "$num_lines" ]; do 
+            sudo -s mount | grep $net_grep | head -n$NUM | tail -n1
+            sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}'
+            read NOP
+            mnt_dir=$(sudo -s mount | grep $net_grep | head -n$NUM | tail -n1 | awk '{print $3}')
+            echo \$mnt_dir: $mnt_dir
+            read NOP
+            echo sudo -s umount $mnt_dir
+            read NOP
+            if [ "X$mnt_dir" != "X" ]; then
+                sudo -s umount -l $mnt_dir
+            else
+                echo "\$mnt_dir is empty/unset, nothing to do"
+            fi
+            let NUM+=1
+        done
+    fi
+    echo "sudo -s mount | grep $net_grep"
+    sudo -s mount | grep $net_grep
+    echo "if all of $NET_LOCAL have umounted, or you accept, if any are, to remain mounted?"
+    ask "type y/Y"
+    if [ "$?" == 0 ]; then
+        echo OK
+    else
+        ask "Without a y/Y we will 'exit 1', are you sure?"
+        if [ "$?" == 0 ]; then
+            echo OK
+        else
+            echo "Fix manually!"
+            echo "'sleep 3' and 'exit 1'"
+            sleep 3
+            exit 1
+        fi
+    fi
+    
+    sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'
+    NUM=1
+    num_lines=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'|wc -l)
+    echo \$num_lines: $num_lines
+    unset mnt_dev
+    while [ "$NUM" -le "$num_lines" ]; do 
+        sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1
+        mnt_dev=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1)
+        sudo -s umount -l $mnt_dev
+        sudo -s cryptsetup close $mnt_dev
+        let NUM+=1
+    done
+    echo "if all of \$mnt_dev have umounted/luks-closed, or you accept, if any are, to remain open/mounted?"
+    ask "type y/Y"
+    if [ "$?" == "0" ]; then
+        touch $uncenz_run/offlined-local
+    else
+        ask "Without a y/Y we will 'exit 1', are you sure?"
+        if [ "$?" == 0 ]; then
+            echo OK
+        else
+            echo "Fix manually!"
+            echo "'sleep 3' and 'exit 1'"
+            sleep 3
+            exit 1
+        fi
+    fi
 else
-    echo "Fix manually!"
-    echo "'sleep 3' and 'exit 1'"
-    sleep 3
-    exit 1
-fi
-
-sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'
-NUM=1
-num_lines=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }'|wc -l)
-echo \$num_lines: $num_lines
-unset mnt_dev
-while [ "$NUM" -le "$num_lines" ]; do 
-    sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1
-    mnt_dev=$(sudo -s mount | grep '/dev/mapper' | grep -v nvme | awk '{print $1 }' | head -n$NUM | tail -n1)
-    sudo -s umount -l $mnt_dev
-    sudo -s cryptsetup close $mnt_dev
-    let NUM+=1
-done
-echo "if all of \$mnt_dev have umounted/luks-closed, or you accept, if any are, to remain open/mounted?"
-ask "type y/Y"
-if [ "$?" == "0" ]; then
-    touch $uncenz_run/offlined-local
-else
-    echo "Fix manually!"
-    echo "'sleep 3' and 'exit 1'"
-    sleep 3
-    exit 1
-fi
-
+	echo "\$USER_LEFT_IT_MOUNTED: $USER_LEFT_IT_MOUNTED"
+fi    
+    
+    
+    
+    

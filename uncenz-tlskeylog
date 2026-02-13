@@ -14,7 +14,7 @@
 # I have seen $SSLKEYLOGFILE on poorly maintained system, non-updated
 # browser, diminishing, i.e. losing keys. We need to check that the
 # append-only $SSLKEYLOGFILE is not losing content.
-kl_size=$(ls -l $SSLKEYLOGFILE | awk '{ print $5 }')
+kl_size=$(ls -l --time-style=posix-long-iso $SSLKEYLOGFILE | awk '{ print $5 }')
 kl_wc_l=$(wc -l $SSLKEYLOGFILE | awk '{ print $1 }')
 kl_hash=$(sha256sum $SSLKEYLOGFILE | awk '{ print $1 }')
 # We don't want to create but one only key log check file for all three above:
@@ -34,7 +34,7 @@ else
     echo "NOTE: we created a bogus old key log check file"
     echo "If you'll be consecutively running uncenz in this dir, this won't be recurring."
     echo "It happens only in the first session."
-    read NOP
+    #read NOP
 fi
 # Needed only for learning/debugging. Should be commented out (3 ln).
 echo "cat /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk"
@@ -49,39 +49,40 @@ if [ "$kl_wc_l" == "$kl_wc_l_old" ]; then
     if [ "$kl_size" != "$kl_size_old" ]; then
         echo "Same number of lines ($kl_wc_l), but different size then before."
         echo "Check whether loss of data occurred with the key log!"
-        read NOP
+        read NOP_permanent
     # The else needed only for learning/debugging. Should be commented it.
     else
         echo \$kl_size: $kl_size
         echo \$kl_size_old: $kl_size_old
-        read NOP
+        #read NOP
     fi
     if [ "$kl_hash" != "$kl_hash_old" ]; then
         echo "Same number of lines ($kl_wc_l), but different hash then before."
         echo "Check whether loss of data occurred with the key log!"
-        read NOP
+        read NOP_permanent
     # The else needed only for learning/debugging. Should be commented out.
     else
         echo \$kl_hash: $kl_hash
         echo \$kl_hash_old: $kl_hash_old
-        read NOP
+        #read NOP
     fi
 else
     # The first old number of lines, head'ed out, must have same size and
     # hash as in /home/$USER/.uncenz-1st/.kl_${tsh_old}_chk.
     head -${kl_wc_l_old} $SSLKEYLOGFILE > /home/$USER/.uncenz-1st/.kl_${tsh}_part
     chmod 600 /home/$USER/.uncenz-1st/.kl_${tsh}_part
-    kl_size_part=$(ls -l /home/$USER/.uncenz-1st/.kl_${tsh}_part|awk '{ print $5 }')
+    kl_size_part=$(ls -l --time-style=posix-long-iso \
+        /home/$USER/.uncenz-1st/.kl_${tsh}_part|awk '{ print $5 }')
     kl_hash_part=$(sha256sum /home/$USER/.uncenz-1st/.kl_${tsh}_part|awk '{ print $1 }')
     if [ "$kl_size_part" != "$kl_size_old" ]; then
         echo "For the portion of old number of lines ($kl_wc_l_old), sizes don't match."
         echo "Check whether loss of data occurred with the key log!"
-        read NOP
+        read NOP_permanent
     fi
     if [ "$kl_hash_part" != "$kl_hash_old" ]; then
         echo "For the portion of old number of lines ($kl_wc_l_old), hashes don't match."
         echo "Check whether loss of data occurred with the key log!"
-        read NOP
+        read NOP_permanent
     fi
     # Uncomment (1 ln) if script works well:
     #rm -v /home/$USER/.uncenz-1st/.kl_${tsh}_part

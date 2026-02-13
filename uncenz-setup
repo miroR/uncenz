@@ -114,7 +114,7 @@ fi
 hst=$(hostname|sed 's/\(...\).*/\1/')
 # I'll be running either xterm's under xorg or foot under wayland, either, never both.
 if [ ! -n "$TERM" ]; then
-    # Likely not needed, will else will always execute.
+    # Likely not needed, else will always execute.
     FOOT_CHK=$( ps aux | grep '\<foot\>' | grep -v grep )
     XTERM_CHK=$( ps aux | grep '\<xterm\>' | grep -v grep )
     read NOP

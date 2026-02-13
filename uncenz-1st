@@ -10,7 +10,7 @@
 # released under BSD license, pls. see LICENSE
 #
 # This is the first phase of my method. We try and start the screencast
-# capturing with FFmpeg and tracing with dumpcap/tcpdump.
+# capturing with wf-recorder/FFmpeg and tracing with tcpdump/dumpcap.
 #
 
 . /home/$USER/.uncenz.conf
@@ -146,7 +146,7 @@ if [ "$INTERIM" == "y" ]; then
     read NOP
     uncenz-inter-kill.sh
 fi
-# We must not start ffmpeg nor dumpcap/tcpdump if another session is running.
+# We must not start wf-recorder/ffmpeg nor tcpdump/dumpcap if another session is running.
 if [ "$TERM" == "xterm" ]; then
     recpid=$(sudo -s ps aux | grep 'ffmpeg' | grep -v grep | grep x11grab | awk '{ print $2 }')
     if [ -n "$recpid" ]; then
@@ -167,13 +167,13 @@ if [ -n "$dupid" ]; then
 #    echo "No $dumper running."
 fi
 
-# If our x11grab'ing FFmpeg/Wayland wf-recorder is running, we can't really (re)start uncenz'ing.
+# If our Wayland wf-recorder/x11grab'ing FFmpeg is running, we can't really (re)start uncenz'ing.
 if [ -n "$recpid" ] && [ "X${recpid}X" != "XX" ] ; then
-    echo "An ffmpeg/wf-recorder process is running, and it likely is uncenz's." ; echo
+    echo "An wf-recorder/ffmpeg process is running, and it likely is uncenz's." ; echo
     ls -ltr | tail -4 ; sleep 2 ; echo
     ls -ltr | tail -4 ; sleep 1
-    echo "Enter y/Y when you have killed FFmpeg/wf-recorder if it indeed is the uncenz one,"
-    echo "or allow it if it is a non-related FFmpeg/wf-recorder run."
+    echo "Enter y/Y when you have killed wf-recorder/FFmpeg if it indeed is the uncenz one,"
+    echo "or allow it if it is a non-related wf-recorder/FFmpeg run."
     echo "(Hit anything other than y/Y and we will exit.)"
     ask 
     if [ "$?" == 0 ]; then
@@ -198,11 +198,11 @@ if [ -n "$dupid" ] || [ "X${dupid}X" != "XX" ] ; then
     fi
 fi
 # This uncenz-1st script starts concurrently (as close as possible) ffmpeg
-# screencasting and network packet capturing. The two files that it will
-# produce with those processes that it will start, it needs to name with the
-# same timestamp infix, and so the first thing to run is actually the
-# uncenz-ts:
-#
+# screencasting and network packet capturing.
+# Note however: $the_dump will be named by the timestamp of the the start of $0.
+# The two files that it will produce with those processes that it will start,
+# it needs to name with the same timestamp infix, and so the first thing to run
+# is actually the uncenz-ts to set the timestamp infix for both files:
 uncenz-ts
 ts=$(<$uncenz_run/uncenz-ts)
 tsh=${ts}_${hst}
@@ -211,7 +211,6 @@ if [ -e "$uncenz_run/uncenz-ts.old" ]; then
     ts_old=$(<$uncenz_run/uncenz-ts.old)
     tsh_old=${ts_old}_${hst}
 fi
-#
 
 . uncenz-tlskeylog
 
@@ -220,6 +219,7 @@ the_cast=Screen_${tsh}.mkv
 echo \$the_dump: $the_dump
 echo \$the_cast: $the_cast
 #read NOP
+# NOTE: dumpcap hasn't been tested in very long time
 if [ "$dumper" == "dumpcap" ]; then
     sudo -s touch $the_dump
 fi
@@ -282,6 +282,7 @@ sleep 0.2
 sudo -s touch $the_cast
 sudo -s chown $USER:$USER $the_cast
 
+# Note: xorg's xterm hasn't been tested in a few years
 if [ "$TERM" == "xterm" ]; then
     if [ ! -n "${SCR}" ] || [ "X${SCR}X" == "XX" ]; then
         # debug
