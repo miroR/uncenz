@@ -24,13 +24,6 @@
 echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
-if [ $# -eq 0 ]; then
-    echo "give (a list of) PCAP(s)"
-    echo "(if globbing, you need to quote it, e.g.:"
-    echo "uncenz-2nd \"*.pcap\")"
-    exit 0
-fi
-
 # You need to be in the directory where you copied over all the produce of
 # uncenz-1st, i.e. the PCAP and the dump_<the-time-stamp>_messages, possibly
 # other logs and the screencasts.
@@ -40,14 +33,60 @@ fi
 # First the PCAP-work-sep.sh is run (see workPCAPs link above). Then
 # this script.
 
-PCAPs=$1
+# used to be
+#PCAPs=$1
 
 # we need a random string so (potentially) multiple instances of uncenz-2nd can
 # run side by side (not on same PCAP though at this time)
-rand_str=$(dd if=/dev/urandom bs=4 count=1 | xxd -g0 | awk '{print $2}')
+rand_str=$(dd if=/dev/urandom bs=4 count=1 status=none | xxd -g0 | awk '{print $2}')
 pcaps_no_split="pcaps_no_split-$rand_str"
 > $uncenz_run/$pcaps_no_split
 read NOP
+
+function show_help {
+    echo
+    echo "==============================================================="
+    echo
+    echo "${0##*/} -- work with uncenz produce"
+    echo
+    echo "Usage: ${0##*/} [-h?kr] [argument]"
+    echo ""
+    echo "  -h show this help and exit"
+    echo "  -? show this help and exit"
+    echo "  -r PCAP(s) to work"
+    echo "     (a list of) PCAP(s)"
+    echo "     (if globbing, you need to quote it, e.g.:"
+    echo "          \"*.pcap\")"
+    echo "  -k specify \$KEYLOGFILE with secrets"
+    echo
+}
+
+OPTIND=1
+KEYLOGFILE=""
+while getopts ":h?r:k:" opt; do
+    case "$opt" in
+    h|\?)
+        show_help
+        exit 0
+        ;;
+    r)  PCAPs=$OPTARG
+    echo "gives: -r $PCAPs (\$PCAPs); since \$OPTARG: $OPTARG"
+        ;;
+    k)  KEYLOGFILE=$OPTARG
+    echo "gives: -k $KEYLOGFILE (\$KEYLOGFILE); since \$OPTARG: $OPTARG"
+        ;;
+    esac
+done
+shift $(($OPTIND - 1)) # However currently only args to -h -? -r and -k are worked
+
+if [ ! -n "$PCAPs" ] || [ "X$PCAPs" == "X" ]; then
+    echo "PCAPs are given as argument to the -r option"
+    echo "you gave none."
+    echo "echo \"X\$PCAPs\" shows only \"X$PCAPs\", since \$PCAPs is empty (or undefined)"
+    echo "sleep 3 and exit"
+    sleep 3
+    exit 0
+fi
 for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # See uncenz-1st for these variables:
     # tsh=${ts}_${hst}
@@ -58,8 +97,8 @@ for i in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # single dir for further processing, and there would be a symlink
     # dump_$tsh.pcap -> dump_$ts-00_$hst.pcap as name-base for scripts on them
     # all.
-    # So work on those is accommodated with by this scriptas as well, although
-    # it has not been tested recently.
+    # So work on those should be accommodated with by this scripts as well.
+    # However, that has not been tested recently.
     if ( echo $i | grep '\-[0-9][0-9]_' ); then
         echo "Not echoing the split PCAP to the list file:"
         ls -l $i.pcap
@@ -91,8 +130,8 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     # i_h_p is needed to work the
     # dump_<timestamp-{00,01,02,..}_$hst>.pcap. IOW when
     # ${i}_${hst}.pcap is symlink to ${i}-00_${hst}.pcap it is so for the
-    # purpose of working on ${i}-{00,01,02,..}_${hst}.pcap. But I have not
-    # tested this in long time.
+    # purpose of working on ${i}-{00,01,02,..}_${hst}.pcap.
+    # However, that has not been tested recently.
     . cont_br_short
     scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1/'| sed 's/-00_/_/')
     echo \$scr: $scr
@@ -175,9 +214,15 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
                 wireshark -otls.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap & pid=$!
                 read NOP
             else
-                echo "wireshark ${i_h_p}.pcap"
-                wireshark ${i_h_p}.pcap & pid=$!
-                read NOP
+                if [ -n "$KEYLOGFILE" ]; then
+                    echo "wireshark -otls.keylog_file:$KEYLOGFILE ${i_h_p}.pcap"
+                    wireshark -otls.keylog_file:$KEYLOGFILE ${i_h_p}.pcap & pid=$!
+                    read NOP
+                 else
+                    echo "wireshark ${i_h_p}.pcap"
+                    wireshark ${i_h_p}.pcap & pid=$!
+                    read NOP
+                 fi
             fi
             echo $pid > $TMP/${i_h_p}_wireshark.pid
             cat_ls_file $TMP/${i_h_p}_wireshark.pid
