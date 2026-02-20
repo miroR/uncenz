@@ -4,24 +4,20 @@
 #            uncenz-1st -made screencast(s) and trace(s)
 #            worked with (primitive) workPCAPs scripts
 #
-# (this is a rewrite after a number of failed attempts; it's primitive, but
-# does allow quick analysis of main events by using now-improved uncenz-1st
-# results)
-#
 # this script is part of the uncenz set of scripts:
 # https://github.com/miroR/uncenz
 #
 # This script runs on the produce of:
 # https://github.com/miroR/workPCAPs
 #
-# Copyright 2015, 2020, 2023, 2024 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
+# Copyright 2015, 2020, 2023, 2024, 2026 Miroslav Rovis, <https://www.CroatiaFidelis.hr/>
 #
 # released under BSD license, pls. see LICENSE
 #
 
 . /home/$USER/.uncenz.conf
 
-echo ". uncenz-setup from ${0##*/}"
+#echo ". uncenz-setup from ${0##*/}"
 . uncenz-setup
 
 # You need to be in the directory where you copied over all the produce of
@@ -41,7 +37,7 @@ echo ". uncenz-setup from ${0##*/}"
 rand_str=$(dd if=/dev/urandom bs=4 count=1 status=none | xxd -g0 | awk '{print $2}')
 pcaps_no_split="pcaps_no_split-$rand_str"
 > $uncenz_run/$pcaps_no_split
-read NOP
+#read NOP
 
 function show_help {
     echo
@@ -58,6 +54,7 @@ function show_help {
     echo "     (if globbing, you need to quote it, e.g.:"
     echo "          \"*.pcap\")"
     echo "  -k specify \$KEYLOGFILE with secrets"
+    echo "     (may be necessary for wireshark run)"
     echo
 }
 
@@ -70,10 +67,10 @@ while getopts ":h?r:k:" opt; do
         exit 0
         ;;
     r)  PCAPs=$OPTARG
-    echo "gives: -r $PCAPs (\$PCAPs); since \$OPTARG: $OPTARG"
+        #echo "gives: -r $PCAPs (\$PCAPs); since \$OPTARG: $OPTARG"
         ;;
     k)  KEYLOGFILE=$OPTARG
-    echo "gives: -k $KEYLOGFILE (\$KEYLOGFILE); since \$OPTARG: $OPTARG"
+        #echo "gives: -k $KEYLOGFILE (\$KEYLOGFILE); since \$OPTARG: $OPTARG"
         ;;
     esac
 done
@@ -110,28 +107,27 @@ done
 cat_ls_file $uncenz_run/$pcaps_no_split
 PCAPs=$(<$uncenz_run/$pcaps_no_split)
     
+# i_full is for full basename
 for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     ls -l $i_full.pcap; echo
     TMP="$(mktemp -d "/tmp/$i.$$.XXXXXXXX")"
     ls -ld $TMP
     echo \$i_full: $i_full
-    read NOP
-    #i_tmp=$i_full
-    #echo \$i_tmp: $i_tmp
-    #read NOP
-    #TO_DO var i changes below from original at this for loop start. Not good.
-    # changed i to i_full (for full basename)
     i=$(echo $i_full | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\1/')
     echo \$i: $i
     hst_p=$(echo $i_full | sed 's/\(.*\)_\([a-z0-9A-Z][a-z0-9A-Z][a-z0-9A-Z].*\)/\2/')
     echo \$hst_p: $hst_p
     i_h_p=${i}_${hst_p}
     echo \$i_h_p: $i_h_p
+    read NOP
     # i_h_p is needed to work the
     # dump_<timestamp-{00,01,02,..}_$hst>.pcap. IOW when
     # ${i}_${hst}.pcap is symlink to ${i}-00_${hst}.pcap it is so for the
     # purpose of working on ${i}-{00,01,02,..}_${hst}.pcap.
     # However, that has not been tested recently.
+    # While the need is pressing to split some large traces which are slow to
+    # work, I haven't found a way to split them and keep them decryptable, and
+    # most traffic is encrypted nowadays.
     . cont_br_short
     scr=$(echo $i_h_p|sed 's/dump_\(.*\)/Screen_\1/'| sed 's/-00_/_/')
     echo \$scr: $scr
@@ -162,7 +158,7 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         ls -l .${i_h_p}_no_scr
         echo "Likely, this is an interim PCAP, without screencasting."
         echo "it has no screencast associated with it"
-        echo "(unless it was lost or misnamed or other erroneous condition incurred)"
+        echo "(unless it was lost or misnamed or other erroneous condition occurred)"
         read NOP
     fi
     # See above about the symlink dump_$tsh.pcap when
@@ -184,11 +180,11 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         read NOP
         ls -l ${i_h_p}.pcap
     else
-        # if it is not any of those ${i}-{00,01,02,..}_${hst_p}.pcap plus the
-        # symlink ${i}_${hst_p}.pcap but normal file ${i}_${hst_p}.pcap
-        echo "if symlink else"
-        ls -m ${i_h_p}_tHostsConv
-        echo "(ls -m ${i_h_p}_tHostsConv)"
+        # it is not any of those ${i}-{00,01,02,..}_${hst_p}.pcap plus the
+        # symlink $i_h_p.pcap but normal file $i_h_p.pcap
+        #echo "if symlink else"
+        ls -1 ${i_h_p}_tHostsConv | grep -v "${hst}_[0-9]" # clutter not listed
+        echo "(ls -1 ${i_h_p}_tHostsConv)"
         ls -ld ${i_h_p}_tHostsConv
         read NOP
     fi
@@ -198,16 +194,16 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo \$TERM: $TERM  # foot
     fi
     pwd
-    echo \$i: $i
-    echo \$hst_p: $hst_p
-    echo \$i_h_p: $i_h_p
+    #echo \$i: $i
+    #echo \$hst_p: $hst_p
+    #echo \$i_h_p: $i_h_p
     echo "Next is: NOT open ${i_h_p}.pcap with Wireshark?..."
     . cont_br_short
     if [ ! -e ".${i_h_p}_sym-pcap" ]; then
         ls -l ${i_h_p}.pcap
         ask "NOT open ${i_h_p}.pcap with Wireshark?"
         if [ "$?" == 0 ]; then
-            echo "User declined to open ${i}_${hst_p}.pcap with Wireshark"
+            echo "User declined to open $i_h_p.pcap with Wireshark"
         else
             if [ -e "${i_h_p}_SSLKEYLOGFILE.txt" ]; then
                 echo "wireshark -otls.keylog_file:${i_h_p}_SSLKEYLOGFILE.txt ${i_h_p}.pcap"
@@ -234,7 +230,7 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "This:"
         ls -l ${i_h_p}.pcap
         echo "is the symlink of the first in a split PCAP series:"
-        # However, can't work here without the $hst part, hardwired in uncenz to three letters.
+        # However, can't work here without the $hst part, hardwired in uncenz to three chars.
         for split_pcap in $(ls -1 ${i}-[0-9][0-9]_${hst_p}.pcap); do
             ls -l ${split_pcap}
         done
@@ -288,8 +284,6 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
     echo "Possible old (previous) lists: "
     for old_list in $(ls -1 ${i_h_p}_list_*); do
         if [ -e "$old_list" ]; then
-        echo "Possible candidate for resumption:"
-            cat $old_list
             ls -l $old_list
         echo "(possible candidate for resumption)"
         read NOP
@@ -313,20 +307,45 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "${i_h_p}_list"
         echo "now mandatory."
         read NOP
+        if [ -e "${i_h_p}_conv-ip_l.txt" ]; then
+            ls -1 ${i_h_p}_conv-ip_l.txt >> $TMP/${i_h_p}_list
+        fi
+        if [ -e "${i_h_p}_messages" ]; then
+            ls -1 ${i_h_p}_messages      >> $TMP/${i_h_p}_list
+        fi
+        if [ -e "${i_h_p}_rn.txt" ]; then
+            ls -1 ${i_h_p}_rn.txt        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_NOTES.txt" ]; then
+            ls -1 ${i_h_p}_NOTES.txt        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_tHostsConv/${i_h_p}.POST" ]; then
+            ls -1 ${i_h_p}_tHostsConv/${i_h_p}.POST        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_tHostsConv/${i_h_p}.POST2" ]; then
+            ls -1 ${i_h_p}_tHostsConv/${i_h_p}.POST2        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}-msg_r_PDU.txt" ]; then
+            ls -1 ${i_h_p}-msg_r_PDU.txt        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt" ]; then
+            ls -1 ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt" ]; then
+            ls -1 ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt        >> $TMP/${i_h_p}_list 
+        fi
+        if [ -e "${i_h_p}_tHostsConv/${i_h_p}-frame-http3-request-full_uri.txt" ]; then
+            ls -1 ${i_h_p}_tHostsConv/${i_h_p}-frame-http3-request-full_uri.txt        >> $TMP/${i_h_p}_list 
+        fi
         # the namespace is ${i_h_p}_<FILES-EXCEPT-SOME>, there for analysis
-        for file in $(ls -1d ${i_h_p}_conv-ip_l.txt \
-            ${i_h_p}_NOTES.txt \
+        for file in $(ls -1d \
             ${i_h_p}_* \
-            ${i_h_p}-msg_r_PDU*.txt \
-            ${i_h_p}_tHostsConv/${i_h_p}.POST \
-            ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt \
-            ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt \
-            ${i_h_p}_rn.d/*.log \
             | grep -v '\.pcap\|SSLKEYLOGFILE.txt\|_127.0.0.1_\|^CMD\>' \
-            | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files*' \
+            | grep -v '_tStreams$\|_tHostsConv$\|_tHostsConv.log\|_files$' \
             | grep -v 'epoch\|\.tar\.gz\|\.zgg\|_s_m_r_list' | grep -v "${i_h_p}_CMD" \
-            | grep -v '\.hosts$' | grep -v '\.:' | uniq | grep '[[:print:]]'); do
-            if [ -e "$file" ]; then
+            | grep -v '\.hosts$' | grep -v '\.:' | grep -v "${i_h_p}_list" \
+            | uniq | grep '[[:print:]]'); do
+            if ! ( grep -q $file $TMP/${i_h_p}_list ); then 
                 echo "$file" >> $TMP/${i_h_p}_list
             fi
         done
@@ -341,41 +360,44 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "            entries, but it may not be complete yet"
         echo "-=-=-"
         cont=""
-        for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
-            cont_part=$(ls -1 ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
-                    ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt)
-            cont="$cont $cont_part"
-            # debug, del 1 ln
-            #echo \$cont: $cont | tr ' ' '\012'
-        done
-        if [ "X${cont}X" != "XX" ]; then
-            ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http-request-full_uri.txt
-            ls -l ${i_h_p}_tHostsConv/${i_h_p}-frame-http2-request-full_uri.txt
-            read NOP
+        # see tshark-hosts-conv.sh for var httpX_uri_do_each_ip
+        if [ -n "$httpX_uri_do_each_ip" ] && [ "X$httpX_uri_do_each_ip" != "X" ]; then
             for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
-                echo $ip
-                #read NOP
-                if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
-                    ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
-                fi
-                if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
-                    ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
-                fi
+                cont_part=$(ls -1 ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
+                        ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt)
+                cont="$cont $cont_part"
             done
-            echo "Do you want to list the above in the:"
-            ls -l $TMP/${i_h_p}_list
-            ask
-            if [ "$?" == 0 ]; then
+        fi
+        if [ "X${cont}X" != "XX" ]; then
+            if [ -n "$httpX_uri_do_each_ip" ] && [ "X$httpX_uri_do_each_ip" != "X" ]; then
                 for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
+                    echo $ip
+                    #read NOP
                     if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
-                        echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
-                            >> $TMP/${i_h_p}_list
+                        ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt
                     fi
                     if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
-                        echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt \
-                            >> $TMP/${i_h_p}_list
+                        ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt
+                    fi
+                    if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http3-request-full_uri.txt" ]; then
+                        ls -l ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http3-request-full_uri.txt
                     fi
                 done
+                echo "Do you want to list the above in the:"
+                ls -l $TMP/${i_h_p}_list
+                ask
+                if [ "$?" == 0 ]; then
+                    for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
+                        if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt" ]; then
+                            echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
+                                >> $TMP/${i_h_p}_list
+                        fi
+                        if [ -e "${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt" ]; then
+                            echo ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt \
+                                >> $TMP/${i_h_p}_list
+                        fi
+                    done
+                fi
             fi
         fi
     fi
