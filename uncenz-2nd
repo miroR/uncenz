@@ -360,8 +360,8 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
         echo "            entries, but it may not be complete yet"
         echo "-=-=-"
         cont=""
-        # see tshark-hosts-conv.sh for var httpX_uri_do_each_ip
-        if [ -n "$httpX_uri_do_each_ip" ] && [ "X$httpX_uri_do_each_ip" != "X" ]; then
+        # see tshark-hosts-conv.sh for var do_each_ip
+        if [ -n "$do_each_ip" ] && [ "X$do_each_ip" != "X" ]; then
             for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
                 cont_part=$(ls -1 ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http-request-full_uri.txt \
                         ${i_h_p}_tHostsConv/${i_h_p}_${ip}-frame-http2-request-full_uri.txt)
@@ -369,7 +369,7 @@ for i_full in $(ls -1 $PCAPs|sed 's/\.pcap//'); do
             done
         fi
         if [ "X${cont}X" != "XX" ]; then
-            if [ -n "$httpX_uri_do_each_ip" ] && [ "X$httpX_uri_do_each_ip" != "X" ]; then
+            if [ -n "$do_each_ip" ] && [ "X$do_each_ip" != "X" ]; then
                 for ip in $( awk '{print $1}' ${i_h_p}_conv-ip_l.txt | grep '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' ); do
                     echo $ip
                     #read NOP
